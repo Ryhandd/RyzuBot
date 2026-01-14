@@ -1,0 +1,45 @@
+{
+    "name": "ryzu",
+    "version": "1.0.0",
+    "description": "Ryzu Bot",
+    "main": "index.js",
+    "type": "commonjs",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "@distube/ytdl-core": "^4.16.12",
+        "@google/generative-ai": "^0.24.1",
+        "@whiskeysockets/baileys": "^6.7.21",
+        "axios": "^1.13.2",
+        "better-sqlite3": "^12.6.0",
+        "bing-image-downloader": "^0.0.4",
+        "chalk": "^4.1.2",
+        "dotenv": "^17.2.3",
+        "duckduckgo-images-api": "^1.0.5",
+        "ffmpeg-static": "^5.3.0",
+        "file-type": "^16.5.4",
+        "fluent-ffmpeg": "^2.1.3",
+        "form-data": "^4.0.5",
+        "jimp": "^1.6.0",
+        "moment-timezone": "^0.6.0",
+        "node-fetch": "^2.7.0",
+        "node-webpmux": "^3.2.1",
+        "openai": "^6.15.0",
+        "pino": "^8.14.1",
+        "readline": "1.3.0",
+        "similarity": "^1.2.1",
+        "wa-sticker-formatter": "^4.4.4",
+        "yt-search": "^2.13.1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Ryhandd/RyzuBot.git"
+    },
+    "author": "Ryzu",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Ryhandd/RyzuBot/issues"
+    },
+    "homepage": "https://github.com/Ryhandd/RyzuBot#readme"
+}
