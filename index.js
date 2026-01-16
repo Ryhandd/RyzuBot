@@ -1,6 +1,8 @@
 const http = require('http');
 http.createServer((req, res) => res.end("Ryzu Bot is Online!")).listen(process.env.PORT || 8080);
 
+const qrcode = require("qrcode-terminal")
+
 require("dotenv").config()
 const {
   makeWASocket,
@@ -38,7 +40,6 @@ async function connectToWhatsApp() {
 
   const ryzu = makeWASocket({
     logger: pino({ level: "silent" }),
-    printQRInTerminal: !usePairingCode,
     auth: state,
     browser: ["Ubuntu", "Chrome", "20.0.04"],
     version,
@@ -55,6 +56,7 @@ async function connectToWhatsApp() {
 
     if (qr) {
       console.log(chalk.magenta("Sapa Ryzu: Silakan Scan QR di bawah ini!"))
+      qrcode.generate(qr, { small: true })
     }
 
     if (connection === "close") {
