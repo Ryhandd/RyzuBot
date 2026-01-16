@@ -2,7 +2,7 @@
   "258123759640808@lid": {
     "registered": true,
     "money": 9007199254742008,
-    "exp": 494949656,
+    "exp": 494949686,
     "level": 1e+30,
     "role": "Existence Beyond Dao",
     "health": 1008,
@@ -57,7 +57,7 @@
     "legendary": 10000000012,
     "lastMonthly": 1767777337408,
     "lastYearly": 1767777340370,
-    "afk": 1768401227149,
+    "afk": 0,
     "lastMining": 1768205084528,
     "Bi": 1,
     "lotre": 0,
@@ -67,7 +67,7 @@
     "name": "Ryhnd.",
     "regTime": 1767841744702,
     "lastUnreg": 1767841681715,
-    "afkReason": "a mimir",
+    "afkReason": "",
     "ikan_lele": 1000000220,
     "gacha_ticket": 0,
     "gacha_history": [
@@ -400,7 +400,7 @@
   "84314838585584@lid": {
     "registered": true,
     "money": 2191292,
-    "exp": 14892,
+    "exp": 14902,
     "level": 38,
     "role": "Warga Biasa",
     "health": 810,
@@ -538,7 +538,7 @@
   "152772657823781@lid": {
     "registered": true,
     "money": 1456000,
-    "exp": 7030,
+    "exp": 7050,
     "level": 17,
     "role": "Warga Biasa",
     "health": 420,

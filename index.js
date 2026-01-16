@@ -16,7 +16,7 @@ const readline = require("readline")
 // ✅ REQUIRE HANDLER SEKALI SAJA (GLOBAL)
 const ryzuHandler = require("./ryzu")
 
-const usePairingCode = true
+const usePairingCode = false
 
 async function question(prompt) {
   const rl = readline.createInterface({
@@ -51,7 +51,11 @@ async function connectToWhatsApp() {
   ryzu.ev.on("creds.update", saveCreds)
 
   ryzu.ev.on("connection.update", (update) => {
-    const { connection, lastDisconnect } = update
+    const { connection, lastDisconnect, qr } = update
+
+    if (qr) {
+      console.log(chalk.magenta("Sapa Ryzu: Silakan Scan QR di bawah ini!"))
+    }
 
     if (connection === "close") {
       const reason = lastDisconnect?.error?.output?.statusCode
