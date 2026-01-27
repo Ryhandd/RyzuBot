@@ -9,8 +9,10 @@ const { exec } = require('child_process')
 const similarity = require('similarity')
 const OpenAI = require("openai")
 const chessHandler = require('./database/chessHandler.js')
-const Database = require('better-sqlite3')
-const db = new Database(path.join(process.cwd(), "database", "history.db"))
+const { db, initDB } = require('./lib/db')
+;(async () => {
+    await initDB()
+})()
 
 const getMediaType = (message) => {
     if (!message) return null
@@ -35,17 +37,6 @@ global.simiQueue = {}
 global.msgHistory = {}
 
 const HISTORY_TTL = 24 * 60 * 60 * 1000 // 24 jam
-
-setInterval(() => {
-  const limit = Date.now() - (24 * 60 * 60 * 1000)
-
-  db.prepare(`
-    DELETE FROM messages
-    WHERE timestamp < ?
-  `).run(limit)
-
-  console.log("🧹 DB cleaned (>24h)")
-}, 60 * 60 * 1000) // tiap 1 jam
 
 // --- 1. CONFIG & DATABASE ---
 const ownerContacts = ["161332242423927", "258123759640808"]; // GANTI PAKE NOMOR LU
@@ -410,19 +401,7 @@ module.exports = async (ryzu, m) => {
 
         // ===== SIMPAN KE SQLITE =====
         try {
-            db.prepare(`
-                INSERT OR IGNORE INTO messages
-                (id, chat_id, sender, text, media_type, media_path, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                `).run(
-                msgId,
-                chatId,
-                rawSenderJid,
-                rawText,
-                mediaType,
-                mediaPath,
-                Date.now()
-            )
+            
         } catch (e) {
             console.error("DB insert error:", e)
         }
