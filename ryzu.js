@@ -352,7 +352,7 @@ const readCommands = () => {
 readCommands();
 
 // --- 4. MAIN HANDLER ---
-module.exports = async (ryzu, m) => {
+export default async function ryzuHandler(ryzu, m) {
     try {
         const msg = m.messages[0];
         if (!msg || !msg.message) return;

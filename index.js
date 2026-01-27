@@ -1,22 +1,19 @@
-const http = require('http');
-http.createServer((req, res) => res.end("Ryzu Bot is Online!")).listen(process.env.PORT || 8080);
+import http from "http"
+import qrcode from "qrcode-terminal"
+import "dotenv/config"
 
-// const qrcode = require("qrcode-terminal")
-
-require("dotenv").config()
-const {
+import {
   makeWASocket,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
   DisconnectReason
-} = require("@whiskeysockets/baileys")
+} from "@whiskeysockets/baileys"
 
-const pino = require("pino")
-const chalk = require("chalk")
-const readline = require("readline")
+import pino from "pino"
+import chalk from "chalk"
+import readline from "readline"
 
-// ✅ REQUIRE HANDLER SEKALI SAJA (GLOBAL)
-const ryzuHandler = require("./ryzu")
+import ryzuHandler from "./ryzu.js"
 
 const usePairingCode = true
 
