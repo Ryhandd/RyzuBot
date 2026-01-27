@@ -7,7 +7,7 @@ module.exports = {
     alias: ["me", "inv", "inventory", "profile"],
     execute: async ({ ryzu, from, sender, mentionUser, quotedUser, msg, funcs, pushname }) => {
 
-        let target = quotedUser || mentionUser[0] || sender;
+        let target = quotedUser || mentionUser?.[0] || sender;
         funcs.checkUser(target);
 
         const u = global.rpg[target];
@@ -33,7 +33,9 @@ module.exports = {
         const f = n => safeNum(n).toLocaleString('id-ID');
 
         const role = getRole(u.level);
-        const name = target === sender ? pushname : `@${target.split('@')[0]}`;
+        const name = target === sender
+            ? pushname
+            : `@${target.split('@')[0]}`;
 
         // ===== GACHA SUMMARY =====
         const gachaCount = (u.gacha_history || []).length;
@@ -93,6 +95,7 @@ module.exports = {
             msg,
             text: txt,
             title: "RPG PLAYER PROFILE",
+            body: `${name} • Lv ${u.level}`,
             image: pp,
             target
         });

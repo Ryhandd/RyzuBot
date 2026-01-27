@@ -130,11 +130,15 @@ module.exports = {
 _Bot by Ryzu_
 `;
         try {
-            await sendCard(
-                textMenu,
-                "https://files.catbox.moe/cz6tt0.jpg",
-                "RYZU RPG MENU"
-            );
+            await sendCard({
+                ryzu,
+                from,
+                msg,
+                text: textMenu,
+                title: 'RYZU RPG MENU',
+                body: `Halo ${pushname}`,
+                image: 'https://files.catbox.moe/cz6tt0.jpg'
+            });
         } catch (e) {
             await reply(textMenu);
         }
