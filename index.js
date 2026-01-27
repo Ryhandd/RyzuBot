@@ -78,7 +78,6 @@ async function connectToWhatsApp() {
   ryzu.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0]
     if (!msg?.message) return
-    if (msg.key.fromMe) return
 
     const body =
       msg.message.conversation ||
@@ -95,7 +94,11 @@ async function connectToWhatsApp() {
     )
 
     // ✅ PANGGIL HANDLER
-    ryzuHandler(ryzu, m)
+     try {
+      await ryzuHandler(ryzu, m)
+    } catch (e) {
+      console.error("❌ Handler crash:", e)
+    }
   })
 }
 

@@ -9,6 +9,10 @@ const { exec } = require('child_process')
 const similarity = require('similarity')
 const OpenAI = require("openai")
 const chessHandler = require('./database/chessHandler.js')
+const { db, initDB } = require('./lib/db')
+;(async () => {
+  await initDB()
+})()
 const getMediaType = (message) => {
     if (!message) return null
     if (message.imageMessage) return "image"
@@ -395,11 +399,19 @@ module.exports = async (ryzu, m) => {
         }
 
         // ===== SIMPAN KE SQLITE =====
-        try {
-            
-        } catch (e) {
-            console.error("DB insert error:", e)
-        }
+        await db.prepare(`
+            INSERT OR IGNORE INTO messages
+            (id, chat_id, sender, text, media_type, media_path, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(
+            msgId,
+            chatId,
+            rawSenderJid,
+            rawText,
+            mediaType,
+            mediaPath,
+            Date.now()
+        )
 
         // ===== MESSAGE HISTORY (RAM) =====
         global.msgHistory = global.msgHistory || {}
