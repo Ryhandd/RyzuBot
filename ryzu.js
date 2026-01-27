@@ -9,11 +9,6 @@ const { exec } = require('child_process')
 const similarity = require('similarity')
 const OpenAI = require("openai")
 const chessHandler = require('./database/chessHandler.js')
-const { db, initDB } = require('./lib/db')
-;(async () => {
-    await initDB()
-})()
-
 const getMediaType = (message) => {
     if (!message) return null
     if (message.imageMessage) return "image"
