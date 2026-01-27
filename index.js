@@ -1,7 +1,7 @@
 const http = require('http');
 http.createServer((req, res) => res.end("Ryzu Bot is Online!")).listen(process.env.PORT || 8080);
 
-const qrcode = require("qrcode-terminal")
+// const qrcode = require("qrcode-terminal")
 
 require("dotenv").config()
 const {
@@ -18,7 +18,7 @@ const readline = require("readline")
 // ✅ REQUIRE HANDLER SEKALI SAJA (GLOBAL)
 const ryzuHandler = require("./ryzu")
 
-const usePairingCode = false
+const usePairingCode = true
 
 async function question(prompt) {
   const rl = readline.createInterface({
@@ -56,7 +56,7 @@ async function connectToWhatsApp() {
 
     if (qr) {
       console.log(chalk.magenta("Sapa Ryzu: Silakan Scan QR di bawah ini!"))
-      qrcode.generate(qr, { small: true })
+      //qrcode.generate(qr, { small: true })
     }
 
     if (connection === "close") {
