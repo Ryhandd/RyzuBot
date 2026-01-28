@@ -1,10 +1,11 @@
+import { webcrypto } from "crypto";
+globalThis.crypto = webcrypto;
+
 import http from "http"
 http.createServer((req, res) => res.end("Ryzu Bot is Online!"))
   .listen(process.env.PORT || 8080)
 //import qrcode from "qrcode-terminal"
 import "dotenv/config"
-const { webcrypto } = require('crypto');
-globalThis.crypto = webcrypto
 
 import {
   makeWASocket,

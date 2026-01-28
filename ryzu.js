@@ -1,18 +1,24 @@
-require("dotenv").config()
+import "dotenv/config"
 
-const { downloadContentFromMessage, jidDecode } = require('@whiskeysockets/baileys')
-const fs = require('fs')
-const path = require('path')
-const axios = require('axios')
-const crypto = require('crypto')
-const { exec } = require('child_process')
-const similarity = require('similarity')
-const OpenAI = require("openai")
-const chessHandler = require('./database/chessHandler.js')
-const { db, initDB } = require('./lib/db')
+import fs from "fs"
+import path from "path"
+import axios from "axios"
+import crypto from "crypto"
+import { exec } from "child_process"
+import similarity from "similarity"
+import OpenAI from "openai"
+import chessHandler from "./database/chessHandler.js"
+import { db, initDB } from "./lib/db.js"
+import { downloadContentFromMessage, jidDecode } from "@whiskeysockets/baileys"
 ;(async () => {
   await initDB()
 })()
+
+import { fileURLToPath } from "url"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const getMediaType = (message) => {
     if (!message) return null
     if (message.imageMessage) return "image"
@@ -34,8 +40,6 @@ global.simiCooldown = {}
 global.simiQueue = {}
 
 global.msgHistory = {}
-
-const HISTORY_TTL = 24 * 60 * 60 * 1000 // 24 jam
 
 // --- 1. CONFIG & DATABASE ---
 const ownerContacts = ["161332242423927", "258123759640808"]; // GANTI PAKE NOMOR LU
@@ -334,22 +338,26 @@ const funcs = {
 };
 
 // --- 3. LOAD COMMANDS ---
-const commands = new Map();
-const cmdFolder = path.join(__dirname, 'database', 'commands');
-const readCommands = () => { 
-    commands.clear();
-    if (!fs.existsSync(cmdFolder)) fs.mkdirSync(cmdFolder, { recursive: true });
-    const files = fs.readdirSync(cmdFolder).filter(file => file.endsWith('.js')); 
-    for (const file of files) { 
-        try { 
-            delete require.cache[require.resolve(path.join(cmdFolder, file))]; 
-            const cmd = require(path.join(cmdFolder, file)); 
-            if (cmd.name) commands.set(cmd.name, cmd); 
-        } catch(e) { console.log(`Error loading ${file}:`, e); }
-    } 
-    console.log(`✅ Loaded ${commands.size} commands.`); 
-};
-readCommands();
+import { createRequire } from "module"
+const require = createRequire(import.meta.url)
+
+const readCommands = async () => {
+    commands.clear()
+    if (!fs.existsSync(cmdFolder)) fs.mkdirSync(cmdFolder, { recursive: true })
+    const files = fs.readdirSync(cmdFolder).filter(f => f.endsWith(".js"))
+    for (const file of files) {
+        try {
+            const cmd = require(path.join(cmdFolder, file))
+            if (cmd?.name) {
+                commands.set(cmd.name, cmd)
+            }
+        } catch (e) {
+            console.log(`❌ Gagal load command ${file}:`, e.message)
+        }
+    }
+    console.log(`✅ Loaded ${commands.size} commands`)
+}
+await readCommands()
 
 // --- 4. MAIN HANDLER ---
 export default async function ryzuHandler(ryzu, m) {
