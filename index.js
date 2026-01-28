@@ -1,7 +1,7 @@
 import http from "http"
 http.createServer((req, res) => res.end("Ryzu Bot is Online!"))
   .listen(process.env.PORT || 8080)
-import qrcode from "qrcode-terminal"
+//import qrcode from "qrcode-terminal"
 import "dotenv/config"
 import { webcrypto } from "crypto"
 globalThis.crypto = webcrypto
