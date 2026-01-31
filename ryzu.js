@@ -340,6 +340,9 @@ const funcs = {
 };
 
 // --- 3. LOAD COMMANDS ---
+const commands = new Map()
+const cmdFolder = path.join(__dirname, "commands")
+
 const readCommands = async () => {
     commands.clear()
     if (!fs.existsSync(cmdFolder)) fs.mkdirSync(cmdFolder, { recursive: true })
