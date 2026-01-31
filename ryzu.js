@@ -341,7 +341,7 @@ const funcs = {
 
 // --- 3. LOAD COMMANDS ---
 const commands = new Map()
-const cmdFolder = path.join(__dirname, "commands")
+const cmdFolder = path.join(__dirname, "database", "commands")
 
 const readCommands = async () => {
     commands.clear()
