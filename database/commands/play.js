@@ -2,7 +2,6 @@ const yts = require('yt-search');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch');
 
 module.exports = {
     name: "play",
@@ -73,13 +72,18 @@ module.exports = {
             // Pastikan folder ada
             if (!fs.existsSync('./database/music')) fs.mkdirSync('./database/music', { recursive: true });
 
-            const stream = fs.createWriteStream(fileName);
-            const response = await fetch(dlUrl);
+            const writer = fs.createWriteStream(fileName)
+            const response = await axios({
+                url: dlUrl,
+                method: 'GET',
+                responseType: 'stream'
+            })
+
             await new Promise((resolve, reject) => {
-                response.body.pipe(stream);
-                response.body.on('error', reject);
-                stream.on('finish', resolve);
-            });
+                response.data.pipe(writer)
+                writer.on('finish', resolve)
+                writer.on('error', reject)
+            })
 
             if (isVideo) {
                 await ryzu.sendMessage(from, { video: { url: fileName }, caption: `✅ Sukses: ${vid.title}` }, { quoted: msg });
