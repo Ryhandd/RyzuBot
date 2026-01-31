@@ -1,24 +1,21 @@
-import { webcrypto } from "crypto";
-globalThis.crypto = webcrypto;
+const { webcrypto } = require("crypto")
+global.crypto = webcrypto
 
-import http from "http"
-http.createServer((req, res) => res.end("Ryzu Bot is Online!"))
-  .listen(process.env.PORT || 8080)
-//import qrcode from "qrcode-terminal"
-import "dotenv/config"
+const http = require("http")
+require("dotenv").config()
 
-import {
+const ryzuHandler = require("./ryzu.js")
+
+const {
   makeWASocket,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
   DisconnectReason
-} from "@whiskeysockets/baileys"
+} = require("@whiskeysockets/baileys")
 
-import pino from "pino"
-import chalk from "chalk"
-import readline from "readline"
-
-import ryzuHandler from "./ryzu.js"
+const pino = require("pino")
+const chalk = require("chalk")
+const readline = require("readline")
 
 const usePairingCode = true
 

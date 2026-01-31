@@ -1,23 +1,18 @@
-import "dotenv/config"
+require("dotenv").config()
 
-import fs from "fs"
-import path from "path"
-import axios from "axios"
-import crypto from "crypto"
-import { exec } from "child_process"
-import similarity from "similarity"
-import OpenAI from "openai"
-import chessHandler from "./database/chessHandler.js"
-import { db, initDB } from "./lib/db.js"
-import { downloadContentFromMessage, jidDecode } from "@whiskeysockets/baileys"
-;(async () => {
-  await initDB()
-})()
+const fs = require("fs")
+const path = require("path")
+const axios = require("axios")
+const crypto = require("crypto")
+const { exec } = require("child_process")
+const similarity = require("similarity")
+const OpenAI = require("openai")
 
-import { fileURLToPath } from "url"
+const chessHandler = require("./database/chessHandler.js")
+const { db, initDB } = require("./lib/db.js")
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const { downloadContentFromMessage, jidDecode } =
+  require("@whiskeysockets/baileys")
 
 const getMediaType = (message) => {
     if (!message) return null
@@ -26,6 +21,13 @@ const getMediaType = (message) => {
     if (message.stickerMessage) return "sticker"
     return null
 }
+
+async function init() {
+  await initDB()
+  await readCommands()
+}
+
+init()
 
 global.chessGames = {
     vsBot: true,
@@ -338,9 +340,6 @@ const funcs = {
 };
 
 // --- 3. LOAD COMMANDS ---
-import { createRequire } from "module"
-const require = createRequire(import.meta.url)
-
 const readCommands = async () => {
     commands.clear()
     if (!fs.existsSync(cmdFolder)) fs.mkdirSync(cmdFolder, { recursive: true })
@@ -357,10 +356,9 @@ const readCommands = async () => {
     }
     console.log(`✅ Loaded ${commands.size} commands`)
 }
-await readCommands()
 
 // --- 4. MAIN HANDLER ---
-export default async function ryzuHandler(ryzu, m) {
+module.exports = async function ryzuHandler(ryzu, m) {
     try {
         const msg = m.messages[0];
         if (!msg || !msg.message) return;
