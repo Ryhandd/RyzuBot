@@ -1,6 +1,7 @@
 *.exe
 *.db
 node_modules
+RyzuSesi
 .env
 tmp
 package-lock.json
