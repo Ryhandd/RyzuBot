@@ -360,6 +360,8 @@ const readCommands = async () => {
     console.log(`✅ Loaded ${commands.size} commands`)
 }
 
+const cooldowns = new Set();
+
 // --- 4. MAIN HANDLER ---
 module.exports = async function ryzuHandler(ryzu, m) {
     try {
@@ -472,9 +474,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
         const text = body.trim();              // 🔥 FIX INI
         const bodyLow = text.toLowerCase();
-
-        // Di luar fungsi/handler utama (global scope)
-        const cooldowns = new Set();
 
         // Di dalam if condition kamu:
         if (
