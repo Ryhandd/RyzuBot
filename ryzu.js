@@ -473,20 +473,28 @@ module.exports = async function ryzuHandler(ryzu, m) {
         const text = body.trim();              // 🔥 FIX INI
         const bodyLow = text.toLowerCase();
 
-        // Respon kata "bot"
+        // Di luar fungsi/handler utama (global scope)
+        const cooldowns = new Set();
+
+        // Di dalam if condition kamu:
         if (
             !/^[\\/!#.]/.test(text) &&
-            bodyLow.includes("bot") &&
+            bodyLow === "bot" && // Menggunakan exact match
+            !cooldowns.has(from) && // Cek apakah sedang masa tunggu
             !ryzu.game?.[from] &&
-            !ryzu.ttt?.[from] &&
-            !global.shimi?.[senderId] &&
-            !global.simi?.[senderId]
-            ) {
+            !ryzu.ttt?.[from]
+        ) {
+            // Masukkan ke daftar cooldown
+            cooldowns.add(from);
+            
+            // Hapus dari daftar cooldown setelah 30 detik (biar gak spam)
+            setTimeout(() => cooldowns.delete(from), 30000); 
+
             return ryzu.sendMessage(
                 from,
                 { text: "RyzuBot disini!" },
                 { quoted: msg }
-            )
+            );
         }
 
         // Respon kata "shimi"
