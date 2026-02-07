@@ -387,7 +387,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
             "";
 
         // 2. BARU BOLEH DI LOG
-        console.log(chalk.green(`${pushname} (${senderNumber})Isi Pesan:`), rawText);
+        console.log(chalk.green(`${pushname}:`), rawText);
 
         if (!msg || !msg.message) return;
 
