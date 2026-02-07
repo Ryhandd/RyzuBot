@@ -364,12 +364,28 @@ const cooldowns = new Set();
 
 // --- 4. MAIN HANDLER ---
 module.exports = async function ryzuHandler(ryzu, m) {
-    console.log("Isi Pesan:", rawText);
     try {
         const msg = m.messages[0];
         if (!msg || !msg.message) return;
+
+        // 1. BUAT VARIABELNYA DULU
         const from = msg.key.remoteJid;
+        const msgId = msg.key.id;
         const isGroup = from.endsWith('@g.us');
+        
+        // TEKS MENTAH (Definisikan ini sekarang)
+        const rawText =
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text ||
+            msg.message.imageMessage?.caption ||
+            msg.message.videoMessage?.caption ||
+            "";
+
+        // 2. BARU BOLEH DI LOG
+        console.log("--- PESAN MASUK ---");
+        console.log("Isi Pesan:", rawText);
+
+        if (!msg || !msg.message) return;
         const sender = isGroup
         ? (msg.key.participant || msg.participant)
         : from;
@@ -377,17 +393,9 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
         // ===== IDENTITAS PESAN =====
         const chatId = msg.key.remoteJid
-        const msgId = msg.key.id
         const rawSenderJid = msg.key.participant || msg.key.remoteJid
 
         // ===== TEKS MENTAH =====
-        const rawText =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            msg.message.imageMessage?.caption ||
-            msg.message.videoMessage?.caption ||
-            ""
-
         const mediaType = getMediaType(msg.message)
         let mediaPath = null
 
@@ -478,15 +486,21 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
         const isCreator = ownerContacts.includes(senderNumber) || botNumber === senderNumber;
 
-        // Di dalam if condition kamu:
-        // Respon "bot" (Taruh SETELAH isCmd didefinisikan)
+       // --- RESPON "BOT" ANTI-SPAM ---
         if (!isCmd && bodyLow === "bot") {
             if (!cooldowns.has(from)) {
                 cooldowns.add(from);
+                
+                // Set cooldown 30 detik
                 setTimeout(() => cooldowns.delete(from), 30000); 
-                return reply("RyzuBot disini!");
+
+                return ryzu.sendMessage(
+                    from,
+                    { text: "RyzuBot disini!" },
+                    { quoted: msg }
+                );
             }
-            return;
+            return; // Berhenti di sini jika masih dalam masa cooldown
         } {
             // Masukkan ke daftar cooldown
             cooldowns.add(from);
