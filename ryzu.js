@@ -364,6 +364,7 @@ const cooldowns = new Set();
 
 // --- 4. MAIN HANDLER ---
 module.exports = async function ryzuHandler(ryzu, m) {
+    console.log("Isi Pesan:", rawText);
     try {
         const msg = m.messages[0];
         if (!msg || !msg.message) return;
@@ -440,49 +441,53 @@ module.exports = async function ryzuHandler(ryzu, m) {
             global.msgHistory[chatId].shift()
         }
         
-        // 1. Definisikan ID dulu
+        // 1. Identitas Dasar
         const botId = decodeJid(ryzu.user?.id || ryzu.authState.creds.me?.id);
         const botNumber = botId.split('@')[0];
-        
         const senderNumber = senderId.split('@')[0];
 
-        // 2. Ambil Metadata Grup (WAJIB sebelum cek isBotAdmin)
-        const groupMetadata = isGroup ? await ryzu.groupMetadata(from).catch(() => null) : null;
+        // 2. Definisi Pesan (Pindahkan ke ATAS)
+        const body = (msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.imageMessage?.caption || "") || "";
+        const text = body.trim();
+        const bodyLow = text.toLowerCase();
         
-        // Buat variabel participants (URUTANNYA HARUS DI SINI)
-        const participants = (isGroup && groupMetadata) ? groupMetadata.participants : [];
+        // 3. Prefix & Command Detector
+        const prefixMatch = text.match(/^[\\/!#.]/);
+        const prefix = prefixMatch ? prefixMatch[0] : ".";
+        const isCmd = text.startsWith(prefix);
+        const args = text.slice(prefix.length).trim().split(/ +/);
+        const commandName = args.shift().toLowerCase();
+        const q = args.join(" ");
 
-        // 3. Sekarang baru bisa cek isBotAdmin (Karena participants sudah ada)
-        const isBotAdmin = isGroup ? participants.some(p => {
-            const pId = decodeJid(p.id).split('@')[0];
-            return p.admin !== null && pId === botNumber;
-        }) : false;
+        // 4. Ambil Metadata (Gunakan try-catch agar tidak crash kalau gagal)
+        let groupMetadata = null;
+        let participants = [];
+        let isAdmin = false;
+        let isBotAdmin = false;
 
-        const isAdmin = isGroup ? participants.some(p => {
-            const pId = decodeJid(p.id).split('@')[0];
-            return p.admin !== null && pId === senderNumber;
-        }) : false;
-        
+        if (isGroup) {
+            try {
+                groupMetadata = await ryzu.groupMetadata(from);
+                participants = groupMetadata.participants || [];
+                isAdmin = participants.some(p => decodeJid(p.id) === senderId && p.admin);
+                isBotAdmin = participants.some(p => decodeJid(p.id) === botId && p.admin);
+            } catch (e) {
+                console.log("Gagal ambil metadata grup:", e);
+            }
+        }
+
         const isCreator = ownerContacts.includes(senderNumber) || botNumber === senderNumber;
 
-        // 4. Definisi Variabel Pesan
-        const body =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            msg.message.imageMessage?.caption ||
-            "";
-
-        const text = body.trim();              // 🔥 FIX INI
-        const bodyLow = text.toLowerCase();
-
         // Di dalam if condition kamu:
-        if (
-            !/^[\\/!#.]/.test(text) &&
-            bodyLow === "bot" && // Menggunakan exact match
-            !cooldowns.has(from) && // Cek apakah sedang masa tunggu
-            !ryzu.game?.[from] &&
-            !ryzu.ttt?.[from]
-        ) {
+        // Respon "bot" (Taruh SETELAH isCmd didefinisikan)
+        if (!isCmd && bodyLow === "bot") {
+            if (!cooldowns.has(from)) {
+                cooldowns.add(from);
+                setTimeout(() => cooldowns.delete(from), 30000); 
+                return reply("RyzuBot disini!");
+            }
+            return;
+        } {
             // Masukkan ke daftar cooldown
             cooldowns.add(from);
             
@@ -530,11 +535,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
         })
 
         if (chessHandled) return
-
-        const prefixMatch = text.match(/^[\\/!#.]/)
-        const prefix = prefixMatch ? prefixMatch[0] : "."
-        const pushname = msg.pushName || "User";
-        const isCmd = text.startsWith(prefix)
 
         // Variabel Tambahan
         const mentionUser = msg.message.extendedTextMessage?.contextInfo?.mentionedJid || [];
@@ -996,9 +996,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
                 const isWhiteList = whiteList.includes(commandName);
 
                 // 1. Cek Registrasi
-                if (!user.registered && !isWhiteList) {
-                    return reply(`⚠️ *AKSES DITOLAK*\n\nLu belum terdaftar di database Ryzu Bot. Silakan daftar dulu biar data lu kesimpan.\n\nContoh: *${prefix}register NamaLu*`);
-                }
 
                 // 2. Cek Limit (Khusus yang bukan WhiteList & bukan Premium)
                 if (!isPremium && !isWhiteList) {
