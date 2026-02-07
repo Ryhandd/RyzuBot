@@ -369,12 +369,16 @@ module.exports = async function ryzuHandler(ryzu, m) {
         const msg = m.messages[0];
         if (!msg || !msg.message) return;
 
-        // 1. BUAT VARIABELNYA DULU
+        // 1. DEFINISIKAN SEMUA IDENTITAS DI ATAS
         const from = msg.key.remoteJid;
         const msgId = msg.key.id;
         const isGroup = from.endsWith('@g.us');
-        
-        // TEKS MENTAH (Definisikan ini sekarang)
+        const sender = isGroup ? (msg.key.participant || msg.participant) : from;
+        const senderId = decodeJid(sender);
+        const senderNumber = senderId.split('@')[0];
+        const pushname = msg.pushName || "User"; // <--- PINDAHKAN KE SINI
+
+        // TEKS MENTAH
         const rawText =
             msg.message.conversation ||
             msg.message.extendedTextMessage?.text ||
@@ -386,10 +390,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
         console.log(chalk.green(`${pushname} (${senderNumber})Isi Pesan:`), rawText);
 
         if (!msg || !msg.message) return;
-        const sender = isGroup
-        ? (msg.key.participant || msg.participant)
-        : from;
-        const senderId = decodeJid(sender);
 
         // ===== IDENTITAS PESAN =====
         const chatId = msg.key.remoteJid
@@ -452,7 +452,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
         // 1. Identitas Dasar
         const botId = decodeJid(ryzu.user?.id || ryzu.authState.creds.me?.id);
         const botNumber = botId.split('@')[0];
-        const senderNumber = senderId.split('@')[0];
 
         // 2. Definisi Pesan (Pindahkan ke ATAS)
         const body = (msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.imageMessage?.caption || "") || "";
