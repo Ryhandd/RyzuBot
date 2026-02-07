@@ -981,6 +981,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
         if (body.startsWith(prefix)) {
             const args = body.slice(prefix.length).trim().split(" ");
             const commandName = args.shift().toLowerCase();
+            console.log("Command yang dipanggil:", commandName);
             const q = args.join(" ");
 
             const cmd = commands.get(commandName) || [...commands.values()].find(x => x.alias && x.alias.includes(commandName));
