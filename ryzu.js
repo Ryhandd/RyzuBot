@@ -382,8 +382,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
             "";
 
         // 2. BARU BOLEH DI LOG
-        console.log("--- PESAN MASUK ---");
-        console.log("Isi Pesan:", rawText);
+        console.log(chalk.green(`${pushname} (${senderNumber})Isi Pesan:`), rawText);
 
         if (!msg || !msg.message) return;
         const sender = isGroup
