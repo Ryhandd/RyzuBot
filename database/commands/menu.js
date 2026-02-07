@@ -98,6 +98,7 @@ module.exports = {
 • ${prefix}darkjokes
 • ${prefix}afk
 • ${prefix}ping
+• ${prefix}say
 • ${prefix}simi
 • ${prefix}shimi
 
