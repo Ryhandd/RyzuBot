@@ -486,12 +486,12 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
         const isCreator = ownerContacts.includes(senderNumber) || botNumber === senderNumber;
 
-       // --- RESPON "BOT" ANTI-SPAM ---
+        // --- RESPON "BOT" ANTI-SPAM (HANYA JIKA KATA "BOT") ---
         if (!isCmd && bodyLow === "bot") {
             if (!cooldowns.has(from)) {
                 cooldowns.add(from);
                 
-                // Set cooldown 30 detik
+                // Set cooldown 30 detik biar gak nyepam
                 setTimeout(() => cooldowns.delete(from), 30000); 
 
                 return ryzu.sendMessage(
@@ -500,35 +500,14 @@ module.exports = async function ryzuHandler(ryzu, m) {
                     { quoted: msg }
                 );
             }
-            return; // Berhenti di sini jika masih dalam masa cooldown
-        } {
-            // Masukkan ke daftar cooldown
-            cooldowns.add(from);
-            
-            // Hapus dari daftar cooldown setelah 30 detik (biar gak spam)
-            setTimeout(() => cooldowns.delete(from), 30000); 
-
-            return ryzu.sendMessage(
-                from,
-                { text: "RyzuBot disini!" },
-                { quoted: msg }
-            );
+            return; // Berhenti di sini kalau masih masa cooldown
         }
-
-        // Respon kata "shimi"
-        if (
-            !/^[\\/!#.]/.test(text) &&
-            bodyLow.includes("shimi") &&
-            !ryzu.game?.[from] &&
-            !ryzu.ttt?.[from] &&
-            !global.shimi?.[senderId] &&
-            !global.simi?.[senderId]
-            ) {
-            return ryzu.sendMessage(
-                from,
-                { text: "Kenapa nih manggil shimi??🤭🤭\nKalo mau ngobrol ketik .shimi on aja bestiee🥰🥰" },
-                { quoted: msg }
-            )
+        
+        // --- RESPON "SHIMI" (HANYA JIKA ADA KATA "SHIMI") ---
+        if (!isCmd && bodyLow.includes("shimi")) {
+            if (!ryzu.game?.[from] && !ryzu.ttt?.[from]) {
+                return reply("Kenapa nih manggil shimi??🤭🤭\nKalo mau ngobrol ketik .shimi on aja bestiee🥰🥰");
+            }
         }
 
         const reply = (teks) => {
