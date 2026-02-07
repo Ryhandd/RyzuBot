@@ -7,6 +7,7 @@ const crypto = require("crypto")
 const { exec } = require("child_process")
 const similarity = require("similarity")
 const OpenAI = require("openai")
+const chalk = require("chalk")
 
 const chessHandler = require("./database/chessHandler.js")
 const { db, initDB } = require("./lib/db.js")
