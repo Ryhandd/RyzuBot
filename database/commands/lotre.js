@@ -1,107 +1,72 @@
+const { safeNum, addMoney } = require("../../lib/rpgUtils")
+
 module.exports = {
-    name: "lotre",
-    alias: ["belilotre", "tiket"],
-    execute: async ({ ryzu, from, sender, reply, funcs, msg, args, isCreator }) => {
-        // 1. Pastikan user terdaftar
-        funcs.checkUser(sender);
-        const user = global.rpg[sender];
-        const hargaTiket = 100000;
+  name: "lotre",
+  alias: ["lotere", "lottrey"],
+  execute: async ({ sender, args, reply, funcs }) => {
+    const user = global.rpg[sender]
 
-        // 2. Inisialisasi data lotre di global.rpg (Bukan global.db)
-        if (!global.rpg.lotre_system) {
-            global.rpg.lotre_system = {
-                peserta: [],
-                status: "open"
-            };
-        }
+    user.lotre = safeNum(user.lotre)
+    user.money = safeNum(user.money)
 
-        const lotre = global.rpg.lotre_system;
+    const harga = 5000
+    const subcommand = args[0]?.toLowerCase()
 
-        // --- FITUR INFO ---
-        if (args[0] === "info" || !args[0]) {
-            let list = lotre.peserta.length > 0 ? 
-                lotre.peserta.map((v, i) => `${i + 1}. @${v.split('@')[0]}`).join('\n') : 
-                "Belum ada peserta.";
-            
-            let txt = `🎟️ *RYZU MINGGUAN LOTRE* 🎟️\n\n`;
-            txt += `💰 *Harga Tiket:* 100.000 Money\n`;
-            txt += `🎁 *Hadiah Utama:* \n`;
-            txt += `   - 💵 500.000 Money\n`;
-            txt += `   - 📦 10 Mythic Box\n`;
-            txt += `   - 📦 5 Legendary Box\n\n`;
-            txt += `👥 *Peserta Saat Ini:* (${lotre.peserta.length})\n${list}\n\n`;
-            txt += `Ketik *.lotre beli* untuk ikut serta!`;
-
-            return ryzu.sendMessage(from, { 
-                text: txt, 
-                mentions: lotre.peserta 
-            }, { quoted: msg });
-        }
-
-        // --- FITUR BELI ---
-        if (args[0] === "beli") {
-            if (user.money < hargaTiket) return reply("❌ Uang kamu gak cukup, Bro. Butuh 100.000 buat beli tiket!");
-            
-            user.money -= hargaTiket;
-            lotre.peserta.push(sender);
-            funcs.saveRPG(); // Simpan ke userRPG.json
-
-            let txt = `✅ *BERHASIL MEMBELI TIKET LOTRE*\n\n`;
-            txt += `Nama: @${sender.split('@')[0]}\n`;
-            txt += `Jumlah Tiket Kamu: ${lotre.peserta.filter(v => v === sender).length}\n`;
-            txt += `\nSemoga beruntung saat pengundian!`;
-
-            return ryzu.sendMessage(from, { 
-                text: txt, 
-                mentions: [sender] 
-            }, { quoted: msg });
-        }
-
-        // --- FITUR ROLL (Hanya Owner) ---
-        if (args[0] === "roll" || args[0] === "undi") {
-            if (!isCreator) return reply("❌ Hanya Owner yang bisa mengundi!");
-            if (lotre.peserta.length < 2) return reply("❌ Peserta minimal harus 2 orang baru bisa di-roll!");
-
-            reply("🎲 *Mengocok nama pemenang...*");
-            
-            setTimeout(async () => {
-                const pemenang = lotre.peserta[Math.floor(Math.random() * lotre.peserta.length)];
-                
-                // Pastikan pemenang ada di database
-                funcs.checkUser(pemenang);
-                const uWin = global.rpg[pemenang];
-
-                // Kasih hadiah
-                uWin.money += 500000;
-                uWin.mythic = (uWin.mythic || 0) + 10;
-                uWin.legendary = (uWin.legendary || 0) + 5;
-                
-                let winTxt = `🎊 *PEMENANG LOTRE RYZU* 🎊\n\n`;
-                winTxt += `Selamat kepada: @${pemenang.split('@')[0]}\n\n`;
-                winTxt += `🎁 *Hadiah Telah Dikirim:* \n`;
-                winTxt += `- 💵 500.000 Money\n`;
-                winTxt += `- 📦 10 Mythic Box\n`;
-                winTxt += `- 📦 5 Legendary Box\n\n`;
-                winTxt += `Cek *.inv* untuk melihat hadiahmu!`;
-
-                // Reset Peserta
-                lotre.peserta = [];
-                funcs.saveRPG();
-
-                await ryzu.sendMessage(from, { 
-                    text: winTxt, 
-                    contextInfo: { 
-                        mentionedJid: [pemenang],
-                        externalAdReply: {
-                            title: "LOTRE WINNER!",
-                            body: "Selamat atas kemenanganmu!",
-                            thumbnailUrl: "https://files.catbox.moe/cz6tt0.jpg", // Pakai foto menu tadi
-                            mediaType: 1,
-                            renderLargerThumbnail: true
-                        }
-                    }
-                }, { quoted: msg });
-            }, 3000);
-        }
+    // Show info
+    if (!subcommand || subcommand === "info") {
+      return reply(
+        `🎟️ *LOTRE RYZU*\n\n` +
+        `• Harga tiket: ${harga.toLocaleString()} money\n` +
+        `• Punya tiket: ${user.lotre}\n\n` +
+        `📌 Perintah:\n` +
+        `*.lotre beli <jumlah>* - Beli tiket\n` +
+        `*.lotre cabut* - Cabut lotre (butuh 1 tiket)\n` +
+        `*.lotre info* - Lihat info\n\n` +
+        `🎁 Hadiah:\n` +
+        `• Jackpot (1%): 500.000 money\n` +
+        `• Menang (10%): 50.000 money\n` +
+        `• Kecil (30%): 10.000 money\n` +
+        `• Kalah (59%): Tidak dapat apa-apa`
+      )
     }
-};
+
+    // Beli tiket
+    if (subcommand === "beli") {
+      const jml = Math.max(1, safeNum(args[1], 1))
+      const total = harga * jml
+      if (user.money < total) return reply(`❌ Uang kurang! Butuh ${total.toLocaleString()} money.`)
+      addMoney(user, -total)
+      user.lotre += jml
+      funcs.saveRPG()
+      return reply(`✅ Berhasil beli *${jml} tiket lotre*!\n💰 Dibayar: ${total.toLocaleString()}\n🎟️ Total tiket: ${user.lotre}`)
+    }
+
+    // Cabut lotre
+    if (subcommand === "cabut") {
+      if (user.lotre < 1) return reply("❌ Kamu tidak punya tiket lotre. Beli dulu dengan *.lotre beli*")
+      user.lotre -= 1
+
+      const roll = Math.random() * 100
+      let hasilText, hasilMoney = 0
+
+      if (roll < 1) {
+        hasilMoney = 500000
+        hasilText = `🎊 *JACKPOT!!!*\nKamu menang *500.000 money*! Keberuntungan dewa!`
+      } else if (roll < 11) {
+        hasilMoney = 50000
+        hasilText = `🥳 *MENANG BESAR!*\nKamu menang *50.000 money*!`
+      } else if (roll < 41) {
+        hasilMoney = 10000
+        hasilText = `😊 *MENANG KECIL*\nKamu menang *10.000 money*!`
+      } else {
+        hasilText = `😢 *TIDAK MENANG*\nCoba lagi besok ya!`
+      }
+
+      if (hasilMoney > 0) addMoney(user, hasilMoney)
+      funcs.saveRPG()
+      return reply(`🎟️ *CABUT LOTRE*\n\n${hasilText}\n\n🎟️ Sisa tiket: ${user.lotre}`)
+    }
+
+    return reply("Perintah tidak dikenali. Ketik *.lotre info* untuk bantuan.")
+  }
+}

@@ -1,4 +1,4 @@
-global.admin = ['6281237710532@s.whatsapp.net']
+global.admin = ['628971614687@s.whatsapp.net']
 
 global.prefix = '!'
 
