@@ -40,7 +40,7 @@ module.exports = {
 
       addMoney(victim, -curian)
       addMoney(user, curian)
-      funcs.saveRPG()
+      await funcs.saveRPG(sender)
 
       await ryzu.sendMessage(from, {
         text:
@@ -54,7 +54,7 @@ module.exports = {
       // 30% ketangkap, kena denda
       const denda = Math.floor(Math.random() * 5000) + 2000
       addMoney(user, -denda)
-      funcs.saveRPG()
+      await funcs.saveRPG(sender)
 
       await ryzu.sendMessage(from, {
         text:
@@ -66,7 +66,7 @@ module.exports = {
       }, { quoted: msg })
     } else {
       // 25% gagal tapi lolos
-      funcs.saveRPG()
+      await funcs.saveRPG(sender)
       return reply(
         `🏃 *GAGAL KABUR!*\n\n` +
         `Kamu gagal mencuri tapi berhasil kabur.\n` +

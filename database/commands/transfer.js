@@ -45,7 +45,7 @@ module.exports = {
             to[item] += amount;
         }
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
 
         return reply(
             `✅ *TRANSFER BERHASIL*\n\n` +

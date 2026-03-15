@@ -59,7 +59,7 @@ module.exports = {
         user.exp = (user.exp || 0) + exp;
         user.lastMining = Date.now();
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
         funcs.cekLevel(sender);
 
         // ===== MESSAGE =====

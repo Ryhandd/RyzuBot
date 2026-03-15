@@ -107,7 +107,7 @@ module.exports = {
                 user.gacha_history.pop();
         }
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
 
         // ===== BUILD MESSAGE =====
         let text = `🎰 *GACHA RESULT*\n`;

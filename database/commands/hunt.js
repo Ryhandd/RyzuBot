@@ -91,7 +91,7 @@ module.exports = {
 
         addExp(user, exp);
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
         funcs.cekLevel(sender);
 
         // ===== MESSAGE =====

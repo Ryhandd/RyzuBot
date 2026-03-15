@@ -23,7 +23,7 @@ module.exports = {
 
         user.lastUnreg = Date.now();
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
 
         reply(`✅ *UNREGISTER BERHASIL*\n\nNama lama *${oldName}* telah dihapus.\n\n⚠️ *Catatan:* History claim harian/mingguan lu tetep kesimpen di nomor ini, jadi gak bisa di-reset pake unreg.`);
     }

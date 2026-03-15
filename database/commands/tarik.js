@@ -33,7 +33,7 @@ module.exports = {
         }
 
         user.money += jumlahTarik;
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
         return reply(`💰 Berhasil tarik 💰 ${jumlahTarik.toLocaleString()} ke dompet!`);
     }
 };

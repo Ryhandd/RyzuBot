@@ -23,6 +23,6 @@ module.exports = {
         reply(`✅ *PENDAFTARAN BERHASIL!*\n\n• Nama: ${nama}\n• Hadiah: 10000 Money\n• Limit: ${user.limit}\n\nSekarang lu udah bisa akses semua fitur bot!`);
         
         // Simpan ke database
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
     }
 }

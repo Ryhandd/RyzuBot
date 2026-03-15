@@ -11,6 +11,7 @@ const chalk = require("chalk")
 
 const chessHandler = require("./database/chessHandler.js")
 const { db, initDB } = require("./lib/db.js")
+const { connect, User } = require("./lib/mongo")
 
 const { downloadContentFromMessage, jidDecode } = require("@whiskeysockets/baileys")
 
@@ -23,8 +24,39 @@ const getMediaType = (message) => {
 }
 
 async function init() {
+  await connect()
   await initDB()
+  await loadRPGFromMongo() // load semua user dari DB
   await readCommands()
+}
+
+async function loadRPGFromMongo() {
+  const users = await User.find({})
+  for (const u of users) {
+    global.rpg[u._id] = u.data
+  }
+  console.log(`✅ Loaded ${users.length} users dari MongoDB`)
+}
+
+// Ganti funcs.saveRPG jadi ini:
+saveRPG: async (userId) => {
+  try {
+    if (userId) {
+      // Simpan 1 user aja (lebih efisien)
+      await User.findByIdAndUpdate(
+        userId,
+        { _id: userId, data: global.rpg[userId] },
+        { upsert: true }
+      )
+    } else {
+      // Simpan semua (fallback)
+      for (const [id, data] of Object.entries(global.rpg)) {
+        await User.findByIdAndUpdate(id, { _id: id, data }, { upsert: true })
+      }
+    }
+  } catch (e) {
+    console.error("MongoDB save error:", e.message)
+  }
 }
 
 init()
@@ -113,7 +145,7 @@ const funcs = {
         lastDaily: 0, lastWeekly: 0, lastMonthly: 0, lastYearly: 0,
         lastMaling: 0, lastRampok: 0
       }
-      funcs.saveRPG()
+      await funcs.saveRPG(sender)
     }
 
     const u = global.rpg[s]
@@ -173,7 +205,7 @@ const funcs = {
       u.money += 1000
       naik = true
     }
-    if (naik) funcs.saveRPG()
+    if (naik) await funcs.saveRPG(sender)
     return naik
   }
 }
@@ -456,7 +488,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
         })
         global.rpg[senderId].afk = 0
         global.rpg[senderId].afkReason = ""
-        funcs.saveRPG()
+        await funcs.saveRPG(sender)
       }
     }
 
@@ -469,7 +501,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
         if (room.tipe === "family100") return reply("❌ Family 100 tidak memiliki hint!")
         const user = global.rpg[senderId]
         if (!user.premium && user.limit <= 0) return reply("❌ Limit kamu habis! Tidak bisa pakai hint.")
-        if (!user.premium) { user.limit -= 1; funcs.saveRPG() }
+        if (!user.premium) { user.limit -= 1; await funcs.saveRPG(sender) }
 
         if (room.deskripsi) return reply(`💡 *PETUNJUK*\n\n${room.deskripsi}`)
 
@@ -507,7 +539,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
             global.rpg[senderId].money += 5000
             global.rpg[senderId].exp += 500
             const up = funcs.cekLevel(senderId)
-            funcs.saveRPG()
+            await funcs.saveRPG(sender)
 
             let teks = `✅ *BENAR!*\n📝 Soal: *${room.soal}*\n\n`
             const mentions = []
@@ -570,7 +602,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
         if (user.premium && user.premiumTime !== -1 && Date.now() > user.premiumTime) {
           user.premium = false
           user.premiumTime = 0
-          funcs.saveRPG()
+          await funcs.saveRPG(sender)
           ryzu.sendMessage(senderId, { text: "⏰ Premium kamu sudah berakhir. Perpanjang ya! 🥲" })
         }
 
@@ -591,7 +623,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
             user.exp += 10
             if (!isPremium) user.limit -= 1
             funcs.cekLevel(senderId)
-            funcs.saveRPG()
+            await funcs.saveRPG(sender)
           }
         } catch (err) {
           console.error(`Error di command ${commandName}:`, err)

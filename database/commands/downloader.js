@@ -70,7 +70,7 @@ module.exports = {
                 if (success) {
                     if (!sutan) {
                         user.limit -= 1;
-                        funcs.saveRPG();
+                        await funcs.saveRPG(sender);
                         await reply(`✅ Berhasil! Sisa limit: ${user.limit}`);
                     }
                 } else {
@@ -112,7 +112,7 @@ module.exports = {
             if (success) {
                 if (!sutan) {
                     user.limit -= 1;
-                    funcs.saveRPG();
+                    await funcs.saveRPG(sender);
                     await reply(`✅ Berhasil! Sisa limit: ${user.limit}`);
                 } else {
                     await reply(`✅ Berhasil!`);

@@ -86,7 +86,7 @@ module.exports = {
             user[key] = (user[key] || 0) + reward[key];
         }
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
         funcs.cekLevel(sender);
 
         // ===== MESSAGE =====

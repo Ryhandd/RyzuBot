@@ -64,7 +64,7 @@ module.exports = {
         // ===== REPAIR =====
         user.durability[item] = max;
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
 
         return reply(
             `🛠️ *REPAIR BERHASIL!*\n\n` +

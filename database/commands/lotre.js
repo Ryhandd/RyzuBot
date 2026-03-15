@@ -37,7 +37,7 @@ module.exports = {
       if (user.money < total) return reply(`❌ Uang kurang! Butuh ${total.toLocaleString()} money.`)
       addMoney(user, -total)
       user.lotre += jml
-      funcs.saveRPG()
+      await funcs.saveRPG(sender)
       return reply(`✅ Berhasil beli *${jml} tiket lotre*!\n💰 Dibayar: ${total.toLocaleString()}\n🎟️ Total tiket: ${user.lotre}`)
     }
 
@@ -63,7 +63,7 @@ module.exports = {
       }
 
       if (hasilMoney > 0) addMoney(user, hasilMoney)
-      funcs.saveRPG()
+      await funcs.saveRPG(sender)
       return reply(`🎟️ *CABUT LOTRE*\n\n${hasilText}\n\n🎟️ Sisa tiket: ${user.lotre}`)
     }
 

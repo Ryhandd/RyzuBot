@@ -104,6 +104,6 @@ module.exports = {
             reply(text);
         }
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
     }
 };

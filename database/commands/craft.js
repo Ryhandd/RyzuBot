@@ -37,7 +37,7 @@ module.exports = {
         user[item] = "stone";
         user.durability[item] = dura.max("stone");
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
 
         // ===== PESAN DETAIL =====
         let detail = Object.entries(req)

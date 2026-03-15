@@ -8,7 +8,7 @@ module.exports = {
         user.potion -= 1;
         user.health = user.maxHealth;
         
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
         return reply("❤️ Darah penuh kembali! Siap bertualang lagi.");
     }
 };

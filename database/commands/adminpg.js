@@ -41,7 +41,7 @@ module.exports = {
             if (durasi.toLowerCase() === "permanen") {
                 tUser.premium = true;
                 tUser.premiumTime = -1;
-                funcs.saveRPG();
+                await funcs.saveRPG(sender);
                 return reply(`✅ @${target.split('@')[0]} Premium Permanen!`);
             }
 
@@ -57,7 +57,7 @@ module.exports = {
             tUser.premium = true;
 
             const tgl = new Date(tUser.premiumTime).toLocaleString('id-ID');
-            funcs.saveRPG();
+            await funcs.saveRPG(sender);
             return reply(
                 `✅ @${target.split('@')[0]} Premium ${hari} hari.\n` +
                 `Berakhir: ${tgl}`
@@ -67,7 +67,7 @@ module.exports = {
         if (command === "delpremium") {
             tUser.premium = false;
             tUser.premiumTime = 0;
-            funcs.saveRPG();
+            await funcs.saveRPG(sender);
             return reply(`❌ Premium @${target.split('@')[0]} dicabut.`);
         }
 
@@ -84,7 +84,7 @@ module.exports = {
             tUser.afk = Date.now() - ms;
             tUser.afkReason = args.slice(jamArg ? 1 : 0).join(" ") || "AFK";
 
-            funcs.saveRPG();
+            await funcs.saveRPG(sender);
 
             ryzu.sendMessage(from, {
                 text:
@@ -107,7 +107,7 @@ module.exports = {
             delete tUser.afk;
             delete tUser.afkReason;
 
-            funcs.saveRPG();
+            await funcs.saveRPG(sender);
 
             ryzu.sendMessage(from, {
                 text:
@@ -160,7 +160,7 @@ module.exports = {
             }
         }
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
 
         return reply(
             `✅ *ADMIN RPG*\n\n` +

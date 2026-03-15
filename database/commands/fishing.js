@@ -96,7 +96,7 @@ module.exports = {
 
         addExp(user, exp);
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
         const up = funcs.cekLevel(sender);
 
         // ===== PESAN =====

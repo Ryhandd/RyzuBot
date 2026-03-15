@@ -65,7 +65,7 @@ module.exports = {
 
         const after = user[item].toUpperCase();
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
 
         // ===== PESAN =====
         let detail = Object.entries(req)

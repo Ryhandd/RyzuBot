@@ -84,7 +84,7 @@ module.exports = {
         addMoney(user, money);
         user.kayu += kayu;
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
         funcs.cekLevel(sender, ryzu, from);
 
         // ===== MESSAGE =====

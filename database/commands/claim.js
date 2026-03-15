@@ -75,7 +75,7 @@ module.exports = {
 
         user[lastKey] = now;
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
         funcs.cekLevel(sender);
 
         return reply(

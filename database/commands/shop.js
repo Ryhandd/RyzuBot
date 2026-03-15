@@ -105,7 +105,7 @@ module.exports = {
                 addMoney(user, -price);
                 user.gacha_ticket += qty;
 
-                funcs.saveRPG();
+                await funcs.saveRPG(sender);
                 return reply(
                     `🎟️ Berhasil beli *${qty} Gacha Ticket*\n` +
                     `💰 Harga: ${price.toLocaleString('id-ID')}\n` +
@@ -123,7 +123,7 @@ module.exports = {
             addMoney(user, -price);
             user[item] += amount;
 
-            funcs.saveRPG();
+            await funcs.saveRPG(sender);
             return reply(
                 `✅ Berhasil beli *${amount} ${item}*\n` +
                 `💰 Harga: ${price.toLocaleString('id-ID')}\n` +
@@ -147,7 +147,7 @@ module.exports = {
             user[item] -= amount;
             addMoney(user, price);
 
-            funcs.saveRPG();
+            await funcs.saveRPG(sender);
             return reply(
                 `✅ Berhasil jual *${amount} ${item}*\n` +
                 `💰 Dapat: ${price.toLocaleString('id-ID')}\n` +

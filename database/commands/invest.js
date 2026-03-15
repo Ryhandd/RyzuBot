@@ -27,7 +27,7 @@ module.exports = {
             claimTime: Date.now() + invData[type - 1].t
         });
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
         return reply(`✅ Berhasil invest 💰 ${amount.toLocaleString()} di ${invData[type - 1].n}.\nSilakan cek di .money dan tarik jika sudah cair.`);
     }
 };

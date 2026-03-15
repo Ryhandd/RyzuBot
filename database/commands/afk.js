@@ -7,7 +7,7 @@ module.exports = {
         global.rpg[sender].afk = Date.now();
         global.rpg[sender].afkReason = q || "Tanpa Alasan";
 
-        funcs.saveRPG();
+        await funcs.saveRPG(sender);
 
         ryzu.sendMessage(from, {
             text:
