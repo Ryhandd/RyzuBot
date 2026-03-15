@@ -4,9 +4,9 @@ node_modules
 RyzuSesi
 .env
 tmp
+env.example
 package-lock.json
 {
 *.id
 *.id)
 v.admin
-env.example
