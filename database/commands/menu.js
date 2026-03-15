@@ -1,147 +1,215 @@
-const getRole = require('../../lib/role');
-const sendCard = require('../../lib/sendCard');
+const getRole = require('../../lib/role')
+const sendCard = require('../../lib/sendCard')
 
 module.exports = {
-    name: "menu",
-    alias: ["help", "list", "start"],
-    execute: async ({ ryzu, from, msg, reply, pushname, prefix, sender, funcs }) => {
-        funcs.checkUser(sender);
-        const user = global.rpg[sender];   
-        
-        const role = getRole(user.level);
+  name: "menu",
+  alias: ["help", "start"],
+  execute: async ({ ryzu, from, msg, reply, pushname, prefix, sender, funcs, args }) => {
+    funcs.checkUser(sender)
+    const user = global.rpg[sender]
+    const getRole = require('../../lib/role')
 
-        const money = user.money.toLocaleString("id-ID");
+    const role = getRole(user.level)
+    const money = user.money.toLocaleString("id-ID")
+    const hp = `${user.health}/${user.maxHealth}`
+    const exp = `${user.exp}/${user.level * 500}`
+    const isPremium = user.premium ? "💎 Premium" : "👤 Free"
 
-        const textMenu = `
-👋 Halo *${pushname}*!
-📊 Status: *${role}* | Level: *${user.level}*
-💰 Money: *Rp ${money}*
+    // Menu per kategori
+    const sub = args[0]?.toLowerCase()
 
-━━━━━━━━━━━━━━━━━━
-🤖 *RYZU BOT – MAIN MENU*
-━━━━━━━━━━━━━━━━━━
+    const categories = {
+      rpg:    "⚔️ RPG",
+      games:  "🎲 Games",
+      media:  "🎵 Media",
+      tools:  "🧰 Tools",
+      admin:  "👥 Admin",
+      gacha:  "🎰 Gacha",
+    }
 
+    // Kalau ada sub-menu
+    if (sub && categories[sub]) {
+      const menus = {
+        rpg: `
 ⚔️ *RPG CORE*
-• ${prefix}adventure / adv
-• ${prefix}mining
-• ${prefix}fishing / mancing
-• ${prefix}hunt / berburu
-• ${prefix}heal
+┌ ${prefix}adventure / adv
+├ ${prefix}mining / tambang
+├ ${prefix}fishing / mancing
+├ ${prefix}hunt / berburu
+├ ${prefix}heal
+└ ${prefix}me / profile / inv
 
-🎒 *PROFILE & STATUS*
-• ${prefix}me / profile
-• ${prefix}inventory / inv
-• ${prefix}equipment
-• ${prefix}buff
-• ${prefix}money
-• ${prefix}exp
-• ${prefix}level
-• ${prefix}kolam
+📊 *PROGRESSION*
+┌ ${prefix}craft <sword|armor|rod>
+├ ${prefix}upgrade <sword|armor|rod>
+├ ${prefix}repair <sword|armor|rod>
+├ ${prefix}equipment / equip
+└ ${prefix}buff
 
-🔨 *CRAFT & PROGRESSION*
-• ${prefix}craft
-• ${prefix}upgrade
-• ${prefix}repair
-
-🛒 *SHOP & EKONOMI*
-• ${prefix}shop
-• ${prefix}buy
-• ${prefix}sell
-• ${prefix}tf
-• ${prefix}top
-
-🎰 *GACHA SYSTEM*
-• ${prefix}gacha
-• ${prefix}ginfo
-• ${prefix}gachadex / igacha
+💰 *EKONOMI*
+┌ ${prefix}money
+├ ${prefix}shop / buy / sell
+├ ${prefix}tf <item> <jml> @tag
+├ ${prefix}invest / tarik
+├ ${prefix}maling @tag
+├ ${prefix}rampok <nominal>
+└ ${prefix}top <kategori>
 
 📦 *BOX & CLAIM*
-• ${prefix}open
-• ${prefix}daily / claim
-• ${prefix}weekly
-• ${prefix}monthly
-• ${prefix}yearly
-• ${prefix}lotre
+┌ ${prefix}open <common|uncommon|mythic|legendary>
+├ ${prefix}daily / weekly / monthly / yearly
+└ ${prefix}lotre`,
 
-🎲 *GAMES*
-• ${prefix}tictactoe
-• ${prefix}suit
-• ${prefix}family100
-• ${prefix}tebakgambar
-• ${prefix}tebakgenshin
-• ${prefix}tebakcharanime
-• ${prefix}tekateki
-• ${prefix}asahotak
-• ${prefix}judi
-• ${prefix}slot
-• ${prefix}nyerah
+        games: `
+🎲 *MINI GAMES*
+┌ ${prefix}tictactoe @lawan
+├ ${prefix}suit @lawan
+├ ${prefix}family100
+├ ${prefix}tebakgambar / tg
+├ ${prefix}tebakgenshin
+├ ${prefix}tebakcharanime / tca
+├ ${prefix}tekateki
+├ ${prefix}asahotak
+├ ${prefix}math <noob|easy|normal|hard|insane>
+├ ${prefix}judi <bet> <x2-x10>
+└ ${prefix}slot <bet>
 
 🐺 *WEREWOLF*
-• ${prefix}ww join
-• ${prefix}ww start
-• ${prefix}ww out
-• ${prefix}cekrole
+┌ ${prefix}ww join
+├ ${prefix}ww start
+├ ${prefix}ww out
+└ ${prefix}cekrole
 
-🎵 *MEDIA*
-• ${prefix}play <judul>
-• ${prefix}ytmp3 <link>
-• ${prefix}ytmp4 <link>
-• ${prefix}tt <link>
-• ${prefix}ig <link>
-• ${prefix}fb <link>
+♟️ *CATUR*
+└ ${prefix}chess <elo>`,
 
-🧰 *TOOLS & FUN*
-• ${prefix}ai
-• ${prefix}aiimg / draw
-• ${prefix}remini
-• ${prefix}meme
-• ${prefix}darkjokes
-• ${prefix}afk
-• ${prefix}ping
-• ${prefix}say
-• ${prefix}simi
-• ${prefix}shimi
+        media: `
+🎵 *DOWNLOADER*
+┌ ${prefix}play <judul/link>
+├ ${prefix}ytmp3 <link>
+├ ${prefix}ytmp4 <link>
+├ ${prefix}tt <link>
+├ ${prefix}ig <link>
+└ ${prefix}fb <link>
 
-🛠 *STICKER*
-• ${prefix}s
-• ${prefix}smeme
-• ${prefix}wm
-• ${prefix}qc
-• ${prefix}brat
-• ${prefix}vbrat
-• ${prefix}pin
+🖼️ *IMAGE*
+┌ ${prefix}pinterest / pin <query>
+├ ${prefix}meme
+└ ${prefix}darkjokes`,
 
-👥 *ADMIN GROUP*
-• ${prefix}kick
-• ${prefix}adduser
-• ${prefix}promote
-• ${prefix}demote
-• ${prefix}hidetag
-• ${prefix}tagall
-• ${prefix}tagadmin
-• ${prefix}del
+        tools: `
+🧰 *TOOLS*
+┌ ${prefix}cuaca <kota>
+├ ${prefix}kurs <100 USD ke IDR>
+├ ${prefix}quote / motivasi
+├ ${prefix}kamus <kata>
+├ ${prefix}translate <en:id teks>
+├ ${prefix}qr <teks/url>
+├ ${prefix}calc <ekspresi>
+├ ${prefix}timezone <zona>
+├ ${prefix}tebakumur <nama>
+├ ${prefix}tebakgender <nama>
+├ ${prefix}shorturl <url>
+├ ${prefix}catfact / dogfact
+├ ${prefix}base64 / encode / decode
+├ ${prefix}ai / tanya <pertanyaan>
+├ ${prefix}draw <prompt>
+├ ${prefix}remini / hd
+└ ${prefix}say <teks>
 
-━━━━━━━━━━━━━━━━━━
-✨ *Tips RPG*
-• Equipment punya tier: *Stone → Iron → Gold → Diamond → Netherite*
-• Upgrade hanya lewat *.upgrade*
-• Buff aktif bisa dicek di *.buff*
-• Gacha punya *PITY SYSTEM* (50 = Legendary)
+🤖 *AI CHAT*
+┌ ${prefix}shimi on/off
+└ ${prefix}simi on/off`,
 
-_Bot by Ryzu_
-`;
-        try {
-            await sendCard({
-                ryzu,
-                from,
-                msg,
-                text: textMenu,
-                title: 'RYZU RPG MENU',
-                body: `Halo ${pushname}`,
-                image: 'https://files.catbox.moe/cz6tt0.jpg'
-            });
-        } catch (e) {
-            await reply(textMenu);
-        }
+        admin: `
+👥 *GROUP ADMIN*
+┌ ${prefix}kick @tag
+├ ${prefix}adduser <nomor>
+├ ${prefix}promote @tag
+├ ${prefix}demote @tag
+├ ${prefix}hidetag <pesan>
+├ ${prefix}tagall <pesan>
+├ ${prefix}tagadmin
+└ ${prefix}del (reply pesan)
+
+👑 *OWNER ONLY*
+┌ ${prefix}addmoney @tag <jml>
+├ ${prefix}setpremium @tag <hari|permanen>
+├ ${prefix}delpremium @tag
+└ ${prefix}listpremium`,
+
+        gacha: `
+🎰 *GACHA SYSTEM*
+┌ ${prefix}gacha / pull
+├ ${prefix}gacha 10
+├ ${prefix}gachainfo / ginfo
+└ ${prefix}gachadex / igacha
+
+🎟️ *TIKET*
+┌ Beli di ${prefix}shop
+└ ${prefix}buy gacha_ticket <1|5|10>
+
+📊 *RATE*
+┌ Common   : 55%
+├ Rare     : 25%
+├ Epic     : 14%
+├ Legendary: 5%
+└ Limited  : 1% (pity 50)`
+      }
+
+      return reply(
+        `📋 *${categories[sub]}*\n` +
+        menus[sub] +
+        `\n\n_Ketik ${prefix}menu untuk kembali ke menu utama_`
+      )
     }
-};
+
+    // Menu utama
+    const textMenu =
+`╔══════════════════════╗
+║   🤖  *RYZU BOT*   ║
+╚══════════════════════╝
+
+👋 Halo *${pushname}*!
+🏅 Role: *${role}* | Level *${user.level}*
+❤️ HP: *${hp}* | ✨ EXP: *${exp}*
+💰 Money: *Rp ${money}*
+🔋 Limit: *${user.limit}* | ${isPremium}
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+📂 *KATEGORI MENU*
+┌ ${prefix}menu rpg    — ⚔️ RPG & Ekonomi
+├ ${prefix}menu games  — 🎲 Mini Games
+├ ${prefix}menu media  — 🎵 Downloader
+├ ${prefix}menu tools  — 🧰 Tools & AI
+├ ${prefix}menu admin  — 👥 Group Admin
+└ ${prefix}menu gacha  — 🎰 Gacha System
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+⚡ *SHORTCUT*
+┌ ${prefix}me       — Profile & Inventory
+├ ${prefix}daily    — Klaim hadiah harian
+├ ${prefix}shop     — Lihat toko
+├ ${prefix}ping     — Cek kecepatan bot
+└ ${prefix}register — Daftar akun RPG
+
+━━━━━━━━━━━━━━━━━━━━━━
+💡 Tips: ketik ${prefix}menu <kategori>
+   contoh: *${prefix}menu rpg*
+_Ryzu Bot — by Ryhandd_`
+
+    try {
+      await sendCard({
+        ryzu, from, msg,
+        text: textMenu,
+        title: "RYZU BOT MENU",
+        body: `Halo ${pushname} • Level ${user.level}`,
+        image: "https://files.catbox.moe/cz6tt0.jpg"
+      })
+    } catch (e) {
+      await reply(textMenu)
+    }
+  }
+}
