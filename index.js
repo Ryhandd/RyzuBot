@@ -15,10 +15,26 @@ const {
 
 const pino = require("pino")
 const chalk = require("chalk")
-const readline = require("readline")
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-const question = (text) => new Promise((resolve) => rl.question(text, resolve))
+if (!ryzu.authState.creds.registered) {
+  const phoneNumber = process.env.BOT_NUMBER
+  
+  if (!phoneNumber) {
+    console.log("❌ Set BOT_NUMBER di environment variable Railway!")
+    process.exit(1)
+  }
+
+  console.log(`[ PAIRING ] Meminta kode untuk nomor: ${phoneNumber}`)
+  await delay(3000)
+
+  try {
+    const code = await ryzu.requestPairingCode(phoneNumber.replace(/[^0-9]/g, ""))
+    console.log(`\n KODE PAIRING ANDA: ${code} \n`)
+    console.log("Masukkan kode ini di WhatsApp > Perangkat Tertaut > Tautkan dengan nomor telepon")
+  } catch (err) {
+    console.error("Gagal meminta kode pairing:", err.message)
+  }
+}
 
 // Track apakah sudah nanya nomor (biar gak nanya berulang)
 let askedNumber = false
