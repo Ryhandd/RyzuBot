@@ -270,12 +270,19 @@ module.exports = async function ryzuHandler(ryzu, m) {
     const senderNumber = senderId.split("@")[0]
     const pushname = msg.pushName || "User"
 
-    const rawText =
-      msg.message.conversation ||
-      msg.message.extendedTextMessage?.text ||
-      msg.message.imageMessage?.caption ||
-      msg.message.videoMessage?.caption ||
+    const rawText = (
+      msg.message?.conversation ||
+      msg.message?.extendedTextMessage?.text ||
+      msg.message?.imageMessage?.caption ||
+      msg.message?.videoMessage?.caption ||
+      msg.message?.buttonsResponseMessage?.selectedDisplayText ||
+      msg.message?.listResponseMessage?.title ||
+      msg.message?.ephemeralMessage?.message?.conversation ||
+      msg.message?.ephemeralMessage?.message?.extendedTextMessage?.text ||
+      msg.message?.viewOnceMessage?.message?.conversation ||
+      msg.message?.documentWithCaptionMessage?.message?.imageMessage?.caption ||
       ""
+    ).trim()
 
     console.log(chalk.green(`[${isGroup ? "Grup" : "PC"}]`), chalk.yellow(pushname + ":"), rawText)
 
