@@ -324,6 +324,8 @@ module.exports = async function ryzuHandler(ryzu, m) {
     const commandName = args.shift().toLowerCase()
     const q = args.join(" ")
 
+    console.log("DEBUG:", { text, isCmd, commandName, commandsSize: commands.size })
+
     // === GRUP METADATA ===
     let groupMetadata = null
     let participants = []
