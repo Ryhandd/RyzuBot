@@ -145,7 +145,7 @@ const funcs = {
         lastDaily: 0, lastWeekly: 0, lastMonthly: 0, lastYearly: 0,
         lastMaling: 0, lastRampok: 0
       }
-      await funcs.saveRPG(sender)
+      funcs.saveRPG()
     }
 
     const u = global.rpg[s]
@@ -205,7 +205,7 @@ const funcs = {
       u.money += 1000
       naik = true
     }
-    if (naik) await funcs.saveRPG(sender)
+    if (naik) funcs.saveRPG()
     return naik
   }
 }
@@ -488,7 +488,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
         })
         global.rpg[senderId].afk = 0
         global.rpg[senderId].afkReason = ""
-        await funcs.saveRPG(sender)
+        funcs.saveRPG()
       }
     }
 
@@ -501,7 +501,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
         if (room.tipe === "family100") return reply("❌ Family 100 tidak memiliki hint!")
         const user = global.rpg[senderId]
         if (!user.premium && user.limit <= 0) return reply("❌ Limit kamu habis! Tidak bisa pakai hint.")
-        if (!user.premium) { user.limit -= 1; await funcs.saveRPG(sender) }
+        if (!user.premium) { user.limit -= 1; funcs.saveRPG() }
 
         if (room.deskripsi) return reply(`💡 *PETUNJUK*\n\n${room.deskripsi}`)
 
@@ -539,7 +539,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
             global.rpg[senderId].money += 5000
             global.rpg[senderId].exp += 500
             const up = funcs.cekLevel(senderId)
-            await funcs.saveRPG(sender)
+            funcs.saveRPG()
 
             let teks = `✅ *BENAR!*\n📝 Soal: *${room.soal}*\n\n`
             const mentions = []
@@ -602,7 +602,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
         if (user.premium && user.premiumTime !== -1 && Date.now() > user.premiumTime) {
           user.premium = false
           user.premiumTime = 0
-          await funcs.saveRPG(sender)
+          funcs.saveRPG()
           ryzu.sendMessage(senderId, { text: "⏰ Premium kamu sudah berakhir. Perpanjang ya! 🥲" })
         }
 
@@ -623,7 +623,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
             user.exp += 10
             if (!isPremium) user.limit -= 1
             funcs.cekLevel(senderId)
-            await funcs.saveRPG(sender)
+            funcs.saveRPG()
           }
         } catch (err) {
           console.error(`Error di command ${commandName}:`, err)
