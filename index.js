@@ -90,6 +90,8 @@ async function connectToWhatsApp() {
   })
 
   ryzu.ev.on("messages.upsert", async (m) => {
+    console.log("UPSERT:", m.type, m.messages.length, m.messages[0]?.key?.remoteJid)
+    console.log("MSG TYPE:", Object.keys(m.messages[0]?.message || {}))
     if (m.type !== "notify") return
     const msg = m.messages[0]
     if (!msg?.message) return
