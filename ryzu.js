@@ -558,6 +558,8 @@ module.exports = async function ryzuHandler(ryzu, m) {
     // === COMMAND HANDLER ===
     if (isCmd) {
       const cmd = commands.get(commandName) || [...commands.values()].find((x) => x.alias?.includes(commandName))
+      console.log("CMD FOUND:", !!cmd, "| NAME:", commandName)
+      console.log("USER EXISTS:", !!global.rpg[senderId])
       if (cmd) {
         const user = global.rpg[senderId]
         const isPremium = user.premium || isCreator
