@@ -22,7 +22,6 @@ const getMediaType = (message) => {
   return null
 }
 
-// --- GLOBALS (inisialisasi dulu sebelum apapun) ---
 global.chessGames = global.chessGames || {}
 global.shimiCooldown = {}
 global.simiCooldown = {}
@@ -30,33 +29,18 @@ global.msgHistory = {}
 global.suit = global.suit || {}
 global.shimi = global.shimi || {}
 global.simi = global.simi || {}
-global.rpg = {}  // FIX: init kosong dulu, diisi MongoDB nanti
+global.rpg = {}
 
 const ownerContacts = (process.env.OWNER_NUMBERS || "").split(",").filter(Boolean)
 const dbPath = "./database/userRPG.json"
 
 if (!fs.existsSync("./database")) fs.mkdirSync("./database")
 
-global.SHIMI_PROMPT = `
-Kamu adalah SHIMI.
-Kepribadian: Feminim, Slayy, Gaul, Bestie vibes, Ramah dan playful.
-Gaya bicara: Bahasa Indonesia gaul, santai, jawaban singkat.
-Panggilan favorit ke user: "bestiee".
-Usahakan setiap balasan diakhiri dengan kata "bestiee".
-Emoji: 🥰 😘 🤭 😍 😋 😜 ❤ 💋 💅 🤣 💖 😭 😱
-`
+global.SHIMI_PROMPT = `Kamu adalah SHIMI. Kepribadian: Feminim, Slayy, Gaul, Bestie vibes, Ramah dan playful. Gaya bicara: Bahasa Indonesia gaul, santai, jawaban singkat. Panggilan favorit ke user: "bestiee". Usahakan setiap balasan diakhiri dengan kata "bestiee". Emoji: 🥰 😘 🤭 😍 😋 😜 ❤ 💋 💅 🤣 💖 😭 😱`
+global.SIMI_PROMPT = `Kamu adalah SIMI. Kepribadian: Ceria, polos, menggemaskan, ramah. Gaya bicara: Kalimat pendek, bahasa sederhana, nada ceria, pakai emoji 😊✨🐻. Jangan pakai kata kasar. Fokus jawab sesuai pertanyaan.`
 
-global.SIMI_PROMPT = `
-Kamu adalah SIMI. Kepribadian: Ceria, polos, menggemaskan, ramah.
-Gaya bicara: Kalimat pendek, bahasa sederhana, nada ceria, pakai emoji 😊✨🐻.
-Jangan pakai kata kasar. Fokus jawab sesuai pertanyaan.
-`
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null
 
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null
-
-// --- DECODE JID ---
 const decodeJid = (jid) => {
   if (!jid) return jid
   if (/:\d+@/gi.test(jid)) {
@@ -66,38 +50,27 @@ const decodeJid = (jid) => {
   return jid
 }
 
-// --- FUNCS ---
 const funcs = {
-  // FIX: saveRPG sekarang async, simpan ke MongoDB
   saveRPG: async (userId) => {
     try {
       if (userId && global.rpg[userId]) {
-        await User.findByIdAndUpdate(
-          userId,
-          { _id: userId, data: global.rpg[userId] },
-          { upsert: true, new: true }
-        )
+        await User.findByIdAndUpdate(userId, { _id: userId, data: global.rpg[userId] }, { upsert: true, new: true })
       } else {
-        // Fallback: simpan semua
         for (const [id, data] of Object.entries(global.rpg)) {
           await User.findByIdAndUpdate(id, { _id: id, data }, { upsert: true })
         }
       }
-      // Juga backup ke JSON lokal
       fs.writeFileSync(dbPath, JSON.stringify(global.rpg, null, 2))
     } catch (e) {
       console.error("saveRPG error:", e.message)
-      // Fallback ke JSON kalau MongoDB error
       try { fs.writeFileSync(dbPath, JSON.stringify(global.rpg, null, 2)) } catch (_) {}
     }
   },
 
   runtime: (s) => {
     s = Number(s)
-    const d = Math.floor(s / 86400),
-      h = Math.floor((s % 86400) / 3600),
-      m = Math.floor((s % 3600) / 60),
-      sc = Math.floor(s % 60)
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600),
+      m = Math.floor((s % 3600) / 60), sc = Math.floor(s % 60)
     return (d > 0 ? d + "h " : "") + (h > 0 ? h + "j " : "") + (m > 0 ? m + "m " : "") + sc + "d"
   },
 
@@ -106,12 +79,10 @@ const funcs = {
       global.rpg[s] = {
         registered: false, regTime: 0, name: "", premium: false, premiumTime: 0,
         money: 10000, exp: 0, level: 1, health: 100, maxHealth: 100, limit: 10,
-        potion: 0, umpan: 0,
-        kayu: 0, batu: 0, besi: 0, emas: 0, diamond: 0,
+        potion: 0, umpan: 0, kayu: 0, batu: 0, besi: 0, emas: 0, diamond: 0,
         ikan: 0, ikan_mas: 0, ikan_lele: 0, ikan_paus: 0, kepiting: 0,
         common: 0, uncommon: 0, mythic: 0, legendary: 0, sampah: 0,
-        sword: null, armor: null, rod: null,
-        durability: { sword: 0, armor: 0, rod: 0 },
+        sword: null, armor: null, rod: null, durability: { sword: 0, armor: 0, rod: 0 },
         pet_wolf: 0, pet_dragon: 0, pet_cat: 0,
         mining_charm: 0, fishing_charm: 0, hunter_charm: 0,
         adventure_badge: 0, golden_emblem: 0,
@@ -121,38 +92,28 @@ const funcs = {
         lastDaily: 0, lastWeekly: 0, lastMonthly: 0, lastYearly: 0,
         lastMaling: 0, lastRampok: 0
       }
-      // Simpan user baru ke MongoDB (fire and forget)
       funcs.saveRPG(s).catch(() => {})
     }
-
     const u = global.rpg[s]
     if (!u.durability) u.durability = { sword: 0, armor: 0, rod: 0 }
     for (const k of ["sword", "armor", "rod"]) {
       if (typeof u.durability[k] !== "number") u.durability[k] = 0
     }
-
     const tierMap = ["stone", "iron", "gold", "diamond", "netherite"]
     for (const eq of ["sword", "armor", "rod"]) {
       if (typeof u[eq] === "number") u[eq] = tierMap[u[eq] - 1] || null
     }
-
     const validTier = ["stone", "iron", "gold", "diamond", "netherite"]
     for (const eq of ["sword", "armor", "rod"]) {
       if (!validTier.includes(u[eq])) u[eq] = null
     }
-
     const maxDura = { stone: 80, iron: 120, gold: 160, diamond: 220, netherite: 300 }
     for (const eq of ["sword", "armor", "rod"]) {
       if (u[eq] && u.durability[eq] === 0) u.durability[eq] = maxDura[u[eq]]
     }
-
     if (!Array.isArray(u.gacha_history)) u.gacha_history = []
     if (!Array.isArray(u.investasi)) u.investasi = []
-
-    const defaults = {
-      premiumTime: 0, lotre: 0, lastDaily: 0, lastWeekly: 0,
-      lastMonthly: 0, lastYearly: 0, afk: 0, afkReason: ""
-    }
+    const defaults = { premiumTime: 0, lotre: 0, lastDaily: 0, lastWeekly: 0, lastMonthly: 0, lastYearly: 0, afk: 0, afkReason: "" }
     for (const [key, val] of Object.entries(defaults)) {
       if (u[key] === undefined) u[key] = val
     }
@@ -182,7 +143,6 @@ const funcs = {
   }
 }
 
-// --- LOAD COMMANDS ---
 const commands = new Map()
 const cmdFolder = path.join(__dirname, "database", "commands")
 
@@ -202,48 +162,39 @@ const readCommands = async () => {
   console.log(`✅ Loaded ${commands.size} commands`)
 }
 
-// --- INIT (MongoDB dulu, baru commands) ---
 async function init() {
   try {
     await connect()
     await initDB()
-
-    // Load dari MongoDB
     const users = await User.find({})
     for (const u of users) {
-      global.rpg[u._id] = u.data
+      if (u._id !== "__sesi__") global.rpg[u._id] = u.data
     }
     console.log(`✅ Loaded ${users.length} users dari MongoDB`)
-
-    // Juga load dari JSON lokal sebagai fallback/merge
     if (fs.existsSync(dbPath)) {
       try {
         const localData = JSON.parse(fs.readFileSync(dbPath))
         for (const [id, data] of Object.entries(localData)) {
-          if (!global.rpg[id]) global.rpg[id] = data // jangan timpa yg dari MongoDB
+          if (!global.rpg[id]) global.rpg[id] = data
         }
       } catch (_) {}
     }
   } catch (e) {
     console.error("MongoDB gagal, fallback ke JSON:", e.message)
-    // Fallback ke JSON lokal
     if (fs.existsSync(dbPath)) {
       global.rpg = JSON.parse(fs.readFileSync(dbPath))
     }
   }
-
   await readCommands()
 }
 
 init()
 
-// --- FAST REPLY ---
 const shimiFastReply = {
   oy: "apa bestiee??🥰", oyy: "apa bestiee??🥰",
   oi: "kenapa bestiee??🤭", oii: "kenapa bestiee??🤭",
   hi: "hi juga bestiee🥰", hai: "hai juga bestiee🥰",
-  halo: "halo juga bestiee🥰",
-  shimi: "iya bestiee🤭", shimii: "iya bestiee🤭",
+  halo: "halo juga bestiee🥰", shimi: "iya bestiee🤭", shimii: "iya bestiee🤭",
   "lu siapa": "temenmu yang slayy dan mengbotyy💅💋",
   "siapa lu": "temenmu yang slayy dan mengbotyy💅💋",
 }
@@ -256,18 +207,22 @@ const simiFastReply = {
 
 const cooldowns = new Set()
 
-// --- MAIN HANDLER ---
 module.exports = async function ryzuHandler(ryzu, m) {
   try {
     const msg = m.messages[0]
     if (!msg || !msg.message) return
 
+    // FIX: abaikan pesan dari bot sendiri PALING AWAL
+    if (msg.key.fromMe) return
+
     const from = msg.key.remoteJid
+    if (!from || from === "status@broadcast") return
+
     const msgId = msg.key.id
     const isGroup = from.endsWith("@g.us")
     const sender = isGroup ? msg.key.participant || msg.participant : from
     const senderId = decodeJid(sender)
-    const senderNumber = senderId.split("@")[0]
+    const senderNumber = senderId?.split("@")[0] || ""
     const pushname = msg.pushName || "User"
 
     const rawText = (
@@ -279,8 +234,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
       msg.message?.listResponseMessage?.title ||
       msg.message?.ephemeralMessage?.message?.conversation ||
       msg.message?.ephemeralMessage?.message?.extendedTextMessage?.text ||
-      msg.message?.viewOnceMessage?.message?.conversation ||
-      msg.message?.documentWithCaptionMessage?.message?.imageMessage?.caption ||
       ""
     ).trim()
 
@@ -327,11 +280,9 @@ module.exports = async function ryzuHandler(ryzu, m) {
     const prefixMatch = text.match(/^[\\/!#.]/)
     const prefix = prefixMatch ? prefixMatch[0] : "."
     const isCmd = !!prefixMatch
-    const args = text.slice(prefix.length).trim().split(/ +/)
-    const commandName = args.shift().toLowerCase()
+    const args = text.slice(isCmd ? prefix.length : 0).trim().split(/ +/)
+    const commandName = isCmd ? args.shift().toLowerCase() : ""
     const q = args.join(" ")
-
-    console.log("DEBUG:", { text, isCmd, commandName, commandsSize: commands.size })
 
     // === GRUP METADATA ===
     let groupMetadata = null
@@ -349,12 +300,15 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     const isCreator = ownerContacts.includes(senderNumber) || botNumber === senderNumber
 
+    // === INIT USER ===
+    funcs.checkUser(senderId)
+
     // === ANTI-SPAM "BOT" ===
     if (!isCmd && bodyLow === "bot") {
       if (!cooldowns.has(from)) {
         cooldowns.add(from)
         setTimeout(() => cooldowns.delete(from), 30000)
-        return reply("RyzuBot disini!\nKetik *.menu* untuk daftar perintah.")
+        return reply("RyzuBot disini! 🤖\nKetik *.menu* untuk daftar perintah.")
       }
       return
     }
@@ -373,51 +327,44 @@ module.exports = async function ryzuHandler(ryzu, m) {
     if (!isCmd && shimiFastReply[bodyLow] && global.shimi?.[senderId]) {
       return ryzu.sendMessage(from, { text: shimiFastReply[bodyLow] })
     }
-    if (!isCmd && global.shimi?.[senderId] && text && !msg.key.fromMe && from !== "status@broadcast") {
+    if (!isCmd && global.shimi?.[senderId] && text && openai) {
       const now = Date.now()
       if (now - (global.shimiCooldown[senderId] || 0) < 1000) return
       global.shimiCooldown[senderId] = now
       if (Math.random() < 0.3) return
-      if (openai) {
-        try {
-          const res = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [{ role: "system", content: global.SHIMI_PROMPT }, { role: "user", content: text }],
-            max_tokens: 150, temperature: 1.2
-          })
-          return ryzu.sendMessage(from, { text: res.choices[0].message.content || "apaan dah" }, { quoted: msg })
-        } catch (_) {}
-      }
+      try {
+        const res = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "system", content: global.SHIMI_PROMPT }, { role: "user", content: text }],
+          max_tokens: 150, temperature: 1.2
+        })
+        return ryzu.sendMessage(from, { text: res.choices[0].message.content || "apaan dah" }, { quoted: msg })
+      } catch (_) {}
     }
 
     // === SIMI ===
     if (!isCmd && simiFastReply[bodyLow] && global.simi?.[senderId]) {
       return ryzu.sendMessage(from, { text: simiFastReply[bodyLow] })
     }
-    if (!isCmd && global.simi?.[senderId] && text && !msg.key.fromMe && from !== "status@broadcast") {
+    if (!isCmd && global.simi?.[senderId] && text && openai) {
       const now = Date.now()
       if (now - (global.simiCooldown[senderId] || 0) < 1000) return
       global.simiCooldown[senderId] = now
       if (Math.random() < 0.3) return
-      if (openai) {
-        try {
-          const res = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [{ role: "system", content: global.SIMI_PROMPT }, { role: "user", content: text }],
-            max_tokens: 120, temperature: 0.6
-          })
-          return ryzu.sendMessage(from, { text: res.choices[0].message.content || "hmm?? 🤔" }, { quoted: msg })
-        } catch (_) {}
-      }
+      try {
+        const res = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "system", content: global.SIMI_PROMPT }, { role: "user", content: text }],
+          max_tokens: 120, temperature: 0.6
+        })
+        return ryzu.sendMessage(from, { text: res.choices[0].message.content || "hmm?? 🤔" }, { quoted: msg })
+      } catch (_) {}
     }
 
-    // === INIT GAME & USER ===
+    // === GAME OBJECTS ===
     if (!ryzu.game) ryzu.game = {}
     if (!ryzu.ttt) ryzu.ttt = {}
     if (!ryzu.suit) ryzu.suit = {}
-    funcs.checkUser(senderId)
-
-    if (msg.key.fromMe) return
 
     // === TIC TAC TOE ===
     if (ryzu.ttt?.[from]) {
@@ -458,7 +405,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
     }
 
     // === AFK ===
-    if (!body.startsWith(prefix + "delafk")) {
+    if (!isCmd || commandName !== "delafk") {
       for (const jid of mentionUser) {
         const t = global.rpg[jid]
         if (t?.afk > 0) {
@@ -478,7 +425,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
     // === GAME HANDLER ===
     if (ryzu.game[from] && body) {
       const room = ryzu.game[from]
-
       if (bodyLow === prefix + "hint") {
         if (room.tipe === "family100") return reply("❌ Family 100 tidak memiliki hint!")
         const user = global.rpg[senderId]
@@ -489,7 +435,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
         const clue = jaw.replace(/[a-zA-Z]/g, (c, i) => i === 0 || jaw[i - 1] === " " ? c : "_")
         return reply(`💡 *HINT*\n\n${clue.toUpperCase()}`)
       }
-
       if (bodyLow === "nyerah") {
         if (room.tipe === "family100") {
           let teks = `🏳️ *MENYERAH*\n\nSoal: *${room.soal}*\n\n🗝️ Jawaban:\n`
@@ -507,8 +452,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
           return reply(`🏳️ *MENYERAH*\nJawaban: *${jaw.toUpperCase()}*`)
         }
       }
-
-      if (!body.startsWith(prefix)) {
+      if (!isCmd) {
         if (room.tipe === "family100") {
           const index = room.jawaban.indexOf(bodyLow)
           if (index >= 0 && !room.terjawab.includes(bodyLow)) {
@@ -558,53 +502,55 @@ module.exports = async function ryzuHandler(ryzu, m) {
     // === COMMAND HANDLER ===
     if (isCmd) {
       const cmd = commands.get(commandName) || [...commands.values()].find((x) => x.alias?.includes(commandName))
-      console.log("CMD FOUND:", !!cmd, "| NAME:", commandName)
-      console.log("USER EXISTS:", !!global.rpg[senderId])
-      if (cmd) {
-        const user = global.rpg[senderId]
-        const isPremium = user.premium || isCreator
-        const whiteList = ["register", "reg", "daftar", "help", "menu", "rules", "owner", "s", "ping", "start"]
 
-        if (!isPremium && !whiteList.includes(commandName) && user.limit <= 0) {
-          return reply(`❌ *LIMIT HABIS*\n\nBeli limit di *.shop* atau upgrade ke *Premium*.`)
-        }
+      if (!cmd) return // command tidak dikenal, diam saja
 
-        if (user.premium && user.premiumTime !== -1 && Date.now() > user.premiumTime) {
-          user.premium = false
-          user.premiumTime = 0
+      const user = global.rpg[senderId]
+      const isPremium = user.premium || isCreator
+      const whiteList = ["register", "reg", "daftar", "help", "menu", "rules", "owner", "s", "ping", "start"]
+
+      if (!isPremium && !whiteList.includes(commandName) && user.limit <= 0) {
+        return reply(`❌ *LIMIT HABIS*\n\nBeli limit di *.shop* atau upgrade ke *Premium*.`)
+      }
+
+      if (user.premium && user.premiumTime !== -1 && Date.now() > user.premiumTime) {
+        user.premium = false
+        user.premiumTime = 0
+        funcs.saveRPG(senderId).catch(() => {})
+        ryzu.sendMessage(senderId, { text: "⏰ Premium kamu sudah berakhir. Perpanjang ya! 🥲" })
+      }
+
+      const rawQuotedUser = msg.message.extendedTextMessage?.contextInfo?.participant ||
+        msg.message.extendedTextMessage?.contextInfo?.remoteJid || null
+      const quotedUser = rawQuotedUser ? decodeJid(rawQuotedUser) : null
+
+      const ctx = {
+        ryzu, m, msg, from, sender: senderId, pushname, body, args, q, prefix,
+        command: commandName, isGroup, isCreator, isAdmin, isBotAdmin, participants,
+        groupMetadata, mentionUser, quoted: quotedMsg, quotedUser, reply, funcs,
+        axios, exec, user, isPremium
+      }
+
+      try {
+        await cmd.execute(ctx)
+        if (!whiteList.includes(commandName)) {
+          user.exp += 10
+          if (!isPremium) user.limit -= 1
+          funcs.cekLevel(senderId)
           funcs.saveRPG(senderId).catch(() => {})
-          ryzu.sendMessage(senderId, { text: "⏰ Premium kamu sudah berakhir. Perpanjang ya! 🥲" })
         }
-
-        const rawQuotedUser = msg.message.extendedTextMessage?.contextInfo?.participant ||
-          msg.message.extendedTextMessage?.contextInfo?.remoteJid || null
-        const quotedUser = rawQuotedUser ? decodeJid(rawQuotedUser) : null
-
-        const ctx = {
-          ryzu, m, msg, from, sender: senderId, pushname, body, args, q, prefix,
-          command: commandName, isGroup, isCreator, isAdmin, isBotAdmin, participants,
-          groupMetadata, mentionUser, quoted: quotedMsg, quotedUser, reply, funcs,
-          axios, exec, user, isPremium
-        }
-
-        try {
-          await cmd.execute(ctx)
-          if (!whiteList.includes(commandName)) {
-            user.exp += 10
-            if (!isPremium) user.limit -= 1
-            funcs.cekLevel(senderId)
-            funcs.saveRPG(senderId).catch(() => {})
-          }
-        } catch (err) {
-          console.error(`Error di command ${commandName}:`, err)
-          reply(`❌ Error: ${err.message}`)
-        }
+      } catch (err) {
+        console.error(`Error di command ${commandName}:`, err)
+        reply(`❌ Error: ${err.message}`)
       }
     }
+
   } catch (e) {
     console.error("Error in main handler:", e)
     if (ownerContacts[0]) {
-      try { await ryzu.sendMessage(ownerContacts[0] + "@s.whatsapp.net", { text: `⚠️ *BOT ERROR*\n\n${e.message}` }) } catch (_) {}
+      try {
+        await ryzu.sendMessage(ownerContacts[0] + "@s.whatsapp.net", { text: `⚠️ *BOT ERROR*\n\n${e.message}` })
+      } catch (_) {}
     }
   }
 }
