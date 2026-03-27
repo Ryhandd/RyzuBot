@@ -63,21 +63,19 @@ module.exports = {
         quoted?.stickerMessage ||
         msg.message?.imageMessage ||
         msg.message?.videoMessage
-      if (!media) return reply("Reply gambar / video (max 10 detik).")
 
-      try {
-        const type =
-          quoted?.stickerMessage ? "sticker" :
-          quoted?.videoMessage ? "video" :
-          "image"
-        if (isVideo && (media.seconds > 10)) return reply("❌ Video terlalu panjang (maks 10 detik).")
-        const buffer = await downloadMedia(media, type)
-        const sticker = await createSticker(buffer, { isVideo: type === "video" })
-        return ryzu.sendMessage(from, { sticker }, { quoted: msg })
-      } catch (e) {
-        console.error(e)
-        return reply("❌ Gagal membuat stiker.")
-      }
+      if (!media) return reply("Reply gambar / video / sticker")
+
+      let type = "image"
+      if (quoted?.videoMessage || msg.message?.videoMessage) type = "video"
+      if (quoted?.stickerMessage) type = "sticker"
+
+      const isVideo = type === "video"
+
+      const buffer = await downloadMedia(media, type)
+      const sticker = await createSticker(buffer, { isVideo })
+
+      return ryzu.sendMessage(from, { sticker }, { quoted: msg })
     }
 
     // SMEME
