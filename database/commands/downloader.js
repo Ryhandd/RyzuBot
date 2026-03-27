@@ -1,129 +1,200 @@
-const axios = require('axios');
+const axios = require('axios')
+const fs = require('fs')
+const path = require('path')
 
+// ================= TMP SETUP =================
+const tmpDir = path.join(__dirname, "../tmp")
+if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
+
+// ================= HELPER =================
+async function downloadAndSend(ryzu, from, msg, url, type, caption = "") {
+    const ext = type === "video" ? ".mp4" : ".jpg"
+    const filePath = path.join(tmpDir, Date.now() + ext)
+
+    const res = await axios({
+        url,
+        method: "GET",
+        responseType: "stream"
+    })
+
+    const writer = fs.createWriteStream(filePath)
+
+    await new Promise((resolve, reject) => {
+        res.data.pipe(writer)
+        writer.on("finish", resolve)
+        writer.on("error", reject)
+    })
+
+    await ryzu.sendMessage(from, {
+        [type]: { url: filePath },
+        caption
+    }, { quoted: msg })
+
+    fs.unlinkSync(filePath)
+}
+
+// ================= COMMAND =================
 module.exports = {
     name: "downloader",
     alias: ["tt", "tiktok", "ig", "igdl", "fb", "fbdl"],
-    async execute(ctx) {
-        const { ryzu, from, msg, command, q, reply, user, funcs, isCreator, isPremium } = ctx;
-        
-        if (!q) return reply(`Kirim linknya mana?\nContoh: *${ctx.prefix}${command} link*`);
 
-        const sutan = isPremium || isCreator;
+    async execute(ctx) {
+        const { ryzu, from, msg, command, q, reply, user, funcs, isCreator, isPremium, sender } = ctx
+
+        if (!q) return reply(`Kirim linknya mana?\nContoh: *${ctx.prefix}${command} link*`)
+
+        const sutan = isPremium || isCreator
         if (!sutan && user.limit <= 0) {
-            return reply("❌ Limit lu abis! Beli di *.shop* atau upgrade ke *Premium* biar Unlimited.");
+            return reply("❌ Limit lu abis! Beli di *.shop* atau upgrade ke *Premium* biar Unlimited.")
         }
 
-        await reply(`⏳ Sedang memproses...`);
+        await reply(`⏳ Sedang memproses...`)
+
+        let success = false
+        const apikey = "Btz-pUjTd"
 
         try {
-            let success = false;
-            const apikey = "Btz-pUjTd";
 
-            // ================= [ TIKTOK HYBRID HANDLER ] =================
+            // ================= [ TIKTOK ] =================
             if (command === "tt" || command === "tiktok") {
-                let success = false;
-                let audioUrl = null;
-                const apikey = "Btz-pUjTd";
+                let audioUrl = null
 
                 try {
                     const [resSlide, resVid] = await Promise.all([
-                        axios.get(`https://api.betabotz.eu.org/api/download/ttslide?url=${q}&apikey=Btz-pUjTd`).catch(() => ({ data: {} })),
-                        axios.get(`https://api.betabotz.eu.org/api/download/tiktok?url=${q}&apikey=Btz-pUjTd`).catch(() => ({ data: {} }))
-                    ]);
+                        axios.get(`https://api.betabotz.eu.org/api/download/ttslide?url=${q}&apikey=${apikey}`).catch(() => ({ data: {} })),
+                        axios.get(`https://api.betabotz.eu.org/api/download/tiktok?url=${q}&apikey=${apikey}`).catch(() => ({ data: {} }))
+                    ])
 
-                    const dataSlide = resSlide.data?.result;
-                    const dataVid = resVid.data?.result;
+                    const dataSlide = resSlide.data?.result
+                    const dataVid = resVid.data?.result
 
-                    if (dataSlide && dataSlide.images && dataSlide.images.length > 0) {
-                        try {
-                            await ryzu.sendMessage(from, { image: { url: dataSlide.images[0] } }, { quoted: msg });
-                            for (let i = 1; i < dataSlide.images.length; i++) {
-                                await ryzu.sendMessage(from, { image: { url: dataSlide.images[i] } });
-                            }
-                            success = true;
-                        } catch (err) {
-                            console.log("CDN Slide Error, fallback ke Video...");
+                    // SLIDE
+                    if (dataSlide?.images?.length > 0) {
+                        for (let i = 0; i < dataSlide.images.length; i++) {
+                            await downloadAndSend(
+                                ryzu,
+                                from,
+                                msg,
+                                dataSlide.images[i],
+                                "image"
+                            )
                         }
+                        success = true
                     }
 
-                    if (!success && dataVid && dataVid.video) {
-                        await ryzu.sendMessage(from, { 
-                            video: { url: dataVid.video }, 
-                            caption: dataVid.title || "Done" 
-                        }, { quoted: msg });
-                        success = true;
+                    // VIDEO fallback
+                    if (!success && dataVid?.video) {
+                        await downloadAndSend(
+                            ryzu,
+                            from,
+                            msg,
+                            dataVid.video,
+                            "video",
+                            dataVid.title || "Done"
+                        )
+                        success = true
                     }
 
-                    audioUrl = dataVid?.audio || dataSlide?.audio;
+                    audioUrl = dataVid?.audio || dataSlide?.audio
+
+                    // AUDIO tambahan
                     if (success && audioUrl) {
-                        await ryzu.sendMessage(from, { 
-                            audio: { url: audioUrl }, 
-                            mimetype: 'audio/mpeg' 
-                        }, { quoted: msg });
+                        await downloadAndSend(
+                            ryzu,
+                            from,
+                            msg,
+                            audioUrl,
+                            "audio"
+                        )
                     }
 
                 } catch (e) {
-                    console.error("TikTok Error:", e);
+                    console.error("TikTok Error:", e)
                 }
 
-                // Proteksi Akhir
                 if (success) {
                     if (!sutan) {
-                        user.limit -= 1;
-                        await funcs.saveRPG(sender);
-                        await reply(`✅ Berhasil! Sisa limit: ${user.limit}`);
+                        user.limit -= 1
+                        await funcs.saveRPG(sender)
+                        await reply(`✅ Berhasil! Sisa limit: ${user.limit}`)
+                    } else {
+                        await reply(`✅ Berhasil!`)
                     }
                 } else {
-                    return reply("❌ Semua server (Slide & Video) gagal memproses link ini. Coba pastikan link valid atau whitelist IP lu di Betabotz!");
+                    return reply("❌ Semua server gagal memproses link ini.")
                 }
-                return;
+
+                return
             }
 
-            // ================= [ INSTAGRAM HANDLER ] =================
+            // ================= [ INSTAGRAM ] =================
             else if (command === "ig" || command === "igdl") {
                 try {
-                    const resIg = await axios.get(`https://api.betabotz.eu.org/api/download/igdownloader?url=${q}&apikey=Btz-pUjTd`);
-                    const result = resIg.data.result;
-                    if (result && result.length > 0) {
+                    const resIg = await axios.get(`https://api.betabotz.eu.org/api/download/igdownloader?url=${q}&apikey=${apikey}`)
+                    const result = resIg.data.result
+
+                    if (result?.length > 0) {
                         for (let i of result) {
-                            let link = i.url || i;
-                            let isVideo = link.includes('.mp4');
-                            await ryzu.sendMessage(from, { [isVideo ? 'video' : 'image']: { url: link } }, { quoted: msg });
+                            let link = i.url || i
+                            let isVideo = link.includes('.mp4')
+
+                            await downloadAndSend(
+                                ryzu,
+                                from,
+                                msg,
+                                link,
+                                isVideo ? "video" : "image"
+                            )
                         }
-                        success = true;
+                        success = true
                     }
-                } catch (e) {}
+
+                } catch (e) {
+                    console.error("IG Error:", e)
+                }
             }
 
-            // ================= [ FACEBOOK HANDLER ] =================
+            // ================= [ FACEBOOK ] =================
             else if (command === "fb" || command === "fbdl") {
                 try {
-                    const resFb = await axios.get(`https://api.betabotz.eu.org/api/download/fbdown?url=${q}&apikey=Btz-pUjTd`);
-                    const d = resFb.data.result;
-                    let vid = d.hd || d.sd || (Array.isArray(d) ? d[0].url : null);
+                    const resFb = await axios.get(`https://api.betabotz.eu.org/api/download/fbdown?url=${q}&apikey=${apikey}`)
+                    const d = resFb.data.result
+
+                    let vid = d?.hd || d?.sd || (Array.isArray(d) ? d[0]?.url : null)
+
                     if (vid) {
-                        await ryzu.sendMessage(from, { video: { url: vid }, caption: "Facebook Done" }, { quoted: msg });
-                        success = true;
+                        await downloadAndSend(
+                            ryzu,
+                            from,
+                            msg,
+                            vid,
+                            "video",
+                            "Facebook Done"
+                        )
+                        success = true
                     }
-                } catch (e) {}
+
+                } catch (e) {
+                    console.error("FB Error:", e)
+                }
             }
 
-            // ================= [ PENYELESAIAN ] =================
+            // ================= RESULT =================
             if (success) {
                 if (!sutan) {
-                    user.limit -= 1;
-                    await funcs.saveRPG(sender);
-                    await reply(`✅ Berhasil! Sisa limit: ${user.limit}`);
+                    user.limit -= 1
+                    await funcs.saveRPG(sender)
+                    await reply(`✅ Berhasil! Sisa limit: ${user.limit}`)
                 } else {
-                    await reply(`✅ Berhasil!`);
+                    await reply(`✅ Berhasil!`)
                 }
             } else {
-                reply("❌ Maaf, server Betabotz sedang bermasalah atau link tidak didukung. Pastikan IP lu udah di-whitelist di web Betabotz!");
+                reply("❌ Server gagal memproses atau link tidak valid.")
             }
 
         } catch (e) {
-            console.error(e);
-            reply("❌ Terjadi kesalahan internal.");
+            console.error(e)
+            reply("❌ Terjadi kesalahan internal.")
         }
     }
-};
+}

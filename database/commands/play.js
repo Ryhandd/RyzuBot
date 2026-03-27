@@ -1,7 +1,5 @@
 const yts = require("yt-search")
 const axios = require("axios")
-const fs = require("fs")
-const path = require("path")
 
 module.exports = {
   name: "play",
@@ -14,63 +12,43 @@ module.exports = {
       const vid = search.videos[0]
       if (!vid) return reply("Video tidak ditemukan.")
 
+      if (vid.seconds > 600)
+        return reply("❌ Maksimal durasi 10 menit.")
+
       const isVideo = command === "ytmp4"
 
-      const caption =
-        `🎵 *YOUTUBE PLAY*\n\n` +
-        `📝 Judul: ${vid.title}\n` +
-        `⏱ Durasi: ${vid.timestamp}\n` +
-        `🔗 Link: ${vid.url}\n\n` +
-        `⌛ Sedang mengunduh ${isVideo ? "video" : "audio"}...`
+      await ryzu.sendMessage(from, {
+        text:
+          `🎵 *YOUTUBE PLAY*\n\n` +
+          `📝 ${vid.title}\n` +
+          `⏱ ${vid.timestamp}\n` +
+          `⌛ Processing...`
+      }, { quoted: msg })
 
-      await ryzu.sendMessage(from, { text: caption }, { quoted: msg })
-
-      // API paling ringan
       const apiUrl = isVideo
         ? `https://api.nekolabs.web.id/downloader/youtube/v1?url=${vid.url}&format=720`
         : `https://api.nekolabs.web.id/downloader/youtube/v1?url=${vid.url}&format=mp3`
 
       const res = await axios.get(apiUrl)
       const dlUrl = res.data?.downloadUrl
-      if (!dlUrl) return reply("Gagal mengambil link download.")
-
-      const folder = path.join(__dirname, "..", "music")
-      if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true })
-
-      const ext = isVideo ? "mp4" : "mp3"
-      const filePath = path.join(folder, `${vid.videoId}.${ext}`)
-
-      const writer = fs.createWriteStream(filePath)
-      const stream = await axios({
-        url: dlUrl,
-        method: "GET",
-        responseType: "stream"
-      })
-
-      await new Promise((resolve, reject) => {
-        stream.data.pipe(writer)
-        writer.on("finish", resolve)
-        writer.on("error", reject)
-      })
+      if (!dlUrl) return reply("Gagal mengambil link.")
 
       if (isVideo) {
         await ryzu.sendMessage(from, {
-          video: { url: filePath },
+          video: { url: dlUrl },
           caption: `✅ ${vid.title}`
         }, { quoted: msg })
       } else {
         await ryzu.sendMessage(from, {
-          audio: { url: filePath },
+          audio: { url: dlUrl },
           mimetype: "audio/mpeg",
-          fileName: `${vid.title}.mp3`
+          ptt: true
         }, { quoted: msg })
       }
 
-      fs.unlinkSync(filePath)
-
     } catch (err) {
       console.error("PLAY ERROR:", err)
-      reply("❌ Gagal memproses perintah play.")
+      reply("❌ Gagal memproses.")
     }
   }
 }

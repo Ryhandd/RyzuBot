@@ -57,14 +57,22 @@ module.exports = {
     // .S / .STIKER
     if (["s", "stiker"].includes(command)) {
       const quoted = getQuoted(msg)
-      const media = quoted?.imageMessage || quoted?.videoMessage || msg.message?.imageMessage || msg.message?.videoMessage
+      const media =
+        quoted?.imageMessage ||
+        quoted?.videoMessage ||
+        quoted?.stickerMessage ||
+        msg.message?.imageMessage ||
+        msg.message?.videoMessage
       if (!media) return reply("Reply gambar / video (max 10 detik).")
 
       try {
-        const isVideo = !!media.videoMessage
+        const type =
+          quoted?.stickerMessage ? "sticker" :
+          quoted?.videoMessage ? "video" :
+          "image"
         if (isVideo && (media.seconds > 10)) return reply("❌ Video terlalu panjang (maks 10 detik).")
-        const buffer = await downloadMedia(media, isVideo ? "video" : "image")
-        const sticker = await createSticker(buffer, { isVideo })
+        const buffer = await downloadMedia(media, type)
+        const sticker = await createSticker(buffer, { isVideo: type === "video" })
         return ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch (e) {
         console.error(e)
