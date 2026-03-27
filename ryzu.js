@@ -149,17 +149,29 @@ const cmdFolder = path.join(__dirname, "database", "commands")
 const readCommands = async () => {
   commands.clear()
   if (!fs.existsSync(cmdFolder)) fs.mkdirSync(cmdFolder, { recursive: true })
+
   const files = fs.readdirSync(cmdFolder).filter((f) => f.endsWith(".js"))
+
+  console.log("📂 Files:", files)
+
   for (const file of files) {
     try {
       delete require.cache[require.resolve(path.join(cmdFolder, file))]
       const cmd = require(path.join(cmdFolder, file))
-      if (cmd?.name) commands.set(cmd.name, cmd)
+
+      if (cmd?.name) {
+        commands.set(cmd.name, cmd)
+        console.log(`✅ Loaded: ${cmd.name}`)
+      } else {
+        console.log(`⚠️ ${file} tidak punya property 'name'`)
+      }
+
     } catch (e) {
-      console.log(`❌ Gagal load command ${file}:`, e.message)
+      console.log(`❌ Gagal load ${file}:`, e.message)
     }
   }
-  console.log(`✅ Loaded ${commands.size} commands`)
+
+  console.log(`🔥 Total commands: ${commands.size}`)
 }
 
 async function init() {
@@ -279,7 +291,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
     const bodyLow = text.toLowerCase()
     const prefixMatch = text.match(/^[\\/!#.]/)
     const prefix = prefixMatch ? prefixMatch[0] : "."
-    const isCmd = !!prefixMatch
+    const isCmd = prefixMatch !== null
     const args = text.slice(isCmd ? prefix.length : 0).trim().split(/ +/)
     const commandName = isCmd ? args.shift().toLowerCase() : ""
     const q = args.join(" ")

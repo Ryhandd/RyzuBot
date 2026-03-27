@@ -7,7 +7,6 @@ module.exports = {
   execute: async ({ ryzu, from, msg, reply, pushname, prefix, sender, funcs, args }) => {
     funcs.checkUser(sender)
     const user = global.rpg[sender]
-    const getRole = require('../../lib/role')
 
     const role = getRole(user.level)
     const money = user.money.toLocaleString("id-ID")
@@ -200,16 +199,12 @@ module.exports = {
    contoh: *${prefix}menu rpg*
 _Ryzu Bot — by Ryhandd_`
 
-    try {
-      await sendCard({
+    await sendCard({
         ryzu, from, msg,
         text: textMenu,
         title: "RYZU BOT MENU",
         body: `Halo ${pushname} • Level ${user.level}`,
         image: "https://files.catbox.moe/cz6tt0.jpg"
-      })
-    } catch (e) {
-      await reply(textMenu)
-    }
+    })
   }
 }
