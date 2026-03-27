@@ -2,7 +2,7 @@ global.admin = ['628971614687@s.whatsapp.net']
 
 global.prefix = '.'
 
-global.image = "https://files.catbox.moe/cz6tt0.jpg"
+global.image = './database/image/flins.jpg'
 
 global.mess = {
     wait: '☕ *One Moment, Please*',
