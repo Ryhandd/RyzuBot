@@ -166,13 +166,18 @@ async function connectToWhatsApp() {
   // ── MESSAGE HANDLER ──
   ryzu.ev.on("messages.upsert", async (m) => {
     if (m.type !== "notify") return
-    const msg = m.messages[0]
-    if (!msg?.message) return
-    try {
-      await ryzuHandler(ryzu, m)
-    } catch (e) {
-      console.error(chalk.red("❌ Handler crash:"), e.message)
-    }
+    
+    // Proses semua pesan dalam upsert secara paralel
+    const promises = m.messages.map(async (msg) => {
+      if (!msg?.message) return
+      try {
+        await ryzuHandler(ryzu, { ...m, messages: [msg] })
+      } catch (e) {
+        console.error(chalk.red("❌ Handler crash:"), e.message)
+      }
+    })
+
+    await Promise.allSettled(promises)
   })
 
   // ── GRACEFUL SHUTDOWN ──
