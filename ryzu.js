@@ -236,13 +236,11 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     if (isGroup) {
       const participant = msg.key.participant || msg.participant
-
-      const user = participants.find(p => p.id.includes(participant.split("@")[0]))
-
-      sender = user ? user.id : participant
+      sender = participant || msg.key.remoteJid
     } else {
       sender = msg.key.remoteJid
     }
+
 
     const senderId = decodeJid(sender)
     const senderNumber = senderId?.split("@")[0] || ""
