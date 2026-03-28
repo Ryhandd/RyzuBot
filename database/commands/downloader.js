@@ -51,7 +51,7 @@ module.exports = {
         await reply(`⏳ Sedang memproses...`)
 
         let success = false
-        const apikey = "Btz-pUjTd"
+        const apikey = "Btz-eMcqb"
 
         try {
 

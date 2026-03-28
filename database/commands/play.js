@@ -25,9 +25,7 @@ module.exports = {
           `⌛ Processing...`
       }, { quoted: msg })
 
-      const apiUrl = isVideo
-        ? `https://api.nekolabs.web.id/downloader/youtube/v1?url=${vid.url}&format=720`
-        : `https://api.nekolabs.web.id/downloader/youtube/v1?url=${vid.url}&format=mp3`
+      const apiUrl = `https://api.betabotz.eu.org/api/download/ytmp3?url=${vid.url}&apikey=Btz-eMcqb`
 
       const res = await axios.get(apiUrl)
       const dlUrl = res.data?.downloadUrl
