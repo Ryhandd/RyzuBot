@@ -247,10 +247,10 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     const pushname = msg.pushName || "User"
 
+    const ownerNumbers = ownerContacts.map(v => v.trim().replace(/[^0-9]/g, ""))
     const isCreator =
-      ownerContacts.includes(senderId) ||
-      ownerContacts.includes(senderNumber) ||
-      ownerContacts.some(v => senderNumber.includes(v))
+      ownerNumbers.includes(senderNumber.replace(/[^0-9]/g, "")) ||
+      ownerNumbers.some(v => v && senderNumber.includes(v))
 
     console.log("SENDER ID:", senderId)
     console.log("SENDER NUMBER:", senderNumber)
