@@ -288,11 +288,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     const pushname = msg.pushName || "User"
 
-    console.log("SENDER ID:", senderId)
-    console.log("SENDER NUMBER (resolved):", senderNumber)
-    console.log("OWNER:", ownerNumbers)
-    console.log("IS CREATOR:", isCreator)
-
     const rawText = (
       msg.message?.conversation ||
       msg.message?.extendedTextMessage?.text ||
