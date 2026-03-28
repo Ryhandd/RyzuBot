@@ -291,9 +291,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
       ownerNumbers.some(o => resolvedNum.endsWith(o)) ||      // Suffix match (62xxx vs 0xxx)
       ownerNumbers.some(o => o.endsWith(resolvedNum))         // Reverse suffix
 
-    console.log(chalk.green(`[${isGroup ? "Grup" : "PC"}]`), chalk.yellow(pushname + ":"))
-    console.log(`senderId: ${senderId} | resolved: ${resolvedNum} | isCreator: ${isCreator}`)
-
     const rawText = (
       msg.message?.conversation ||
       msg.message?.extendedTextMessage?.text ||
@@ -306,7 +303,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
       ""
     ).trim()
 
-    console.log(chalk.yellow("MSG:"), rawText)
+    console.log(chalk.green(`[${isGroup ? "Grup" : "PC"}]`), chalk.yellow(pushname + ":"), rawText)
 
     const reply = (teks) => {
       if (!teks) return
