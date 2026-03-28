@@ -28,7 +28,7 @@ module.exports = {
       const apiUrl = `https://api.betabotz.eu.org/api/download/ytmp3?url=${vid.url}&apikey=Btz-eMcqb`
 
       const res = await axios.get(apiUrl)
-      const dlUrl = res.data?.downloadUrl
+      const dlUrl = res.data?.result?.url
       if (!dlUrl) return reply("Gagal mengambil link.")
 
       if (isVideo) {
