@@ -41,7 +41,7 @@ module.exports = {
             if (durasi.toLowerCase() === "permanen") {
                 tUser.premium = true;
                 tUser.premiumTime = -1;
-                await funcs.saveRPG(sender);
+                await funcs.saveRPG(target);
                 return reply(`✅ @${target.split('@')[0]} Premium Permanen!`);
             }
 
@@ -57,7 +57,7 @@ module.exports = {
             tUser.premium = true;
 
             const tgl = new Date(tUser.premiumTime).toLocaleString('id-ID');
-            await funcs.saveRPG(sender);
+            await funcs.saveRPG(target);
             return reply(
                 `✅ @${target.split('@')[0]} Premium ${hari} hari.\n` +
                 `Berakhir: ${tgl}`
@@ -67,7 +67,7 @@ module.exports = {
         if (command === "delpremium") {
             tUser.premium = false;
             tUser.premiumTime = 0;
-            await funcs.saveRPG(sender);
+            await funcs.saveRPG(target);
             return reply(`❌ Premium @${target.split('@')[0]} dicabut.`);
         }
 
@@ -84,7 +84,7 @@ module.exports = {
             tUser.afk = Date.now() - ms;
             tUser.afkReason = args.slice(jamArg ? 1 : 0).join(" ") || "AFK";
 
-            await funcs.saveRPG(sender);
+            await funcs.saveRPG(target);
 
             ryzu.sendMessage(from, {
                 text:
@@ -104,10 +104,10 @@ module.exports = {
             const lama = Date.now() - tUser.afk;
             const waktu = funcs.runtime(lama / 1000);
 
-            delete tUser.afk;
-            delete tUser.afkReason;
+            tUser.afk = 0;
+            tUser.afkReason = "";
 
-            await funcs.saveRPG(sender);
+            await funcs.saveRPG(target);
 
             ryzu.sendMessage(from, {
                 text:
@@ -130,7 +130,7 @@ module.exports = {
             return reply("❌ Nilai tidak valid.");
 
         const type = command.replace("add", "").replace("set", "");
-        
+
         // ===== ADD =====
         if (command.startsWith("add")) {
 
@@ -160,7 +160,7 @@ module.exports = {
             }
         }
 
-        await funcs.saveRPG(sender);
+        await funcs.saveRPG(target);
 
         return reply(
             `✅ *ADMIN RPG*\n\n` +
