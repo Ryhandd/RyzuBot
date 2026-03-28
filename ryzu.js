@@ -226,6 +226,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     if (msg.key.fromMe) return
 
+    const msgId = msg.key.id
     const from = msg.key.remoteJid
     if (!from || from === "status@broadcast") return
 
