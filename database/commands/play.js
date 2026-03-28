@@ -28,8 +28,15 @@ module.exports = {
       const apiUrl = `https://api.betabotz.eu.org/api/download/ytmp3?url=${vid.url}&apikey=Btz-eMcqb`
 
       const res = await axios.get(apiUrl)
-      const dlUrl = res.data?.result?.url
-      if (!dlUrl) return reply("Gagal mengambil link.")
+      const dlUrl =
+          res.data?.result?.url ||
+          res.data?.result?.audio ||
+          res.data?.result
+
+      if (!dlUrl) {
+          console.log("API ERROR:", res.data)
+          return reply("❌ Gagal mengambil link dari API.")
+      }
 
       if (isVideo) {
         await ryzu.sendMessage(from, {
