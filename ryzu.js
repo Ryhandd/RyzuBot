@@ -242,7 +242,16 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     const senderId = decodeJid(sender)
     const senderNumber = senderId?.split("@")[0] || ""
-    const pushname = msg.pushName || "User"
+
+    const isCreator =
+      ownerContacts.includes(senderId) ||
+      ownerContacts.includes(senderNumber) ||
+      ownerContacts.some(v => senderNumber.includes(v))
+
+    console.log("SENDER ID:", senderId)
+    console.log("SENDER NUMBER:", senderNumber)
+    console.log("OWNER:", ownerContacts)
+    console.log("IS CREATOR:", isCreator)
 
     const rawText = (
       msg.message?.conversation ||
@@ -316,11 +325,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
         isBotAdmin = participants.some((p) => decodeJid(p.id) === botId && p.admin)
       } catch (_) {}
     }
-
-    const isCreator =
-      ownerContacts.includes(senderId) ||
-      ownerContacts.includes(senderNumber) ||
-      ownerContacts.some(v => senderNumber.includes(v))
 
     // === INIT USER ===
     funcs.checkUser(senderId)
