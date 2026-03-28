@@ -232,7 +232,14 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     const msgId = msg.key.id
     const isGroup = from.endsWith("@g.us")
-    const sender = isGroup ? msg.key.participant || msg.participant : from
+    let sender = isGroup
+      ? (msg.key.participant || msg.participant)
+      : msg.key.remoteJid
+
+    if (sender?.endsWith("@lid")) {
+      sender = msg.key.participant || msg.key.remoteJid
+    }
+
     const senderId = decodeJid(sender)
     const senderNumber = senderId?.split("@")[0] || ""
     const pushname = msg.pushName || "User"
