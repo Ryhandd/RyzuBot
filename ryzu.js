@@ -317,7 +317,10 @@ module.exports = async function ryzuHandler(ryzu, m) {
       } catch (_) {}
     }
 
-    const isCreator = ownerContacts.includes(senderId)
+    const isCreator =
+      ownerContacts.includes(senderId) ||
+      ownerContacts.includes(senderNumber) ||
+      ownerContacts.some(v => senderNumber.includes(v))
 
     // === INIT USER ===
     funcs.checkUser(senderId)
