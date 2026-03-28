@@ -561,7 +561,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
     console.error("Error in main handler:", e)
     if (ownerContacts[0]) {
       try {
-        await ryzu.sendMessage(ownerContacts[0] + "@s.whatsapp.net", { text: `⚠️ *BOT ERROR*\n\n${e.message}` })
+        await ryzu.sendMessage(ownerContacts[0], { text: `⚠️ *BOT ERROR*\n\n${e.message}` })
       } catch (_) {}
     }
   }
