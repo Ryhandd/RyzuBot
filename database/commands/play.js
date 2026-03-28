@@ -29,15 +29,13 @@ module.exports = {
 
       const res = await axios.get(apiUrl)
       const dlUrl =
-          res.data?.result?.url ||
-          res.data?.result?.audio ||
-          res.data?.result
-
-      if (!dlUrl) {
-          console.log("API ERROR:", res.data)
-          return reply("❌ Gagal mengambil link dari API.")
+      	typeof res.data?.result === "string"
+        	? res.data.result
+            : res.data?.result?.url || res.data?.result?.audio
+      if (!dlUrl || typeof dlUrl !== "string") {
+      	console.log("INVALID DL URL:", res.data)
+      	return reply("❌ Link tidak valid dari API.")
       }
-
       if (isVideo) {
         await ryzu.sendMessage(from, {
           video: { url: dlUrl },
