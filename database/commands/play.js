@@ -28,14 +28,18 @@ module.exports = {
       const apiUrl = `https://api.betabotz.eu.org/api/download/ytmp3?url=${vid.url}&apikey=Btz-eMcqb`
 
       const res = await axios.get(apiUrl)
-      const dlUrl =
-      	typeof res.data?.result === "string"
-        	? res.data.result
-            : res.data?.result?.url || res.data?.result?.audio
-      if (!dlUrl || typeof dlUrl !== "string") {
+
+      console.log("API RESPONSE:", res.data)
+
+      const dlUrl = isVideo
+      	? res.data?.result?.mp4
+        : res.data?.result?.mp3
+
+      if (!dlUrl) {
       	console.log("INVALID DL URL:", res.data)
-      	return reply("❌ Link tidak valid dari API.")
+        return reply("❌ Gagal mengambil link dari API.")
       }
+        
       if (isVideo) {
         await ryzu.sendMessage(from, {
           video: { url: dlUrl },
