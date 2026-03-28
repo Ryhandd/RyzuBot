@@ -50,6 +50,14 @@ const decodeJid = (jid) => {
   return jid
 }
 
+// Cek apakah JID adalah LID format WhatsApp baru (bukan nomor HP)
+const isLidFormat = (jid) => {
+  if (!jid) return false
+  const num = jid.split("@")[0].replace(/[^0-9]/g, "")
+  // LID biasanya 15 digit ke atas dan tidak dimulai dengan kode negara normal
+  return num.length > 13
+}
+
 const funcs = {
   saveRPG: async (userId) => {
     try {
@@ -219,6 +227,9 @@ const simiFastReply = {
 
 const cooldowns = new Set()
 
+// Map LID -> nomor HP asli (diisi saat bot jalan)
+const lidToNumber = new Map()
+
 module.exports = async function ryzuHandler(ryzu, m) {
   try {
     const msg = m.messages[0]
@@ -232,8 +243,8 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     const isGroup = from.endsWith("@g.us")
 
+    // === SENDER ===
     let sender
-
     if (isGroup) {
       const participant = msg.key.participant || msg.participant
       sender = participant || msg.key.remoteJid
@@ -241,20 +252,45 @@ module.exports = async function ryzuHandler(ryzu, m) {
       sender = msg.key.remoteJid
     }
 
-
     const senderId = decodeJid(sender)
-    const senderNumber = senderId?.split("@")[0] || ""
+
+    // === RESOLVE LID KE NOMOR HP ===
+    // WhatsApp baru pakai LID format di grup, kita perlu nomor aslinya untuk isCreator
+    let senderNumber = senderId?.split("@")[0] || ""
+
+    // Jika LID format, cek cache dulu
+    if (isLidFormat(senderId)) {
+      if (lidToNumber.has(senderNumber)) {
+        senderNumber = lidToNumber.get(senderNumber)
+      } else {
+        // Coba resolve dari group metadata
+        try {
+          const meta = await ryzu.groupMetadata(from)
+          for (const p of (meta.participants || [])) {
+            const pNum = p.id.split("@")[0]
+            const pLid = p.lid ? p.lid.split("@")[0] : null
+            if (pLid) lidToNumber.set(pLid, pNum)
+          }
+          if (lidToNumber.has(senderNumber)) {
+            senderNumber = lidToNumber.get(senderNumber)
+          }
+        } catch (_) {}
+      }
+    }
+
+    const ownerNumbers = ownerContacts.map(v => v.trim().replace(/[^0-9]/g, ""))
+    const cleanSender = senderNumber.replace(/[^0-9]/g, "")
+
+    const isCreator =
+      ownerNumbers.includes(cleanSender) ||
+      ownerNumbers.some(v => v && cleanSender.includes(v)) ||
+      ownerNumbers.some(v => v && v.includes(cleanSender))
 
     const pushname = msg.pushName || "User"
 
-    const ownerNumbers = ownerContacts.map(v => v.trim().replace(/[^0-9]/g, ""))
-    const isCreator =
-      ownerNumbers.includes(senderNumber.replace(/[^0-9]/g, "")) ||
-      ownerNumbers.some(v => v && senderNumber.includes(v))
-
     console.log("SENDER ID:", senderId)
-    console.log("SENDER NUMBER:", senderNumber)
-    console.log("OWNER:", ownerContacts)
+    console.log("SENDER NUMBER (resolved):", senderNumber)
+    console.log("OWNER:", ownerNumbers)
     console.log("IS CREATOR:", isCreator)
 
     const rawText = (
@@ -325,6 +361,14 @@ module.exports = async function ryzuHandler(ryzu, m) {
       try {
         groupMetadata = await ryzu.groupMetadata(from)
         participants = groupMetadata.participants || []
+
+        // Update LID cache dari metadata
+        for (const p of participants) {
+          const pNum = p.id.split("@")[0]
+          const pLid = p.lid ? p.lid.split("@")[0] : null
+          if (pLid) lidToNumber.set(pLid, pNum)
+        }
+
         isAdmin = participants.some((p) => decodeJid(p.id) === senderId && p.admin)
         isBotAdmin = participants.some((p) => decodeJid(p.id) === botId && p.admin)
       } catch (_) {}
