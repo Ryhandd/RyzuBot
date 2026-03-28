@@ -287,17 +287,24 @@ module.exports = {
         return reply(`Format: ${prefix}wm Pack|Author`)
 
       let [pack, author] = q.split("|")
+      pack = pack.trim()
+      author = author.trim()
 
       try {
-        const buffer = await downloadMedia(
-          quoted.stickerMessage,
-          "sticker"
-        )
-
-        const sticker = await createSticker(buffer, {
-          pack: pack.trim(),
-          author: author.trim()
-        })
+        const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
+        
+        const exifData = buildExifBuffer(pack || "", author || "RyzuBot")
+        
+        let sticker
+        try {
+          const { Image } = require("node-webpmux")
+          const img = new Image()
+          await img.load(buffer)
+          img.exif = exifData
+          sticker = await img.save(null)
+        } catch {
+          sticker = injectExifChunkManual(buffer, exifData)
+        }
 
         return ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch (e) {
