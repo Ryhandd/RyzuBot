@@ -116,7 +116,7 @@ async function connectToWhatsApp() {
     await delay(3000)
     try {
       const code = await ryzu.requestPairingCode(phoneNumber.replace(/[^0-9]/g, ""))
-      console.log(chalk.black.bgGreen.bold(`\n KODE PAIRING ANDA: ${code} \n`))
+      console.log(chalk.yellow(`\n KODE PAIRING ANDA: ${code} \n`))
       console.log(chalk.yellow("Masukkan kode ini di WhatsApp > Perangkat Tertaut > Tautkan dengan nomor telepon\n"))
     } catch (err) {
       console.error(chalk.red("Gagal meminta kode pairing:"), err.message)
