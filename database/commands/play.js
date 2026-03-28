@@ -49,7 +49,7 @@ module.exports = {
         await ryzu.sendMessage(from, {
           audio: { url: dlUrl },
           mimetype: "audio/mpeg",
-          ptt: true
+          fileName: `${vid.title}.mp3`
         }, { quoted: msg })
       }
 
