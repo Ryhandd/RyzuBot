@@ -224,14 +224,13 @@ module.exports = async function ryzuHandler(ryzu, m) {
     const msg = m.messages[0]
     if (!msg || !msg.message) return
 
-    // FIX: abaikan pesan dari bot sendiri PALING AWAL
     if (msg.key.fromMe) return
 
     const from = msg.key.remoteJid
     if (!from || from === "status@broadcast") return
 
-    const msgId = msg.key.id
     const isGroup = from.endsWith("@g.us")
+
     let sender = isGroup
       ? (msg.key.participant || msg.participant)
       : msg.key.remoteJid
@@ -242,6 +241,8 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     const senderId = decodeJid(sender)
     const senderNumber = senderId?.split("@")[0] || ""
+
+    const pushname = msg.pushName || "User"
 
     const isCreator =
       ownerContacts.includes(senderId) ||
