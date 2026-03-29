@@ -83,7 +83,7 @@ module.exports = {
                         pl.alive = true;
                         ryzu.sendMessage(pl.id, { text: `🎮 *GAME WEREWOLF DIMULAI!*\n\n🎭 Role Kamu: *${pl.role}*\n${getRoleDescription(pl.role)}` });
                     });
-                    return reply(`🎮 *GAME DIMULAI!*\n\n🌅 FASE SIANG - HARI 1\n\n📋 Distribusi Role (Leader):\n${room.player.map(pl => `${pl.nickname}: ${pl.role}`).join("\n")}\n\nℹ️ Gunakan: .ww kill, .ww protect, .ww ramal, .ww vote, .ww next, .ww cektim`);
+                    return reply(`🎮 *GAME DIMULAI!*\n\n🌅 FASE SIANG - HARI 1\n\nℹ️ Gunakan: .ww kill, .ww protect, .ww ramal, .ww vote, .ww next, .ww cektim`);
 
                 case "kill":
                     if (!room || room.status !== "playing") return reply("❌ Tidak ada game jalan.");
