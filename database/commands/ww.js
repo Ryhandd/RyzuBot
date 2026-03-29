@@ -77,7 +77,7 @@ module.exports = {
                     return reply(textLb);
 
                 case "rules":
-                    return reply(`📖 *RULES WEREWOLF*\n\n1. Game min 4 orang.\n2. Siang hari (5 menit) digunakan untuk diskusi.\n3. Voting (1 menit) untuk mengeliminasi yang dicurigai.\n4. Malam hari (1 menit) untuk Werewolf membunuh, Seer meramal, dan Guardian melindungi.\n5. Jangan menyebarkan role di grup!`);
+                    return reply(`📖 *RULES WEREWOLF*\n\n1. Game min 4 orang.\n2. Siang hari (1 menit) digunakan untuk diskusi.\n3. Voting (1 menit) untuk mengeliminasi yang dicurigai.\n4. Malam hari (1 menit) untuk Werewolf membunuh, Seer meramal, dan Guardian melindungi.\n5. Jangan menyebarkan role di grup!`);
 
                 case "cekrole":
                     if (!room || room.status !== "playing") return reply("❌ Tidak ada game WW yang sedang berlangsung.");
