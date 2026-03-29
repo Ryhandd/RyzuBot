@@ -192,6 +192,9 @@ async function notifyPlayers(room, message, ryzu, role = null) {
 }
 
 module.exports = {
+    name: "wwAdv",
+    description: "Library Module untuk Werewolf",
+    execute: async () => {},
     updatePlayerStats,
     getLeaderboard,
     saveGameHistory,
