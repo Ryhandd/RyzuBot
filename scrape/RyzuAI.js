@@ -5,7 +5,7 @@ async function RyzuAI(prompt) {
         const res = await axios.post(
             "https://api.openai.com/v1/chat/completions",
             {
-                model: "gpt-3.5-turbo",
+                model: "llama3-70b-8192",
                 messages: [
                     { role: "user", content: prompt }
                 ]
