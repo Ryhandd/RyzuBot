@@ -11,7 +11,7 @@ module.exports = {
 
             // AMBIL ARGUMEN LANGSUNG DARI ARGS BAWAAN RYZU.JS
             // Contoh: ".ww join Ryzu" -> args = "join", targetArg = "Ryzu"
-            let cmdArg = isCmd ? args.shift().toLowerCase() : ""
+            let cmdArg = args.length ? args.shift().toLowerCase() : ""
             let targetArg = args.length > 1 ? args.slice(1).join(" ") : "";
 
             // Override cmdArg kalau user pakai alias (misal: .cekrole)
