@@ -1,4 +1,4 @@
-const { updatePlayerStats, getBalancedRoles } = require('../src/lib/wwUtils'); 
+const { updatePlayerStats, getBalancedRoles, getLeaderboard } = require('../../lib/wwUtils'); 
 
 module.exports = {
     name: "ww",
@@ -7,7 +7,20 @@ module.exports = {
     execute: async ({ ryzu, from, sender, args, command, reply, funcs }) => {
         if (!ryzu.werewolf) ryzu.werewolf = {};
         let room = ryzu.werewolf[from];
-        
+
+        // --- FITUR LEADERBOARD ---
+        if (args === "leaderboard" || args === "lb") {
+            let lb = getLeaderboard(args || "total_wins");
+            if (lb.length === 0) return reply("❌ Belum ada data leaderboard Werewolf.");
+            
+            let text = `🏆 *LEADERBOARD WEREWOLF*\n━━━━━━━━━━━━━━━━━\n`;
+            lb.forEach((p, i) => {
+                text += `${i+1}. ${p.username}\n   Win: ${p.wins} | Games: ${p.games} | WR: ${p.winRate}%\n`;
+            });
+            text += `━━━━━━━━━━━━━━━━━\nDipilih: ${args || "total_wins"}`;
+            return reply(text);
+        }
+
         // --- FITUR CEK ROLE ---
         if (command === "cekrole") {
             if (!room || room.status !== "playing") return reply("❌ Tidak ada game WW yang sedang berlangsung.");
@@ -26,7 +39,7 @@ module.exports = {
             
             let playerList = room.player.map((p, i) => {
                 let status = p.alive ? "🟢 Hidup" : "💀 Mati";
-                return `${i + 1}. ${p.nickname || p.id.split("@")[0]} (${status})`;
+                return `${i + 1}. ${p.nickname || p.id.split("@")} (${status})`;
             }).join("\n");
 
             let gameStatus = `❌ Menunggu dimulai`;
@@ -41,13 +54,13 @@ module.exports = {
         }
 
         // --- FITUR INFO ROLES ---
-        if (command === "wwhelp" || args[0] === "info") {
+        if (command === "wwhelp" || args === "info") {
             let text = `🎭 *DAFTAR ROLE WEREWOLF*\n━━━━━━━━━━━━━━━━━\n\n🐺 *WEREWOLF* (Penjahat)\nTugas: Bunuh 1 warga setiap malam\nTaktik: Diskusi siang untuk keluar dari curigaan\n\n👤 *VILLAGER* (Warga Biasa)\nTugas: Temukan werewolf saat siang hari\nKemampuan: Voting untuk eliminate seseorang\n\n🔮 *SEER* (Peramal)\nTugas: Ramal role pemain setiap malam\nHanya bisa ramal 1x per hari\nJangan ketahuan sebagai Seer!\n\n🛡️ *GUARDIAN* (Penjaga)\nTugas: Lindungi 1 orang setiap malam\nJika dilindungi, werewolf tidak bisa membunuh\nTidak bisa lindungi orang yang sama 2x berturut-turut\n\n🌾 *FARMER* (Petani)\nTugas: Bertahan hidup & voting\nBonus: Jika masih hidup di hari terakhir, team villager menang otomatis\n\n━━━━━━━━━━━━━━━━━\n💡 *CARA MAIN:*\n- Siang: Diskusi & voting untuk eliminate seseorang\n- Malam: Role khusus melakukan aksi mereka\n- Tim Werewolf menang jika = jumlah villager\n- Tim Villager menang jika semua werewolf dead`;
             return reply(text);
         }
 
         // --- LOGIKA GAME WW ---
-        if (args[0] === "join") {
+        if (args === "join") {
             if (room && room.status === "playing") return reply("❌ Game sudah dimulai, tunggu game selesai.");
             if (!room) {
                 ryzu.werewolf[from] = { 
@@ -67,13 +80,14 @@ module.exports = {
                 id: sender, 
                 role: "",
                 alive: true,
-                nickname: args[1] || sender.split("@")[0]
+                nickname: args || sender.split("@")
             });
             
             let text = `✅ Berhasil join game!\n\n👥 Peserta sekarang: ${room.player.length}/10\n\n${room.player.map((p, i) => `${i + 1}. ${p.nickname}`).join("\n")}\n\n_Leader: gunakan .ww start untuk memulai game_`;
             return reply(text);
         }
 
+        // Perbaikan: pakai args === "start"
         if (args === "start") {
             if (!room || room.player.length < 4) return reply("❌ Minimal 4 pemain untuk memulai. Sekarang: " + (room?.player.length || 0));
             if (room.status === "playing") return reply("❌ Game sudah jalan.");
@@ -86,37 +100,24 @@ module.exports = {
             room.guardianProtected = {};
 
             let roles = getBalancedRoles(room.player.length);
-            let playerCount = room.player.length;
-
-            if (playerCount >= 4) roles.push("WEREWOLF");
-            if (playerCount >= 5) roles.push("SEER");
-            if (playerCount >= 6) roles.push("GUARDIAN");
-            if (playerCount >= 7) roles.push("FARMER");
-            if (playerCount >= 8) roles.push("WEREWOLF");
-            
-            while (roles.length < playerCount) {
-                roles.push("VILLAGER");
-            }
-
             let shuffle = roles.sort(() => Math.random() - 0.5);
+            
             room.player.forEach((p, i) => {
-                p.role = shuffle[i];
-                ryzu.sendMessage(p.id, { text: `🎭 Role kamu: *${p.role}*` });
+                p.role = shuffle[i] || "VILLAGER"; // Fallback ke villager
+                p.alive = true;
+                
+                let roleDesc = getRoleDescription(p.role);
+                ryzu.sendMessage(p.id, { 
+                    text: `🎮 *GAME WEREWOLF DIMULAI!*\n━━━━━━━━━━━━━━━━━\n\n🎭 Role Kamu: *${p.role}*\n${roleDesc}\n\n━━━━━━━━━━━━━━━━━\nℹ️ Cek group untuk info lebih lanjut!\n_Jangan bagikan role mu!_` 
+                });
             });
 
-            return reply("🎮 Game Dimulai! Cek chat pribadi untuk role masing-masing.");
-        }
-        if (args[0] === "start") {
-            
+            let roleList = room.player.map(p => `${p.nickname}: ${p.role}`).join("\n");
+            return reply(`🎮 *GAME DIMULAI!*\n\n🌅 FASE SIANG - HARI 1\n\n📋 Distribusi Role (Leader only):\n${roleList}\n\n━━━━━━━━━━━━━━━━━\nℹ️ Gunakan perintah:\n.ww kill @user (Werewolf malam)\n.ww protect @user (Guardian malam)\n.ww ramal @user (Seer malam)\n.ww vote @user (Voting siang)\n.ww next (Lanjut ke fase berikutnya)\n.ww cektim (Cek status pemain)`);
         }
 
-        if (args === "leaderboard" || args === "lb") {
-            // Logika ambil data dari global.rpg...
-            return reply("🏆 Menampilkan Leaderboard...");
-        }
-        
         // --- FITUR KILL (Werewolf) ---
-        if (args[0] === "kill") {
+        if (args === "kill") {
             if (!room || room.status !== "playing") return reply("❌ Tidak ada game jalan.");
             if (room.phase !== "night") return reply("❌ Hanya bisa kill di malam hari!");
 
@@ -125,7 +126,7 @@ module.exports = {
                 return reply("❌ Kamu bukan werewolf yang hidup.");
             }
 
-            let target = room.player.find(x => x.nickname === args[1] || x.id.includes(args[1]));
+            let target = room.player.find(x => x.nickname === args || x.id.includes(args));
             if (!target) return reply("❌ Target tidak ditemukan. Cek .ww cektim");
             if (target.id === sender) return reply("❌ Tidak bisa bunuh diri sendiri.");
             if (!target.alive) return reply("❌ Target sudah mati.");
@@ -139,15 +140,11 @@ module.exports = {
             target.alive = false;
             reply(`✅ Werewolf memilih korban: ${target.nickname}\n💀 ${target.nickname} akan dieksekusi saat fajar tiba.`);
             
-            room.history.push({
-                day: room.day,
-                phase: "night",
-                event: `Werewolf membunuh ${target.nickname}`
-            });
+            room.history.push({ day: room.day, phase: "night", event: `Werewolf membunuh ${target.nickname}` });
         }
 
         // --- FITUR PROTECT (Guardian) ---
-        if (args[0] === "protect") {
+        if (args === "protect") {
             if (!room || room.status !== "playing") return reply("❌ Tidak ada game jalan.");
             if (room.phase !== "night") return reply("❌ Hanya bisa protect di malam hari!");
 
@@ -156,7 +153,7 @@ module.exports = {
                 return reply("❌ Kamu bukan guardian yang hidup.");
             }
 
-            let target = room.player.find(x => x.nickname === args[1] || x.id.includes(args[1]));
+            let target = room.player.find(x => x.nickname === args || x.id.includes(args));
             if (!target) return reply("❌ Target tidak ditemukan.");
             if (!target.alive) return reply("❌ Target sudah mati.");
 
@@ -167,16 +164,11 @@ module.exports = {
 
             room.guardianProtected[room.day] = target.id;
             reply(`✅ Guardian melindungi: ${target.nickname}`);
-            
-            room.history.push({
-                day: room.day,
-                phase: "night",
-                event: `Guardian melindungi ${target.nickname}`
-            });
+            room.history.push({ day: room.day, phase: "night", event: `Guardian melindungi ${target.nickname}` });
         }
 
         // --- FITUR RAMAL (Seer) ---
-        if (args[0] === "ramal") {
+        if (args === "ramal") {
             if (!room || room.status !== "playing") return reply("❌ Tidak ada game jalan.");
             if (room.phase !== "night") return reply("❌ Hanya bisa ramal di malam hari!");
 
@@ -189,7 +181,7 @@ module.exports = {
                 return reply("❌ Kamu sudah ramal hari ini! Ramal lagi besok.");
             }
 
-            let target = room.player.find(x => x.nickname === args[1] || x.id.includes(args[1]));
+            let target = room.player.find(x => x.nickname === args || x.id.includes(args));
             if (!target) return reply("❌ Target tidak ditemukan.");
             if (target.id === sender) return reply("❌ Tidak bisa ramal diri sendiri.");
 
@@ -201,22 +193,18 @@ module.exports = {
                 text: `🔮 *HASIL RAMALAN HARI ${room.day}*\n━━━━━━━━━━━━━━━━━\n${roleEmoji} ${target.nickname} adalah: *${target.role}*\n━━━━━━━━━━━━━━━━━` 
             });
 
-            room.history.push({
-                day: room.day,
-                phase: "night",
-                event: `Seer meramal ${target.nickname} sebagai ${target.role}`
-            });
+            room.history.push({ day: room.day, phase: "night", event: `Seer meramal ${target.nickname} sebagai ${target.role}` });
         }
 
         // --- FITUR VOTING (Siang) ---
-        if (args[0] === "vote") {
+        if (args === "vote") {
             if (!room || room.status !== "playing") return reply("❌ Tidak ada game jalan.");
             if (room.phase !== "day") return reply("❌ Hanya bisa vote di siang hari!");
 
             let player = room.player.find(x => x.id === sender);
             if (!player || !player.alive) return reply("❌ Kamu sudah mati atau bukan peserta.");
 
-            let target = room.player.find(x => x.nickname === args[1] || x.id.includes(args[1]));
+            let target = room.player.find(x => x.nickname === args || x.id.includes(args));
             if (!target) return reply("❌ Target tidak ditemukan.");
             if (!target.alive) return reply("❌ Target sudah mati.");
 
@@ -227,7 +215,7 @@ module.exports = {
         }
 
         // --- FITUR NEXT PHASE ---
-        if (args[0] === "next") {
+        if (args === "next") {
             if (!room || room.status !== "playing") return reply("❌ Tidak ada game jalan.");
 
             if (room.phase === "day") {
@@ -245,12 +233,7 @@ module.exports = {
                     if (target) {
                         target.alive = false;
                         reply(`🗳️ *HASIL VOTING*\n━━━━━━━━━━━━━━━━━\n💀 ${target.nickname} (${target.role}) dieliminasi!\n\n━━━━━━━━━━━━━━━━━\n🌙 Memasuki FASE MALAM...`);
-                        
-                        room.history.push({
-                            day: room.day,
-                            phase: "day",
-                            event: `${target.nickname} (${target.role}) dieliminasi voting`
-                        });
+                        room.history.push({ day: room.day, phase: "day", event: `${target.nickname} (${target.role}) dieliminasi voting` });
                     }
                 }
 
@@ -259,24 +242,14 @@ module.exports = {
                 
                 // Notify players
                 room.player.forEach(p => {
-                    if (p.role === "WEREWOLF" && p.alive) {
-                        ryzu.sendMessage(p.id, { text: `🌙 FASE MALAM - HARI ${room.day}\n\nGunakan .ww kill @user untuk membunuh warga` });
-                    }
-                    if (p.role === "GUARDIAN" && p.alive) {
-                        ryzu.sendMessage(p.id, { text: `🛡️ FASE MALAM - HARI ${room.day}\n\nGunakan .ww protect @user untuk melindungi` });
-                    }
-                    if (p.role === "SEER" && p.alive) {
-                        if (!room.seerUsed[room.day]) {
-                            ryzu.sendMessage(p.id, { text: `🔮 FASE MALAM - HARI ${room.day}\n\nGunakan .ww ramal @user untuk meramal role` });
-                        }
-                    }
+                    if (p.role === "WEREWOLF" && p.alive) ryzu.sendMessage(p.id, { text: `🌙 FASE MALAM - HARI ${room.day}\n\nGunakan .ww kill @user untuk membunuh warga` });
+                    if (p.role === "GUARDIAN" && p.alive) ryzu.sendMessage(p.id, { text: `🛡️ FASE MALAM - HARI ${room.day}\n\nGunakan .ww protect @user untuk melindungi` });
+                    if (p.role === "SEER" && p.alive && !room.seerUsed[room.day]) ryzu.sendMessage(p.id, { text: `🔮 FASE MALAM - HARI ${room.day}\n\nGunakan .ww ramal @user untuk meramal role` });
                 });
 
             } else if (room.phase === "night") {
                 room.phase = "day";
                 room.day++;
-                
-                // Reset actions
                 room.votes = {};
                 room.seerUsed[room.day] = false;
 
@@ -285,22 +258,16 @@ module.exports = {
                 let villagersAlive = room.player.filter(p => p.role !== "WEREWOLF" && p.alive).length;
                 let farmerAlive = room.player.filter(p => p.role === "FARMER" && p.alive).length;
 
-                if (werewolvesAlive === 0) {
-                    return finishGame(room, "villager", reply, ryzu, funcs);
-                }
-                if (werewolvesAlive >= villagersAlive) {
-                    return finishGame(room, "werewolf", reply, ryzu, funcs);
-                }
-                if (farmerAlive > 0 && villagersAlive === farmerAlive) {
-                    return finishGame(room, "villager", reply, ryzu, funcs);
-                }
+                if (werewolvesAlive === 0) return finishGame(room, "villager", reply, ryzu, funcs);
+                if (werewolvesAlive >= villagersAlive) return finishGame(room, "werewolf", reply, ryzu, funcs);
+                if (farmerAlive > 0 && villagersAlive === farmerAlive) return finishGame(room, "villager", reply, ryzu, funcs);
 
                 reply(`☀️ *FASE SIANG - HARI ${room.day}*\n━━━━━━━━━━━━━━━━━\nSilakan diskusi dan voting untuk eliminate seseorang.\n\nGunakan .ww vote @user`);
             }
         }
 
         // --- FITUR OUT ---
-        if (args[0] === "out") {
+        if (args === "out") {
             if (!room) return reply("❌ Tidak ada room.");
             if (room.status === "playing") return reply("❌ Tidak bisa keluar saat game berlangsung.");
             
@@ -310,13 +277,13 @@ module.exports = {
         }
 
         // --- FITUR RESET ---
-        if (args[0] === "reset") {
+        if (args === "reset") {
             delete ryzu.werewolf[from];
             return reply("✅ Game direset.");
         }
 
-        if (!args[0]) {
-            return reply(`📖 *PERINTAH WEREWOLF*\n\n.ww join [nama] - Join game\n.ww start - Mulai game (min 4 pemain)\n.ww cektim - Lihat status pemain\n.ww cekrole - Cek role kamu (Private Chat)\n.ww info - Daftar role & cara main\n.ww kill @user - Bunuh (Werewolf malam)\n.ww protect @user - Lindungi (Guardian malam)\n.ww ramal @user - Ramal (Seer malam)\n.ww vote @user - Vote eliminate (Siang)\n.ww next - Lanjut phase\n.ww out - Keluar game\n.ww reset - Reset game`);
+        if (!args) {
+            return reply(`📖 *PERINTAH WEREWOLF*\n\n.ww join [nama] - Join game\n.ww start - Mulai game (min 4 pemain)\n.ww cektim - Lihat status pemain\n.ww cekrole - Cek role kamu (Private Chat)\n.ww info - Daftar role & cara main\n.ww leaderboard - Lihat Top Rank\n.ww kill @user - Bunuh (Werewolf malam)\n.ww protect @user - Lindungi (Guardian malam)\n.ww ramal @user - Ramal (Seer malam)\n.ww vote @user - Vote eliminate (Siang)\n.ww next - Lanjut phase\n.ww out - Keluar game\n.ww reset - Reset game`);
         }
     }
 };
@@ -334,13 +301,7 @@ function getRoleDescription(role) {
 }
 
 function getRoleEmoji(role) {
-    const emojis = {
-        "WEREWOLF": "🐺",
-        "VILLAGER": "👤",
-        "SEER": "🔮",
-        "GUARDIAN": "🛡️",
-        "FARMER": "🌾"
-    };
+    const emojis = { "WEREWOLF": "🐺", "VILLAGER": "👤", "SEER": "🔮", "GUARDIAN": "🛡️", "FARMER": "🌾" };
     return emojis[role] || "❓";
 }
 
@@ -349,13 +310,9 @@ function finishGame(room, winner, reply, ryzu, funcs) {
 
     if (winner === "werewolf") {
         let prize = 50000;
-        let xp = 1000;
         room.player.filter(p => p.role === "WEREWOLF").forEach(p => {
-            funcs.checkUser(p.id);
-            if (global.rpg[p.id]) {
-                global.rpg[p.id].money = (global.rpg[p.id].money || 0) + prize;
-                global.rpg[p.id].level = (global.rpg[p.id].level || 1) + 1;
-            }
+            updatePlayerStats(p.id, "WEREWOLF", prize, funcs);
+            if (global.rpg[p.id]) global.rpg[p.id].level = (global.rpg[p.id].level || 1) + 1;
             ryzu.sendMessage(p.id, { text: `🔥 *TEAM WEREWOLF MENANG!*\n━━━━━━━━━━━━━━━━━\n💀 Semua warga berhasil dibasmi!\n\n💰 Hadiah: +${prize.toLocaleString()} Money\n⭐ Bonus: +1 Level` });
         });
         reply(`💀 *WEREWOLF MENANG!* 💀\n\n🔥 Para werewolf berhasil memakan semua warga!\nMasing-masing werewolf dapat ${prize.toLocaleString()} Money & +1 Level!`);
@@ -363,14 +320,11 @@ function finishGame(room, winner, reply, ryzu, funcs) {
         let prize = 20000;
         room.player.filter(p => p.role !== "WEREWOLF").forEach(p => {
             if (p.alive) {
-                funcs.checkUser(p.id);
-                if (global.rpg[p.id]) {
-                    global.rpg[p.id].money = (global.rpg[p.id].money || 0) + prize;
-                }
+                updatePlayerStats(p.id, p.role, prize, funcs);
                 ryzu.sendMessage(p.id, { text: `🏆 *TEAM VILLAGER MENANG!*\n━━━━━━━━━━━━━━━━━\n✅ Werewolf telah dibasmi!\n\n💰 Hadiah: +${prize.toLocaleString()} Money` });
             }
         });
-        reply(`🎉 *VILLAGER MENANG!* 🎉\n\n✅ Werewolf telah berhasil dibasmi!\nMasing-masing villager dapat ${prize.toLocaleString()} Money!`);
+        reply(`🎉 *VILLAGER MENANG!* 🎉\n\n✅ Werewolf telah berhasil dibasmi!\nMasing-masing villager yang selamat dapat ${prize.toLocaleString()} Money!`);
     }
 
     delete room.werewolf;
