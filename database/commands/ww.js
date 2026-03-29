@@ -4,28 +4,31 @@ module.exports = {
     name: "ww",
     alias: ["werewolf", "cekrole", "cektim", "wwstatus", "wwhelp"],
     description: "Main Werewolf Game",
-    // PERHATIKAN: Kita pakai 'q' di sini, bukan 'args'
     execute: async ({ ryzu, from, sender, q, command, reply, funcs }) => {
         try {
             if (!ryzu.werewolf) ryzu.werewolf = {};
             let room = ryzu.werewolf[from];
 
-            // PENGAMANAN ANTI NYASAR (Pakai 'q' bawaan RyzuBot)
+            // 1. PENGAMANAN ARGS SANGAT KETAT PAKAI 'q'
             let cmdArg = "";
             let targetArg = "";
 
-            if (q && q.trim() !== "") {
+            if (q && typeof q === 'string' && q.trim() !== "") {
                 let splitQ = q.trim().split(/ +/); // Pecah berdasarkan spasi
-                cmdArg = splitQ.toLowerCase(); // Ambil kata pertama (join, start, dll)
-                targetArg = splitQ.slice(1).join(" "); // Ambil sisa namanya (Ryzu)
+                if (splitQ.length > 0) {
+                    cmdArg = splitQ.toLowerCase(); // Ambil kata pertama (join, start, dll)
+                }
+                if (splitQ.length > 1) {
+                    targetArg = splitQ.slice(1).join(" "); // Ambil sisa namanya (Ryzu)
+                }
             }
 
-            // Override cmdArg kalau user pakai alias (misal: .cekrole)
+            // 2. OVERRIDE JIKA MENGGUNAKAN ALIAS
             if (command === "cekrole") cmdArg = "cekrole";
             if (command === "cektim" || command === "wwstatus") cmdArg = "cektim";
             if (command === "wwhelp") cmdArg = "info";
 
-            // JIKA KOSONG (Cuma ketik .ww), TAMPILKAN MENU
+            // 3. JIKA KOSONG (Cuma ketik .ww), TAMPILKAN MENU
             if (!cmdArg || cmdArg === "") {
                 return reply(`📖 *PERINTAH WEREWOLF*\n\n.ww join [nama] - Join game\n.ww start - Mulai game\n.ww cektim - Lihat pemain\n.ww cekrole - Cek role (PC)\n.ww info - Cara main\n.ww lb - Leaderboard\n.ww kill [nama] - Bunuh (Werewolf)\n.ww protect [nama] - Lindungi (Guardian)\n.ww ramal [nama] - Ramal (Seer)\n.ww vote [nama] - Vote (Siang)\n.ww next - Lanjut phase\n.ww out - Keluar\n.ww reset - Reset`);
             }
@@ -54,7 +57,7 @@ module.exports = {
 
                 case "cektim":
                     if (!room) return reply("❌ Tidak ada room Werewolf.");
-                    let playerList = room.player.map((p, i) => `${i + 1}. ${p.nickname} (${p.alive ? "🟢 Hidup" : "💀 Mati"})`).join("\n");
+                    let playerList = room.player.map((pl, i) => `${i + 1}. ${pl.nickname} (${pl.alive ? "🟢 Hidup" : "💀 Mati"})`).join("\n");
                     let gameStatus = room.status === "playing" 
                         ? `🎮 Sedang Berlangsung - Hari ke-${room.day}\n⏰ Phase: ${room.phase === "day" ? "☀️ SIANG" : "🌙 MALAM"}` 
                         : (room.status === "finished" ? `✅ Game Selesai` : `❌ Menunggu dimulai`);
@@ -73,7 +76,7 @@ module.exports = {
                     if (room.player.length >= 10) return reply("❌ Sudah penuh (Max 10).");
                     
                     room.player.push({ id: sender, role: "", alive: true, nickname: targetArg || sender.split("@") });
-                    return reply(`✅ Berhasil join game!\n\n👥 Peserta: ${room.player.length}/10\n${room.player.map((p, i) => `${i + 1}. ${p.nickname}`).join("\n")}\n\n_Leader: .ww start_`);
+                    return reply(`✅ Berhasil join game!\n\n👥 Peserta: ${room.player.length}/10\n${room.player.map((pl, i) => `${i + 1}. ${pl.nickname}`).join("\n")}\n\n_Leader: .ww start_`);
 
                 case "start":
                     if (!room || room.player.length < 4) return reply(`❌ Minimal 4 pemain. Sekarang: ${room?.player.length || 0}`);
@@ -85,12 +88,12 @@ module.exports = {
                     let roles = getBalancedRoles(room.player.length);
                     let shuffle = roles.sort(() => Math.random() - 0.5);
                     
-                    room.player.forEach((p, i) => {
-                        p.role = shuffle[i] || "VILLAGER"; 
-                        p.alive = true;
-                        ryzu.sendMessage(p.id, { text: `🎮 *GAME WEREWOLF DIMULAI!*\n\n🎭 Role Kamu: *${p.role}*\n${getRoleDescription(p.role)}` });
+                    room.player.forEach((pl, i) => {
+                        pl.role = shuffle[i] || "VILLAGER"; 
+                        pl.alive = true;
+                        ryzu.sendMessage(pl.id, { text: `🎮 *GAME WEREWOLF DIMULAI!*\n\n🎭 Role Kamu: *${pl.role}*\n${getRoleDescription(pl.role)}` });
                     });
-                    return reply(`🎮 *GAME DIMULAI!*\n\n🌅 FASE SIANG - HARI 1\n\n📋 Distribusi Role (Leader):\n${room.player.map(p => `${p.nickname}: ${p.role}`).join("\n")}\n\nℹ️ Gunakan: .ww kill, .ww protect, .ww ramal, .ww vote, .ww next, .ww cektim`);
+                    return reply(`🎮 *GAME DIMULAI!*\n\n🌅 FASE SIANG - HARI 1\n\n📋 Distribusi Role (Leader):\n${room.player.map(pl => `${pl.nickname}: ${pl.role}`).join("\n")}\n\nℹ️ Gunakan: .ww kill, .ww protect, .ww ramal, .ww vote, .ww next, .ww cektim`);
 
                 case "kill":
                     if (!room || room.status !== "playing") return reply("❌ Tidak ada game jalan.");
@@ -169,10 +172,10 @@ module.exports = {
                         room.phase = "night";
                         room.votes = {};
                         
-                        room.player.forEach(p => {
-                            if (p.role === "WEREWOLF" && p.alive) ryzu.sendMessage(p.id, { text: `🌙 FASE MALAM - HARI ${room.day}\n\nGunakan .ww kill [nama] untuk membunuh warga` });
-                            if (p.role === "GUARDIAN" && p.alive) ryzu.sendMessage(p.id, { text: `🛡️ FASE MALAM - HARI ${room.day}\n\nGunakan .ww protect [nama] untuk melindungi` });
-                            if (p.role === "SEER" && p.alive && !room.seerUsed[room.day]) ryzu.sendMessage(p.id, { text: `🔮 FASE MALAM - HARI ${room.day}\n\nGunakan .ww ramal [nama] untuk meramal role` });
+                        room.player.forEach(pl => {
+                            if (pl.role === "WEREWOLF" && pl.alive) ryzu.sendMessage(pl.id, { text: `🌙 FASE MALAM - HARI ${room.day}\n\nGunakan .ww kill [nama] untuk membunuh warga` });
+                            if (pl.role === "GUARDIAN" && pl.alive) ryzu.sendMessage(pl.id, { text: `🛡️ FASE MALAM - HARI ${room.day}\n\nGunakan .ww protect [nama] untuk melindungi` });
+                            if (pl.role === "SEER" && pl.alive && !room.seerUsed[room.day]) ryzu.sendMessage(pl.id, { text: `🔮 FASE MALAM - HARI ${room.day}\n\nGunakan .ww ramal [nama] untuk meramal role` });
                         });
                         return;
 
@@ -182,9 +185,9 @@ module.exports = {
                         room.votes = {};
                         room.seerUsed[room.day] = false;
 
-                        let werewolvesAlive = room.player.filter(p => p.role === "WEREWOLF" && p.alive).length;
-                        let villagersAlive = room.player.filter(p => p.role !== "WEREWOLF" && p.alive).length;
-                        let farmerAlive = room.player.filter(p => p.role === "FARMER" && p.alive).length;
+                        let werewolvesAlive = room.player.filter(pl => pl.role === "WEREWOLF" && pl.alive).length;
+                        let villagersAlive = room.player.filter(pl => pl.role !== "WEREWOLF" && pl.alive).length;
+                        let farmerAlive = room.player.filter(pl => pl.role === "FARMER" && pl.alive).length;
 
                         if (werewolvesAlive === 0) return finishGame(room, "villager", reply, ryzu, funcs);
                         if (werewolvesAlive >= villagersAlive) return finishGame(room, "werewolf", reply, ryzu, funcs);
