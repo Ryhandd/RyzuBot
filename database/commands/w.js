@@ -1,5 +1,4 @@
 const fs = require("fs")
-const path = require("path")
 const db = require("../history")
 
 module.exports = {
@@ -7,45 +6,61 @@ module.exports = {
   alias: ["w"],
   execute: async ({ ryzu, from, msg, reply }) => {
 
-    const ctx = msg.message?.extendedTextMessage?.contextInfo
+    let ctx = msg.message?.extendedTextMessage?.contextInfo
     if (!ctx?.stanzaId) return reply("Reply pesan dulu.")
 
     const chatId = msg.key.remoteJid
+    let currentId = ctx.stanzaId
+    let targetMessage = null
 
-    // ambil pesan yg direply
-    const current = db.prepare(`
-      SELECT * FROM messages
-      WHERE id = ?
-    `).get(ctx.stanzaId)
+    while (currentId) {
+      const data = db.prepare(`
+        SELECT * FROM messages
+        WHERE id = ?
+      `).get(currentId)
 
-    if (!current) return reply("❌ Pesan tidak ditemukan.")
+      if (!data) break
 
-    // ambil pesan SEBELUMNYA
-    const before = db.prepare(`
-      SELECT * FROM messages
-      WHERE chat_id = ?
-      AND timestamp < ?
-      ORDER BY timestamp DESC
-      LIMIT 1
-    `).get(chatId, current.timestamp)
+      targetMessage = data
 
-    if (!before) return reply("❌ Tidak ada pesan sebelumnya.")
+      try {
+        const parsed = JSON.parse(data.raw || "{}")
 
-    // ==== KIRIM MEDIA JIKA ADA ====
-    if (before.media_type && before.media_path && fs.existsSync(before.media_path)) {
-      const media = fs.readFileSync(before.media_path)
+        const nextCtx =
+          parsed?.message?.extendedTextMessage?.contextInfo ||
+          parsed?.message?.imageMessage?.contextInfo ||
+          parsed?.message?.videoMessage?.contextInfo
+
+        if (nextCtx?.stanzaId) {
+          currentId = nextCtx.stanzaId
+        } else {
+          break
+        }
+
+      } catch {
+        break
+      }
+    }
+
+    if (!targetMessage) return reply("❌ Pesan tidak ditemukan.")
+
+    if (
+      targetMessage.media_type &&
+      targetMessage.media_path &&
+      fs.existsSync(targetMessage.media_path)
+    ) {
+      const media = fs.readFileSync(targetMessage.media_path)
 
       const payload = {}
-      payload[before.media_type] = media
-      if (before.text) payload.caption = before.text
+      payload[targetMessage.media_type] = media
+      if (targetMessage.text) payload.caption = targetMessage.text
 
       return ryzu.sendMessage(from, payload, { quoted: msg })
     }
 
-    // ==== TEXT ONLY ====
     return ryzu.sendMessage(
       from,
-      { text: before.text || "[Pesan kosong]" },
+      { text: targetMessage.text || "[Pesan kosong]" },
       { quoted: msg }
     )
   }

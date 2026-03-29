@@ -14,7 +14,6 @@ module.exports = {
     const exp = `${user.exp}/${user.level * 500}`
     const isPremium = user.premium ? "💎 Premium" : "👤 Free"
 
-    // Menu per kategori
     const sub = args.length ? args.shift().toLowerCase() : ""
 
     const categories = {
@@ -26,7 +25,6 @@ module.exports = {
       gacha:  "🎰 Gacha",
     }
 
-    // Kalau ada sub-menu
     if (sub && categories[sub]) {
       const menus = {
         rpg: `
@@ -113,11 +111,9 @@ module.exports = {
 ├ ${prefix}translate <en:id teks>
 ├ ${prefix}qr <teks/url>
 ├ ${prefix}calc <ekspresi>
-├ ${prefix}timezone <zona>
 ├ ${prefix}tebakumur <nama>
 ├ ${prefix}tebakgender <nama>
 ├ ${prefix}shorturl <url>
-├ ${prefix}catfact / dogfact
 ├ ${prefix}base64 / encode / decode
 ├ ${prefix}ai / tanya <pertanyaan>
 ├ ${prefix}draw <prompt>
@@ -171,7 +167,6 @@ module.exports = {
       )
     }
 
-    // Menu utama
     const textMenu =
 `╔══════════════════════╗
 ║   🤖  *RYZU BOT* ║

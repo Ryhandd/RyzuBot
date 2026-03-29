@@ -1,4 +1,4 @@
-const Ai4Chat = require('../../scrape/Ai4Chat'); // Pastikan path filenya bener!
+const RyzuAI = require('../../scrape/RyzuAI');
 
 module.exports = {
     name: "ai",
@@ -6,11 +6,10 @@ module.exports = {
     execute: async ({ reply, q, prefix, command }) => {
         if (!q) return reply(`Contoh: ${prefix + command} apa itu coding?`);
 
-        await reply("⏳ Ryzu AI sedang berpikir...");
+        await reply("⏳ RyzuAI sedang berpikir...");
 
         try {
-            // Panggil fungsinya (Pastikan di Ai4Chat.js pake module.exports = function...)
-            let res = await Ai4Chat(q);
+            let res = await RyzuAI(q);
             
             if (res) {
                 await reply(res);
@@ -19,7 +18,7 @@ module.exports = {
             }
         } catch (e) {
             console.error(e);
-            reply("❌ Error di scraper Ai4Chat lu, cek console!");
+            reply("❌ Error!");
         }
     }
 };
