@@ -15,7 +15,7 @@ module.exports = {
     const isPremium = user.premium ? "💎 Premium" : "👤 Free"
 
     // Menu per kategori
-    const sub = args[0]?.toLowerCase()
+    const sub = args?.toLowerCase()
 
     const categories = {
       rpg:    "⚔️ RPG",
@@ -73,11 +73,19 @@ module.exports = {
 ├ ${prefix}judi <bet> <x2-x10>
 └ ${prefix}slot <bet>
 
-🐺 *WEREWOLF*
-┌ ${prefix}ww join
-├ ${prefix}ww start
-├ ${prefix}ww out
-└ ${prefix}cekrole
+🐺 *WEREWOLF GAME*
+┌ ${prefix}ww join <nama> (Join Room)
+├ ${prefix}ww start (Mulai Game)
+├ ${prefix}ww cektim (Status Game)
+├ ${prefix}ww info (Daftar Role)
+├ ${prefix}ww kill @tag 🌙 (Werewolf)
+├ ${prefix}ww protect @tag 🛡️ (Guardian)
+├ ${prefix}ww ramal @tag 🔮 (Seer)
+├ ${prefix}ww vote @tag ☀️ (Siang)
+├ ${prefix}ww next (Lanjut Phase)
+├ ${prefix}ww out / reset
+├ ${prefix}cekrole (Private Chat)
+└ ${prefix}ww leaderboard / lb
 
 ♟️ *CATUR*
 └ ${prefix}chess <elo>`,
@@ -166,7 +174,7 @@ module.exports = {
     // Menu utama
     const textMenu =
 `╔══════════════════════╗
-║   🤖  *RYZU BOT*   ║
+║   🤖  *RYZU BOT* ║
 ╚══════════════════════╝
 
 👋 Halo *${pushname}*!
@@ -179,7 +187,7 @@ module.exports = {
 
 📂 *KATEGORI MENU*
 ┌ ${prefix}menu rpg    — ⚔️ RPG & Ekonomi
-├ ${prefix}menu games  — 🎲 Mini Games
+├ ${prefix}menu games  — 🎲 Mini Games & WW
 ├ ${prefix}menu media  — 🎵 Downloader
 ├ ${prefix}menu tools  — 🧰 Tools & AI
 ├ ${prefix}menu admin  — 👥 Group Admin
@@ -196,8 +204,8 @@ module.exports = {
 
 ━━━━━━━━━━━━━━━━━━━━━━
 💡 Tips: ketik ${prefix}menu <kategori>
-   contoh: *${prefix}menu rpg*
-_Ryzu Bot — by Ryhandd_`
+   contoh: *${prefix}menu games*
+_RyzuBot — by Ryhandd_`
 
     await sendCard({
         ryzu, from, msg,
