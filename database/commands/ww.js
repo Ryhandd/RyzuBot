@@ -9,10 +9,8 @@ module.exports = {
             if (!ryzu.werewolf) ryzu.werewolf = {};
             let room = ryzu.werewolf[from];
 
-            // AMBIL ARGUMEN LANGSUNG DARI ARGS BAWAAN RYZU.JS
-            // Contoh: ".ww join Ryzu" -> args = "join", targetArg = "Ryzu"
-            let cmdArg = args.length ? args.shift().toLowerCase() : ""
-            let targetArg = args.length > 1 ? args.slice(1).join(" ") : "";
+            let cmdArg = args.shift()
+            let targetArg = args.join(" ");
 
             // Override cmdArg kalau user pakai alias (misal: .cekrole)
             if (command === "cekrole") cmdArg = "cekrole";
@@ -66,7 +64,7 @@ module.exports = {
                     if (room.player.find(x => x.id === sender)) return reply("❌ Kamu sudah join.");
                     if (room.player.length >= 10) return reply("❌ Sudah penuh (Max 10).");
                     
-                    let finalName = targetArg || sender.split("@");
+                    let finalName = targetArg || sender.split("@")[0];
                     room.player.push({ id: sender, role: "", alive: true, nickname: finalName });
                     return reply(`✅ Berhasil join game!\n\n👥 Peserta: ${room.player.length}/10\n${room.player.map((pl, i) => `${i + 1}. ${pl.nickname}`).join("\n")}\n\n_Leader: .ww start_`);
 
