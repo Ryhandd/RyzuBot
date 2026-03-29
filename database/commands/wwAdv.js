@@ -50,7 +50,7 @@ function getLeaderboard(type = "total_wins") {
         players.sort((a, b) => b.wins - a.wins);
     }
     
-    return players.slice(0, 10);
+    return players;
 }
 
 // Implementasi di command:

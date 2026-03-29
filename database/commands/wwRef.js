@@ -363,6 +363,11 @@ ERROR MESSAGES YANG SUDAH IMPLEMENTED:
 */
 
 module.exports = { 
+    name: "werewolf-ref",
+    command: ["wwref", "wwguide"],
     description: "Werewolf Game Reference Documentation",
-    version: "2.0.0"
+    version: "2.0.0",
+    execute: async (m, { args, reply }) => {
+        reply("Ini adalah dokumen referensi Werewolf.");
+    }
 };
