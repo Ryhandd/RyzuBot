@@ -1,10 +1,13 @@
+const { updatePlayerStats, getBalancedRoles } = require('../src/lib/wwUtils'); 
+
 module.exports = {
     name: "ww",
-    alias: ["werewolf", "cekrole", "cektim", "wwstatus", "wwhelp"],
+    alias: ["werewolf", "cekrole", "cektim"],
+    description: "Main Werewolf Game",
     execute: async ({ ryzu, from, sender, args, command, reply, funcs }) => {
         if (!ryzu.werewolf) ryzu.werewolf = {};
         let room = ryzu.werewolf[from];
-
+        
         // --- FITUR CEK ROLE ---
         if (command === "cekrole") {
             if (!room || room.status !== "playing") return reply("❌ Tidak ada game WW yang sedang berlangsung.");
@@ -71,7 +74,7 @@ module.exports = {
             return reply(text);
         }
 
-        if (args[0] === "start") {
+        if (args === "start") {
             if (!room || room.player.length < 4) return reply("❌ Minimal 4 pemain untuk memulai. Sekarang: " + (room?.player.length || 0));
             if (room.status === "playing") return reply("❌ Game sudah jalan.");
 
@@ -82,8 +85,7 @@ module.exports = {
             room.seerUsed = {};
             room.guardianProtected = {};
 
-            // Role Distribution
-            let roles = [];
+            let roles = getBalancedRoles(room.player.length);
             let playerCount = room.player.length;
 
             if (playerCount >= 4) roles.push("WEREWOLF");
@@ -92,26 +94,27 @@ module.exports = {
             if (playerCount >= 7) roles.push("FARMER");
             if (playerCount >= 8) roles.push("WEREWOLF");
             
-            // Fill the rest with VILLAGER
             while (roles.length < playerCount) {
                 roles.push("VILLAGER");
             }
 
             let shuffle = roles.sort(() => Math.random() - 0.5);
             room.player.forEach((p, i) => {
-                p.role = shuffle[i] || "VILLAGER";
-                p.alive = true;
-                
-                let roleDesc = getRoleDescription(p.role);
-                ryzu.sendMessage(p.id, { 
-                    text: `🎮 *GAME WEREWOLF DIMULAI!*\n━━━━━━━━━━━━━━━━━\n\n🎭 Role Kamu: *${p.role}*\n${roleDesc}\n\n━━━━━━━━━━━━━━━━━\nℹ️ Cek group untuk info lebih lanjut!\n_Jangan bagikan role mu!_` 
-                });
+                p.role = shuffle[i];
+                ryzu.sendMessage(p.id, { text: `🎭 Role kamu: *${p.role}*` });
             });
 
-            let roleList = room.player.map(p => `${p.nickname}: ${p.role}`).join("\n");
-            reply(`🎮 *GAME DIMULAI!*\n\n🌅 FASE SIANG - HARI 1\n\n📋 Distribusi Role (Leader only):\n${roleList}\n\n━━━━━━━━━━━━━━━━━\nℹ️ Gunakan perintah:\n.ww kill @user (Werewolf malam)\n.ww protect @user (Guardian malam)\n.ww ramal @user (Seer malam)\n.ww vote @user (Voting siang)\n.ww next (Lanjut ke fase berikutnya)\n.ww cektim (Cek status pemain)`);
+            return reply("🎮 Game Dimulai! Cek chat pribadi untuk role masing-masing.");
+        }
+        if (args[0] === "start") {
+            
         }
 
+        if (args === "leaderboard" || args === "lb") {
+            // Logika ambil data dari global.rpg...
+            return reply("🏆 Menampilkan Leaderboard...");
+        }
+        
         // --- FITUR KILL (Werewolf) ---
         if (args[0] === "kill") {
             if (!room || room.status !== "playing") return reply("❌ Tidak ada game jalan.");

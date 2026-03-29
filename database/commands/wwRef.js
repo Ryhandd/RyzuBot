@@ -363,7 +363,7 @@ ERROR MESSAGES YANG SUDAH IMPLEMENTED:
 */
 
 module.exports = { 
-    name: "werewolf-ref",
+    name: "wwRef",
     command: ["wwref", "wwguide"],
     description: "Werewolf Game Reference Documentation",
     version: "2.0.0",
