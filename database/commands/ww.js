@@ -9,17 +9,30 @@ module.exports = {
             if (!ryzu.werewolf) ryzu.werewolf = {};
             let room = ryzu.werewolf[from];
 
-            // Tangkap perintah dan target dengan aman
-            let cmdArg = (args && args.length > 0) ? args.toLowerCase() : "";
-            let targetArg = (args && args.length > 1) ? args.slice(1).join(" ") : "";
+            // 1. PENGAMANAN ARGS SANGAT KETAT
+            let cmdArg = "";
+            let targetArg = "";
 
-            // Override cmdArg kalau user pakai alias (misal: .cekrole)
+            if (Array.isArray(args) && args.length > 0) {
+                // Pastikan args adalah string sebelum di-toLowerCase
+                if (typeof args === 'string') {
+                    cmdArg = args.toLowerCase();
+                } else {
+                    cmdArg = String(args).toLowerCase();
+                }
+            }
+
+            if (Array.isArray(args) && args.length > 1) {
+                targetArg = args.slice(1).join(" ").trim();
+            }
+
+            // 2. OVERRIDE JIKA MENGGUNAKAN ALIAS
             if (command === "cekrole") cmdArg = "cekrole";
             if (command === "cektim" || command === "wwstatus") cmdArg = "cektim";
             if (command === "wwhelp") cmdArg = "info";
 
-            // JIKA KOSONG (Cuma ketik .ww), TAMPILKAN MENU
-            if (!cmdArg) {
+            // 3. JIKA KOSONG (Cuma ketik .ww), TAMPILKAN MENU
+            if (!cmdArg || cmdArg === "") {
                 return reply(`📖 *PERINTAH WEREWOLF*\n\n.ww join [nama] - Join game\n.ww start - Mulai game\n.ww cektim - Lihat pemain\n.ww cekrole - Cek role (PC)\n.ww info - Cara main\n.ww lb - Leaderboard\n.ww kill [nama] - Bunuh (Werewolf)\n.ww protect [nama] - Lindungi (Guardian)\n.ww ramal [nama] - Ramal (Seer)\n.ww vote [nama] - Vote (Siang)\n.ww next - Lanjut phase\n.ww out - Keluar\n.ww reset - Reset`);
             }
 
@@ -204,7 +217,7 @@ module.exports = {
             
         } catch (error) {
             console.error("[ERROR WW]:", error);
-            reply("❌ Terjadi kesalahan pada sistem Werewolf.");
+            reply(`❌ Terjadi kesalahan: ${error.message}`);
         }
     }
 };
