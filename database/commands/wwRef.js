@@ -364,7 +364,7 @@ ERROR MESSAGES YANG SUDAH IMPLEMENTED:
 
 module.exports = { 
     name: "wwRef",
-    command: ["wwref", "wwguide"],
+    command: ["ww rule", "ww guide", "ww help"],
     description: "Werewolf Game Reference Documentation",
     version: "2.0.0",
     execute: async (m, { args, reply }) => {

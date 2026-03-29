@@ -359,6 +359,7 @@ function handleCastling(game, color, notation) {
 }
 
 module.exports = {
+  name: 'chessGame',
   startChessGame,
   makeMove
 }

@@ -286,6 +286,7 @@ function hasAnyLegalMove(board, color) {
 }
 
 module.exports = {
+  name: 'chessMoves',
   parseSAN,
   parseMove,
   pawnMoves,

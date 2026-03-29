@@ -15,7 +15,7 @@ module.exports = {
     const isPremium = user.premium ? "💎 Premium" : "👤 Free"
 
     // Menu per kategori
-    const sub = args?.toLowerCase()
+    const sub = isCmd ? args.shift().toLowerCase() : ""
 
     const categories = {
       rpg:    "⚔️ RPG",

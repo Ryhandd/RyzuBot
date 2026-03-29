@@ -36,4 +36,4 @@ function renderBoard(board) {
   return out
 }
 
-module.exports = { renderBoard }
+module.exports = { name: 'chessRender', renderBoard }

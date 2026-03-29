@@ -28,6 +28,7 @@ function pickMove(moves, elo) {
 }
 
 module.exports = {
+  name: 'chessBot',
   evaluateBoard,
   pickMove
 }

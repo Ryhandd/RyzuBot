@@ -16,4 +16,4 @@ function createInitialBoard() {
   return board
 }
 
-module.exports = { createInitialBoard }
+module.exports = { name: 'chessBoard', createInitialBoard }

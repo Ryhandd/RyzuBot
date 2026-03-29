@@ -13,3 +13,5 @@ function minimax(board, depth, isMax, color) {
   }
   return best
 }
+
+module.exports = { name: 'chessEval'}

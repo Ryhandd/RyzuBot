@@ -10,6 +10,7 @@ function coordToSquare(file, rank) {
 }
 
 module.exports = {
+  name: 'chessUtils',
   squareToCoord,
   coordToSquare
 }
