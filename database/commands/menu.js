@@ -7,13 +7,6 @@ module.exports = {
   execute: async ({ ryzu, from, msg, reply, pushname, prefix, sender, funcs, args }) => {
     funcs.checkUser(sender)
     const user = global.rpg[sender]
-
-    const role = getRole(user.level)
-    const money = user.money.toLocaleString("id-ID")
-    const hp = `${user.health}/${user.maxHealth}`
-    const exp = `${user.exp}/${user.level * 500}`
-    const isPremium = user.premium ? "💎 Premium" : "👤 Free"
-
     const sub = args.length ? args.shift().toLowerCase() : ""
 
     const categories = {
@@ -240,8 +233,8 @@ _RyzuBot — by Ryhandd_`
     await sendCard({
         ryzu, from, msg,
         text: textMenu,
-        title: "RYZU BOT MENU",
-        body: `Halo ${pushname} • Level ${user.level}`,
+        title: "RyzuBot Menu",
+        body: `Halo ${pushname}`,
         image: "https://files.catbox.moe/cz6tt0.jpg"
     })
   }
