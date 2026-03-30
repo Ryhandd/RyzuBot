@@ -54,7 +54,7 @@ const funcs = {
   saveRPG: async (userId) => {
     try {
       if (userId && global.rpg[userId]) {
-        await User.findByIdAndUpdate(userId, { _id: userId, data: global.rpg[userId] }, { upsert: true, new: true })
+        await User.findByIdAndUpdate(userId, { _id: userId, data: global.rpg[userId] }, { upsert: true, returnDocument: 'after' })
       } else {
         for (const [id, data] of Object.entries(global.rpg)) {
           await User.findByIdAndUpdate(id, { _id: id, data }, { upsert: true })
