@@ -1,7 +1,8 @@
 const axios = require("axios")
 
 module.exports = {
-  name: "draw",
+  name: "aiimg",
+  alias: ["draw"],
   execute: async ({ ryzu, from, q, reply, msg }) => {
     if (!q) return reply("Mau digambarin apa?")
 

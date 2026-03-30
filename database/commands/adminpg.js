@@ -3,10 +3,9 @@ const { safeNum, addMoney, addExp, MAX_SAFE } = require('../../lib/rpgUtils');
 module.exports = {
     name: "adminrpg",
     alias: [
-        "addmoney", "addexp", "addlevel",
-        "setmoney", "setexp", "setlevel",
-        "setpremium", "delpremium",
-        "setafk", "delafk"
+        "addpremium","addmoney", "addexp", "addlevel",
+        "setpremium", "setmoney", "setexp", "setlevel", "setafk",
+        "delpremium", "delafk"
     ],
     execute: async ({ isCreator, command, args, reply, funcs, mentionUser, quotedUser, ryzu, from, msg }) => {
 
@@ -60,6 +59,36 @@ module.exports = {
             await funcs.saveRPG(target);
             return reply(
                 `✅ @${target.split('@')[0]} Premium ${hari} hari.\n` +
+                `Berakhir: ${tgl}`
+            );
+        }
+
+        if (command === "addpremium") {
+            const durasiArg = args.find(a => Number.isFinite(Number(a)));
+            
+            if (!durasiArg) 
+                return reply("❌ Masukkan jumlah hari!\nContoh: *.addpremium @user 7*");
+
+            const hari = safeNum(durasiArg);
+            const ms = hari * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+
+            if (tUser.premiumTime === -1) {
+                return reply("✅ User tersebut sudah Premium Permanen.");
+            }
+
+            if (tUser.premium && tUser.premiumTime > now) {
+                tUser.premiumTime += ms;
+            } else {
+                tUser.premiumTime = now + ms;
+            }
+
+            tUser.premium = true;
+            await funcs.saveRPG(target);
+
+            const tgl = new Date(tUser.premiumTime).toLocaleString('id-ID');
+            return reply(
+                `✅ Durasi premium @${target.split('@')} bertambah ${hari} hari\n` +
                 `Berakhir: ${tgl}`
             );
         }

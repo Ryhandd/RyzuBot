@@ -5,24 +5,20 @@ module.exports = {
     async execute(ctx) {
         const { m, args, reply, user, funcs } = ctx;
         
-        // Cek apakah user sudah terdaftar
-        if (user.registered) return reply("Lu udah terdaftar sebelumnya, Bro!");
+        if (user.registered) return reply("Kamu sudah terdaftar sebelumnya");
         
-        // Validasi input nama
-        if (!args[0]) return reply("Format salah! Contoh: *.register Ryhand*");
+        if (!args[0]) return reply("Format salah! Contoh: *.register Rayhand*");
         
         let nama = args.join(" ");
         if (nama.length > 20) return reply("Nama kepanjangan, maksimal 20 karakter!");
 
-        // Update data user
         user.name = nama;
         user.registered = true;
         user.regTime = Date.now();
-        user.money += 10000; // Kasih bonus pendaftaran
+        user.money += 10000;
 
         reply(`✅ *PENDAFTARAN BERHASIL!*\n\n• Nama: ${nama}\n• Hadiah: 10000 Money\n• Limit: ${user.limit}\n\nSekarang lu udah bisa akses semua fitur bot!`);
         
-        // Simpan ke database
         await funcs.saveRPG(sender);
     }
 }

@@ -23,18 +23,24 @@ module.exports = {
       tools:  "🧰 Tools",
       admin:  "👥 Admin",
       gacha:  "🎰 Gacha",
+      fun:    "🎭 Fun",
     }
 
     if (sub && categories[sub]) {
       const menus = {
         rpg: `
+👤 *PROFILE*
+┌ ${prefix}register / daftar <nama>
+├ ${prefix}me / profile / inv
+├ ${prefix}limit
+└ ${prefix}kolam
+
 ⚔️ *RPG CORE*
 ┌ ${prefix}adventure / adv
 ├ ${prefix}mining / tambang
 ├ ${prefix}fishing / mancing
 ├ ${prefix}hunt / berburu
-├ ${prefix}heal
-└ ${prefix}me / profile / inv
+└ ${prefix}heal
 
 📊 *PROGRESSION*
 ┌ ${prefix}craft <sword|armor|rod>
@@ -46,7 +52,7 @@ module.exports = {
 💰 *EKONOMI*
 ┌ ${prefix}money
 ├ ${prefix}shop / buy / sell
-├ ${prefix}tf <item> <jml> @tag
+├ ${prefix}tf <item> <jumlah> @tag
 ├ ${prefix}invest / tarik
 ├ ${prefix}maling @tag
 ├ ${prefix}rampok <nominal>
@@ -104,19 +110,20 @@ module.exports = {
 
         tools: `
 🧰 *TOOLS*
-┌ ${prefix}cuaca <kota>
+┌ ${prefix}ping
+├ ${prefix}viewonce
+├ ${prefix}cuaca <kota>
 ├ ${prefix}kurs <100 USD ke IDR>
 ├ ${prefix}quote / motivasi
 ├ ${prefix}kamus <kata>
 ├ ${prefix}translate <en:id teks>
 ├ ${prefix}qr <teks/url>
 ├ ${prefix}calc <ekspresi>
-├ ${prefix}tebakumur <nama>
-├ ${prefix}tebakgender <nama>
 ├ ${prefix}shorturl <url>
 ├ ${prefix}base64 / encode / decode
+├ ${prefix}biner
 ├ ${prefix}ai / tanya <pertanyaan>
-├ ${prefix}draw <prompt>
+├ ${prefix}aiimg <prompt>
 ├ ${prefix}remini / hd
 └ ${prefix}say <teks>
 
@@ -136,9 +143,17 @@ module.exports = {
 └ ${prefix}del (reply pesan)
 
 👑 *OWNER ONLY*
-┌ ${prefix}addmoney @tag <jml>
+┌ ${prefix}addpremium @tag <hari>
+├ ${prefix}addmoney @tag <jumlah>
+├ ${prefix}addexp @tag <jumlah>
+├ ${prefix}addlevel @tag <jumlah>
 ├ ${prefix}setpremium @tag <hari|permanen>
+├ ${prefix}setmoney @tag <jumlah>
+├ ${prefix}setexp @tag <jumlah>
+├ ${prefix}setlevel @tag <jumlah>
+├ ${prefix}setafk @tag <jam>
 ├ ${prefix}delpremium @tag
+├ ${prefix}delafk @tag <jam>
 └ ${prefix}listpremium`,
 
         gacha: `
@@ -157,7 +172,18 @@ module.exports = {
 ├ Rare     : 25%
 ├ Epic     : 14%
 ├ Legendary: 5%
-└ Limited  : 1% (pity 50)`
+└ Limited  : 1% (pity 50)`,
+
+        fun: `
+🎭 *FUN RANDOM*
+┌ ${prefix}apakah <pertanyaan>
+├ ${prefix}kerangajaib <pertanyaan>
+├ ${prefix}siapa
+├ ${prefix}seberapagay [nama]
+├ ${prefix}seberapalesbi [nama]
+├ ${prefix}tebakumur <nama>
+└ ${prefix}tebakgender <nama>`
+
       }
 
       return reply(
@@ -185,13 +211,15 @@ module.exports = {
 ├ ${prefix}menu games  — 🎲 Mini Games & WW
 ├ ${prefix}menu media  — 🎵 Downloader
 ├ ${prefix}menu tools  — 🧰 Tools & AI
+├ ${prefix}menu fun    — 🎭 Random & Absurd
 ├ ${prefix}menu admin  — 👥 Group Admin
 └ ${prefix}menu gacha  — 🎰 Gacha System
 
 ━━━━━━━━━━━━━━━━━━━━━━
 
 ⚡ *SHORTCUT*
-┌ ${prefix}me       — Profile & Inventory
+┌ ${prefix}owner    — Kontak pemilik bot
+├ ${prefix}me       — Profile & Inventory
 ├ ${prefix}daily    — Klaim hadiah harian
 ├ ${prefix}shop     — Lihat toko
 ├ ${prefix}ping     — Cek kecepatan bot

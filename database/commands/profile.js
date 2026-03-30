@@ -47,7 +47,8 @@ module.exports = {
         txt += `🏅 Role: ${role} (Lv.${u.level})\n`;
         txt += `💰 Money: Rp ${formatMoney(u.money)}\n`;
         txt += `✨ EXP: ${f(u.exp)}\n`;
-        txt += `❤️ HP: ${u.health} / ${u.maxHealth}\n\n`;
+        txt += `❤️ HP: ${u.health} / ${u.maxHealth}\n`;
+        txt += `🔋 Limit: ${limitText} [${isPremium}]\n\n`;
 
         txt += `⚔️ *EQUIPMENT*\n`;
         txt += `   ├ Sword Tier: ${u.sword || 0}\n`;

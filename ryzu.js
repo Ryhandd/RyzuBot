@@ -551,8 +551,12 @@ module.exports = async function ryzuHandler(ryzu, m) {
       if (!cmd) return
 
       const user = global.rpg[senderId]
+      const whiteList = ["register", "reg", "daftar", "help", "menu", "rules", "owner", "s", "ping", "runtime", "speed", "start", "shop", "buy", "sell", "money", "profile", "me", "inv", "afk", "unreg", "unregister", "tictactoe", "limit", "ceklimit", "sisalimit"]
       const isPremium = user.premium || isCreator
-      const whiteList = ["register", "reg", "daftar", "help", "menu", "rules", "owner", "s", "ping", "start"]
+      
+      if (!user.registered && !whiteList.includes(commandName)) {
+        return reply("Anda belum terdaftar.\nSilahkan daftar dengan .daftar nama")
+      }
 
       if (!isPremium && !whiteList.includes(commandName) && user.limit <= 0) {
         return reply(`❌ *LIMIT HABIS*\n\nBeli limit di *.shop* atau upgrade ke *Premium*.`)
@@ -580,7 +584,14 @@ module.exports = async function ryzuHandler(ryzu, m) {
         await cmd.execute(ctx)
         if (!whiteList.includes(commandName)) {
           user.exp += 10
-          if (!isPremium) user.limit -= 1
+          
+          if (!isPremium) {
+            user.limit -= 1
+            await ryzu.sendMessage(from, { 
+              text: "*Limit -1*"
+            }).catch(() => {}) 
+          }
+          
           funcs.cekLevel(senderId)
           funcs.saveRPG(senderId).catch(() => {})
         }
