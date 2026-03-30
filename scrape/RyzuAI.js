@@ -1,5 +1,5 @@
 const axios = require("axios");
-const DeepSeekAI = require("../DeepSeek");
+const DeepSeekAI = require("./Deepseek");
 
 async function RyzuAI(prompt) {
 
