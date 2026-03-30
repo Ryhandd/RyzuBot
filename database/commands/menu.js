@@ -177,10 +177,17 @@ module.exports = {
         fun: `
 🎭 *FUN RANDOM*
 ┌ ${prefix}apakah <pertanyaan>
+├ ${prefix}iq <nama>
 ├ ${prefix}kerangajaib <pertanyaan>
 ├ ${prefix}siapa
-├ ${prefix}seberapagay [nama]
-├ ${prefix}seberapalesbi [nama]
+├ ${prefix}seberapagay <nama>
+├ ${prefix}seberapalesbi <nama>
+├ ${prefix}seberapaganteng <nama>
+├ ${prefix}seberapacantik <nama>
+├ ${prefix}seberapaimut <nama>
+├ ${prefix}seberapapintar <nama>
+├ ${prefix}seberapatolol <nama>
+├ ${prefix}seberapagila <nama>
 ├ ${prefix}tebakumur <nama>
 └ ${prefix}tebakgender <nama>`
 
