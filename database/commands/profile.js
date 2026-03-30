@@ -97,7 +97,7 @@ module.exports = {
             msg,
             text: txt,
             title: "RPG PLAYER PROFILE",
-            body: `${name} • Lv ${u.level}`,
+            body: `${name}`,
             image: pp,
             target
         });
