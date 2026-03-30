@@ -72,7 +72,10 @@ module.exports = {
         txt += `   └ 💎 Diamond: ${f(u.diamond)}\n\n`;
 
         txt += `📦 *LOOT BOX*\n`;
-        txt += `   └ C:${f(u.common)} | U:${f(u.uncommon)} | M:${f(u.mythic)} | L:${f(u.legendary)}\n\n`;
+        txt += `   ├ Common:${f(u.common)}`
+        txt += `   ├ Uncommon:${f(u.uncommon)}`
+        txt += `   ├ Mythic:${f(u.mythic)}`
+        txt += `   └ Legendary:${f(u.legendary)}\n\n`;
 
         txt += `🎰 *GACHA STATUS*\n`;
         txt += `   ├ 🎟️ Ticket: ${u.gacha_ticket || 0}\n`;

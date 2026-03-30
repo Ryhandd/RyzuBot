@@ -1,4 +1,4 @@
-const { handleGachaItem } = require("../../lib/gachaConvert");
+const { createItem } = require("../../lib/inventory");
 const { safeNum, addMoney } = require("../../lib/rpgUtils");
 
 module.exports = {
@@ -8,10 +8,11 @@ module.exports = {
 
         const user = global.rpg[sender];
 
-        // ===== SANITIZE INIT =====
         user.gacha_ticket = safeNum(user.gacha_ticket);
         user.gacha_pity = safeNum(user.gacha_pity);
         user.money = safeNum(user.money);
+
+        user.inventory ||= [];
         user.gacha_history ||= [];
 
         const pullCount = args[0] === "10" ? 10 : 1;
@@ -19,15 +20,13 @@ module.exports = {
         const totalPull = pullCount + bonusPull;
 
         if (user.gacha_ticket < pullCount)
-            return reply("❌ Tiket gacha kamu tidak cukup.");
+            return reply("❌ Tiket tidak cukup.");
 
         user.gacha_ticket -= pullCount;
 
         let results = [];
-        let messages = [];
         let gotRareItem = false;
 
-        // ===== RARITY ROLL + PITY =====
         const rollRarity = () => {
             user.gacha_pity++;
 
@@ -42,32 +41,22 @@ module.exports = {
             return "limited";
         };
 
-        // ===== GACHA LOOP =====
         for (let i = 0; i < totalPull; i++) {
             const rarity = rollRarity();
             let reward = "";
 
             switch (rarity) {
                 case "common":
-                    reward = Math.random() < 0.5
-                        ? "potion"
-                        : "gacha_ticket";
+                    reward = Math.random() < 0.5 ? "potion" : "gacha_ticket";
                     break;
 
-                case "rare": {
-                    const r = Math.random();
-                    reward = r < 0.34
-                        ? "mining_charm"
-                        : r < 0.67
-                            ? "fishing_charm"
-                            : "hunter_charm";
+                case "rare":
+                    reward = ["mining_charm", "fishing_charm", "hunter_charm"]
+                        [Math.floor(Math.random() * 3)];
                     break;
-                }
 
                 case "epic":
-                    reward = Math.random() < 0.5
-                        ? "pet_wolf"
-                        : "adventure_badge";
+                    reward = Math.random() < 0.5 ? "pet_wolf" : "adventure_badge";
                     break;
 
                 case "legendary":
@@ -77,25 +66,16 @@ module.exports = {
                     break;
 
                 case "limited":
-                    reward = user.golden_emblem
-                        ? "pet_dragon"
-                        : "golden_emblem";
+                    reward = Math.random() < 0.5 ? "golden_emblem" : "ancient_relic";
                     user.gacha_pity = 0;
                     gotRareItem = true;
                     break;
             }
 
-            // ===== HANDLE ITEM =====
-            const gachaRes = handleGachaItem(user, reward, rarity);
+            const itemObj = createItem(reward, rarity);
+            user.inventory.push(itemObj);
 
-            // 🔒 JIKA ADA KONVERSI MONEY
-            if (gachaRes?.money)
-                addMoney(user, gachaRes.money);
-
-            if (gachaRes?.message)
-                messages.push(gachaRes.message);
-
-            results.push({ rarity, reward });
+            results.push(itemObj);
 
             user.gacha_history.unshift({
                 rarity,
@@ -109,27 +89,19 @@ module.exports = {
 
         await funcs.saveRPG(sender);
 
-        // ===== BUILD MESSAGE =====
         let text = `🎰 *GACHA RESULT*\n`;
-        text += `🎟️ Pull: ${pullCount}x`;
-        text += bonusPull ? ` (+1 Bonus)\n` : `\n`;
-
+        text += `🎟️ Pull: ${pullCount}${bonusPull ? " (+1)" : ""}\n`;
         text += `📉 Pity: ${user.gacha_pity}/50\n\n`;
 
-        results.forEach((r, i) => {
-            text += `${i + 1}. [${r.rarity.toUpperCase()}] ${r.reward}\n`;
+        results.forEach((item, i) => {
+            text += `${i + 1}. [${item.rarity.toUpperCase()}] ${item.name} (${item.durability})\n`;
         });
 
         if (gotRareItem)
-            text += `\n🔥 *ITEM LANGKA DIDAPAT!*`;
+            text += `\n🔥 ITEM LANGKA DIDAPAT!`;
 
         text += `\n🎟️ Sisa Ticket: ${user.gacha_ticket}`;
 
-        if (messages.length) {
-            text += `\n\n💱 *Konversi Duplikat*\n`;
-            messages.forEach(m => text += `- ${m}\n`);
-        }
-
-        return reply(text);
+        reply(text);
     }
 };
