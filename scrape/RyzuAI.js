@@ -1,9 +1,9 @@
 const axios = require("axios");
-const DeepSeekAI = require("../../scrape/DeepSeek");
+const DeepSeekAI = require("../DeepSeek");
 
 async function RyzuAI(prompt) {
 
-    // 1. GROQ
+    // GROQ
     try {
         const res = await axios.post(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -19,13 +19,13 @@ async function RyzuAI(prompt) {
             }
         );
 
-        return res.data.choices[0].message.content;
+        return res.data?.choices?.[0]?.message?.content;
 
     } catch (err) {
         console.error("GROQ ERROR:", err.response?.data || err.message);
     }
 
-    // 2. OPENROUTER
+    // OPENROUTER
     try {
         const res = await axios.post(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -41,13 +41,13 @@ async function RyzuAI(prompt) {
             }
         );
 
-        return res.data.choices[0].message.content;
+        return res.data?.choices?.[0]?.message?.content;
 
     } catch (err) {
         console.error("OPENROUTER ERROR:", err.response?.data || err.message);
     }
 
-    // 3. DEEPSEEK
+    // DEEPSEEK
     try {
         const res = await DeepSeekAI(prompt);
         if (res) return res;
@@ -55,7 +55,7 @@ async function RyzuAI(prompt) {
         console.error("DEEPSEEK ERROR:", err.message);
     }
 
-    return "⚠️ AI lagi error semua. Coba lagi nanti.";
+    return null;
 }
 
 module.exports = RyzuAI;
