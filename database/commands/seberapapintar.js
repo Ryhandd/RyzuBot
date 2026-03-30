@@ -1,4 +1,4 @@
-const brainResponses = [
+const responses = [
   "dihitung berdasarkan logika yang sempat hilang",
   "otak terdeteksi sedang buffering",
   "hasil ini dipengaruhi WiFi mental",
@@ -11,7 +11,11 @@ module.exports = {
   alias: ["pintar"],
 
   execute: async ({ q, reply }) => {
-    const { persen, note } = randomRate(brainResponses)
+    let persen = Math.floor(Math.random() * 101)
+
+    if (persen > 90) persen = 90 + Math.floor(Math.random() * 10)
+
+    const note = responses[Math.floor(Math.random() * responses.length)]
 
     return reply(
       `🧠 *SEBERAPA PINTAR*\n\n` +

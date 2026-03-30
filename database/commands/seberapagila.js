@@ -1,4 +1,4 @@
-const crazyResponses = [
+const responses = [
   "tingkat kegilaan terdeteksi melebihi batas normal",
   "logika sudah meninggalkan sistem",
   "hasil ini membuat psikolog menyerah",
@@ -11,7 +11,11 @@ module.exports = {
   alias: ["gila"],
 
   execute: async ({ q, reply }) => {
-    const { persen, note } = randomRate(crazyResponses)
+    let persen = Math.floor(Math.random() * 101)
+
+    if (persen > 90) persen = 90 + Math.floor(Math.random() * 10)
+
+    const note = responses[Math.floor(Math.random() * responses.length)]
 
     return reply(
       `🤪 *SEBERAPA GILA*\n\n` +

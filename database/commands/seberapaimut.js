@@ -1,4 +1,4 @@
-const cuteResponses = [
+const responses = [
   "dikonfirmasi oleh standar keimutan global",
   "kucing terdekat menyetujui hasil ini",
   "tingkat keimutan menyebabkan orang ingin cubit",
@@ -11,7 +11,11 @@ module.exports = {
   alias: ["imut"],
 
   execute: async ({ q, reply }) => {
-    const { persen, note } = randomRate(cuteResponses)
+    let persen = Math.floor(Math.random() * 101)
+
+    if (persen > 90) persen = 90 + Math.floor(Math.random() * 10)
+
+    const note = responses[Math.floor(Math.random() * responses.length)]
 
     return reply(
       `🐥 *SEBERAPA IMUT*\n\n` +
