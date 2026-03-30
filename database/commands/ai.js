@@ -12,7 +12,8 @@ module.exports = {
             let res = await RyzuAI(q);
             
             if (res) {
-                await reply(res);
+                const cleanText = res.replace(/[\*#]/g, "");
+                await reply(cleanText); 
             } else {
                 await reply("AI nggak kasih respon, coba lagi.");
             }
