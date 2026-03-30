@@ -233,7 +233,7 @@ _RyzuBot — by Ryhandd_`
     await sendCard({
         ryzu, from, msg,
         text: textMenu,
-        title: "RyzuBot Menu",
+        title: "RYZUBOT MENU",
         body: `Halo ${pushname}`,
         image: "https://files.catbox.moe/cz6tt0.jpg"
     })
