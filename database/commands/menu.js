@@ -1,4 +1,3 @@
-const getRole = require('../../lib/role')
 const sendCard = require('../../lib/sendCard')
 
 module.exports = {
@@ -199,10 +198,6 @@ module.exports = {
 ╚══════════════════════╝
 
 👋 Halo *${pushname}*!
-🏅 Role: *${role}* | Level *${user.level}*
-❤️ HP: *${hp}* | ✨ EXP: *${exp}*
-💰 Money: *Rp ${money}*
-🔋 Limit: *${user.limit}* | ${isPremium}
 
 ━━━━━━━━━━━━━━━━━━━━━━
 
