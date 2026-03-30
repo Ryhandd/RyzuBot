@@ -1,7 +1,7 @@
 module.exports = {
     name: "owner",
     alias: ["own"],
-    execute: async ({ ryzu, m }) => {
+    execute: async ({ ryzu, msg }) => {
         const ownerNumber = "628971614687";
 
         const vcard = `
@@ -12,11 +12,11 @@ TEL;type=CELL;type=VOICE;waid=${ownerNumber}:${ownerNumber}
 END:VCARD
         `.trim();
 
-        await ryzu.sendMessage(m.chat, {
+        await ryzu.sendMessage(msg.key.remoteJid, {
             contacts: {
                 displayName: "Owner Bot",
                 contacts: [{ vcard }]
             }
-        }, { quoted: m });
+        }, { quoted: msg });
     }
 };
