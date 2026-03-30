@@ -40,7 +40,8 @@ module.exports = {
         // ===== GACHA SUMMARY =====
         const gachaCount = (u.gacha_history || []).length;
         const lastPull = u.gacha_history?.[0];
-        const limitText = user.premium ? "Infinity (Premium 💎)" : user.limit;
+        const limitText = u.premium ? "Infinity (Premium 💎)" : u.limit;
+        const isPremium = u.premium ? "💎 Premium" : "👤 Free";
 
         // ===== PROFILE TEXT =====
         let txt = `👤 *PROFILE CARD*\n`;
