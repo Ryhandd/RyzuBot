@@ -44,7 +44,7 @@ module.exports = {
         caption += `🏳️ Ketik *nyerah* untuk menyerah`;
 
         return ryzu.sendMessage(from, {
-            image: { url: soal.img },
+            image: { url: soal.soal },
             caption
         }, { quoted: msg });
     }

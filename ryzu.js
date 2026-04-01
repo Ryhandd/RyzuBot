@@ -534,6 +534,12 @@ module.exports = async function ryzuHandler(ryzu, m) {
             if (room.timeout) clearTimeout(room.timeout)
             delete ryzu.game[from]
             funcs.saveRPG(senderId).catch(() => {})
+            if (tipeGame === 'tebakheromlbb') {
+                return ryzu.sendMessage(from, { 
+                    image: { url: imgJawaban }, 
+                    caption: `✅ *BENAR!*\n\n💰 +${money} Money\n✨ +${exp} EXP${up ? "\n🎊 LEVEL UP!" : ""}` 
+                }, { quoted: msg })
+            }
             return reply(`✅ *BENAR!*\n💰 +${money} Money\n✨ +${exp} EXP${up ? "\n🎊 LEVEL UP!" : ""}`)
           }
         }
