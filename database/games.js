@@ -62709,7 +62709,15 @@ const dbMlbb = [
         "img": "https://files.catbox.moe/eqhig7.png",
         "soal": "https://files.catbox.moe/88c20u.png",
         "role": "Support"
-    }
+    },
+    {
+        "name": [
+            "Lapu lapu",
+        ],
+        "img": "https://files.catbox.moe/1r2a1v.png",
+        "soal": "https://files.catbox.moe/72pmfe.png",
+        "role": "Assassin"
+    },
 ]
 
 module.exports = {

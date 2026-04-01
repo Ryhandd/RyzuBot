@@ -10,6 +10,20 @@ const { createSticker, buildExifBuffer, injectExifChunkManual } = require("../..
 // Menggunakan ffmpeg dari node_modules (otomatis)
 ffmpeg.setFfmpegPath(ffmpegPath)
 
+const buildExifBuffer = (pack, author) => {
+  const json = {
+    "sticker-pack-id": `ryzubot-${Date.now()}`,
+    "sticker-pack-name": pack,
+    "sticker-pack-publisher": author,
+    "emojis": ["🚀"]
+  }
+  const exifHeader = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00])
+  const jsonBuffer = Buffer.from(JSON.stringify(json), "utf-8")
+  const exif = Buffer.concat([exifHeader, jsonBuffer])
+  exif.writeUIntLE(jsonBuffer.length, 14, 4)
+  return exif
+}
+
 // ================= UTIL =================
 function tmp(name) {
   return path.join(__dirname, "../../tmp", name)
@@ -280,36 +294,35 @@ module.exports = {
     // ================= WM =================
     if (command === "wm") {
       const quoted = getQuoted(msg)
-      if (!quoted?.stickerMessage)
-        return reply("Reply stikernya.")
-
-      if (!q.includes("|"))
-        return reply(`Format: ${prefix}wm Pack|Author`)
+      if (!quoted?.stickerMessage) return reply("Reply stikernya.")
+      if (!q.includes("|")) return reply(`Format: ${prefix}wm Pack|Author`)
 
       let [pack, author] = q.split("|")
-      pack = pack.trim()
-      author = author.trim()
+      pack = pack.trim() || "Ryzu Pack"
+      author = author.trim() || "RyzuBot"
 
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
-        
-        const exifData = buildExifBuffer(pack || "", author || "RyzuBot")
-        
-        let sticker
-        try {
-          const { Image } = require("node-webpmux")
-          const img = new Image()
-          await img.load(buffer)
-          img.exif = exifData
-          sticker = await img.save(null)
-        } catch {
-          sticker = injectExifChunkManual(buffer, exifData)
-        }
+        const { Image } = require("node-webpmux")
+        const img = new Image()
+        await img.load(buffer)
 
-        return ryzu.sendMessage(from, { sticker }, { quoted: msg })
+        // Penting: Generate EXIF yang valid untuk mobile
+        const exifData = buildExifBuffer(pack, author)
+        img.exif = exifData
+
+        const stickerWithExif = await img.save(null)
+
+        // Kirim menggunakan buffer hasil olahan webpmux
+        return ryzu.sendMessage(from, { 
+          sticker: stickerWithExif 
+        }, { 
+          quoted: msg 
+        })
+
       } catch (e) {
-        console.error(e)
-        return reply("❌ WM gagal.")
+        console.error("WM Error:", e)
+        return reply("❌ Gagal menyisipkan WM. Pastikan library node-webpmux terinstal.")
       }
     }
   }
