@@ -481,16 +481,28 @@ module.exports = async function ryzuHandler(ryzu, m) {
           let teks = `🏳️ *MENYERAH*\n\nSoal: *${room.soal}*\n\n🗝️ Jawaban:\n`
           room.jawaban_asli.forEach((j, i) => {
             const p = room.penjawab?.[j.toLowerCase().trim()]
-            teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")[0]}` : " ❌"}\n`
+            teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")}` : " ❌"}\n`
           })
           if (room.timeout) clearTimeout(room.timeout)
           delete ryzu.game[from]
           return ryzu.sendMessage(from, { text: teks, mentions: Object.values(room.penjawab || {}) }, { quoted: msg })
         } else {
-          const jaw = Array.isArray(room.jawaban) ? room.jawaban[0] : room.jawaban
+          const jaw = Array.isArray(room.jawaban_asli) ? room.jawaban_asli : (room.jawaban_asli || room.jawaban);
+          const captionNyerah = `🏳️ *MENYERAH*\n\n🗝️ Jawaban: *${jaw.toUpperCase()}*`;
+          
           if (room.timeout) clearTimeout(room.timeout)
+          const backupImg = room.img;
+          const tipeGame = room.tipe;
           delete ryzu.game[from]
-          return reply(`🏳️ *MENYERAH*\nJawaban: *${jaw.toUpperCase()}*`)
+
+          if (tipeGame === 'tebakheromlbb' && backupImg) {
+            return ryzu.sendMessage(from, { 
+              image: { url: backupImg }, 
+              caption: captionNyerah 
+            }, { quoted: msg });
+          }
+
+          return reply(captionNyerah);
         }
       }
       if (!isCmd) {
@@ -534,12 +546,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
             if (room.timeout) clearTimeout(room.timeout)
             delete ryzu.game[from]
             funcs.saveRPG(senderId).catch(() => {})
-            if (tipeGame === 'tebakheromlbb') {
-                return ryzu.sendMessage(from, { 
-                    image: { url: imgJawaban }, 
-                    caption: `✅ *BENAR!*\n\n💰 +${money} Money\n✨ +${exp} EXP${up ? "\n🎊 LEVEL UP!" : ""}` 
-                }, { quoted: msg })
-            }
             return reply(`✅ *BENAR!*\n💰 +${money} Money\n✨ +${exp} EXP${up ? "\n🎊 LEVEL UP!" : ""}`)
           }
         }

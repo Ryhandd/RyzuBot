@@ -24,6 +24,7 @@ module.exports = {
         ryzu.game[from] = {
             tipe: 'tebakcharanime',
             soal: soal.soal,
+            img: soal.img,
             jawaban: soal.name.map(n => n.toLowerCase().trim()),
             jawaban_asli: soal.name,
             deskripsi,
