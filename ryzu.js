@@ -486,110 +486,102 @@ module.exports = async function ryzuHandler(ryzu, m) {
       }
 
       if (!room && ryzu.game[from]["family100"]) {
-        room = ryzu.game[from]["family100"];
+        const isJawabanFamily = ryzu.game[from]["family100"].jawaban.includes(bodyLow);
+        if (isJawabanFamily || bodyLow === "nyerah") {
+          room = ryzu.game[from]["family100"];
+        }
       }
 
       if (!room) {
         if (bodyLow === "nyerah" || bodyLow === prefix + "hint") {
-          if (activeGames.some(g => g.tipe !== "family100")) {
+          if (activeGames.length > 0 && activeGames.some(g => g.tipe !== "family100")) {
              return reply("❌ Wajib reply pesan soal gamenya untuk nyerah/hint ya!");
           }
         }
-        return;
-      }
+        
+      } else { 
 
-      // === HINT ===
-      if (bodyLow === prefix + "hint") {
-        if (room.tipe === "family100") return reply("❌ Family 100 tidak memiliki hint!");
-        const user = global.rpg[senderId];
-        if (!user.premium && user.limit <= 0) return reply("❌ Limit habis!");
-        if (!user.premium) { user.limit -= 1; funcs.saveRPG(senderId).catch(() => {}); }
-        if (room.deskripsi) return reply(`💡 *PETUNJUK*\n\n${room.deskripsi}`);
-        const jaw = Array.isArray(room.jawaban) ? room.jawaban : room.jawaban;
-        const clue = jaw.replace(/[a-zA-Z]/g, (c, i) => i === 0 || jaw[i - 1] === " " ? c : "_");
-        return reply(`💡 *HINT*\n\n${clue.toUpperCase()}`);
-      }
-
-      // === NYERAH ===
-      if (bodyLow === "nyerah") {
-        if (room.tipe === "family100") {
-          let teks = `🏳️ *MENYERAH*\n\nSoal: *${room.soal}*\n\n🗝️ Jawaban:\n`;
-          room.jawaban_asli.forEach((j, i) => {
-            const p = room.penjawab?.[j.toLowerCase().trim()];
-            teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")}` : " ❌"}\n`;
-          });
-          if (room.timeout) clearTimeout(room.timeout);
-          delete ryzu.game[from][room.tipe];
-          return ryzu.sendMessage(from, { text: teks, mentions: Object.values(room.penjawab || {}) }, { quoted: msg });
-        } else {
-          const listJawaban = Array.isArray(room.jawaban_asli) 
-            ? room.jawaban_asli.join(', ') 
-            : (room.jawaban_asli || room.jawaban);
-
-          const captionNyerah = `🏳️ *MENYERAH*\n\n🗝️ Jawaban: *${listJawaban.toUpperCase()}*`;
-          
-          if (room.timeout) clearTimeout(room.timeout);
-          const backupImg = room.img; 
-          const tipeGame = room.tipe;
-          delete ryzu.game[from][room.tipe];
-
-          if (tipeGame === 'tebakheromlbb' && backupImg) {
-            return ryzu.sendMessage(from, { 
-              image: { url: backupImg }, 
-              caption: captionNyerah 
-            }, { quoted: msg });
-          }
-          return reply(captionNyerah);
+        // === HINT ===
+        if (bodyLow === prefix + "hint") {
+          if (room.tipe === "family100") return reply("❌ Family 100 tidak memiliki hint!");
+          const user = global.rpg[senderId];
+          if (!user.premium && user.limit <= 0) return reply("❌ Limit habis!");
+          if (!user.premium) { user.limit -= 1; funcs.saveRPG(senderId).catch(() => {}); }
+          if (room.deskripsi) return reply(`💡 *PETUNJUK*\n\n${room.deskripsi}`);
+          const jaw = Array.isArray(room.jawaban) ? room.jawaban : room.jawaban;
+          const clue = jaw.replace(/[a-zA-Z]/g, (c, i) => i === 0 || jaw[i - 1] === " " ? c : "_");
+          return reply(`💡 *HINT*\n\n${clue.toUpperCase()}`);
         }
-      }
 
-      if (!isCmd) {
-        if (room.tipe === "family100") {
-          const index = room.jawaban.indexOf(bodyLow);
-          if (index >= 0 && !room.terjawab.includes(bodyLow)) {
-            room.terjawab.push(bodyLow);
-            room.penjawab[bodyLow] = senderId;
-            global.rpg[senderId].money += 5000;
-            global.rpg[senderId].exp += 500;
-            const up = funcs.cekLevel(senderId);
-            funcs.saveRPG(senderId).catch(() => {});
-            
-            let teks = `✅ *BENAR!*\n📝 Soal: *${room.soal}*\n\n`;
-            const mentions = [];
+        // === NYERAH ===
+        if (bodyLow === "nyerah") {
+          if (room.tipe === "family100") {
+            let teks = `🏳️ *MENYERAH*\n\nSoal: *${room.soal}*\n\n🗝️ Jawaban:\n`;
             room.jawaban_asli.forEach((j, i) => {
-              const lj = j.toLowerCase().trim();
-              if (room.terjawab.includes(lj)) {
-                mentions.push(room.penjawab[lj]);
-                teks += `${i + 1}. ${j} (@${room.penjawab[lj].split("@")})\n`;
-              } else teks += `${i + 1}. ??\n`;
+              const p = room.penjawab?.[j.toLowerCase().trim()];
+              teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")}` : " ❌"}\n`;
             });
-            teks += `\n🎁 +5000 Money | +500 EXP${up ? "\n🎊 LEVEL UP!" : ""}`;
-            
-            if (room.terjawab.length === room.jawaban.length) {
-              teks += `\n\n🎉 SEMUA TERJAWAB!`;
-              if (room.timeout) clearTimeout(room.timeout);
-              delete ryzu.game[from][room.tipe];
-            }
-            return ryzu.sendMessage(from, { text: teks, mentions }, { quoted: msg });
-          }
-        } else {
-          const targetJawaban = room.jawaban;
-          let benar = Array.isArray(targetJawaban)
-            ? targetJawaban.some((j) => bodyLow === j || similarity(bodyLow, j) >= 0.75)
-            : bodyLow === targetJawaban || similarity(bodyLow, targetJawaban) >= 0.75;
-            
-          if (benar) {
-            let money = 5000, exp = 500;
-            if (room.tipe === "math" && room.hadiah) { money = room.hadiah.money; exp = room.hadiah.exp; }
-            global.rpg[senderId].money += money;
-            global.rpg[senderId].exp += exp;
-            const up = funcs.cekLevel(senderId);
-            
             if (room.timeout) clearTimeout(room.timeout);
             delete ryzu.game[from][room.tipe];
-            funcs.saveRPG(senderId).catch(() => {});
-            
-            return reply(`✅ *BENAR!*\n💰 +${money} Money\n✨ +${exp} EXP${up ? "\n🎊 LEVEL UP!" : ""}`);
+            return ryzu.sendMessage(from, { text: teks, mentions: Object.values(room.penjawab || {}) }, { quoted: msg });
+          } else {
+            const listJawaban = Array.isArray(room.jawaban_asli) ? room.jawaban_asli.join(', ') : (room.jawaban_asli || room.jawaban);
+            const captionNyerah = `🏳️ *MENYERAH*\n\n🗝️ Jawaban: *${listJawaban.toUpperCase()}*`;
+            if (room.timeout) clearTimeout(room.timeout);
+            const backupImg = room.img; 
+            const tipeGame = room.tipe;
+            delete ryzu.game[from][room.tipe];
+            if (tipeGame === 'tebakheromlbb' && backupImg) {
+              return ryzu.sendMessage(from, { image: { url: backupImg }, caption: captionNyerah }, { quoted: msg });
+            }
+            return reply(captionNyerah);
+          }
+        }
+
+        // === JAWABAN BENAR ===
+        if (!isCmd) {
+          if (room.tipe === "family100") {
+            const index = room.jawaban.indexOf(bodyLow);
+            if (index >= 0 && !room.terjawab.includes(bodyLow)) {
+              room.terjawab.push(bodyLow);
+              room.penjawab[bodyLow] = senderId;
+              global.rpg[senderId].money += 5000;
+              global.rpg[senderId].exp += 500;
+              const up = funcs.cekLevel(senderId);
+              funcs.saveRPG(senderId).catch(() => {});
+              let teks = `✅ *BENAR!*\n📝 Soal: *${room.soal}*\n\n`;
+              const mentions = [];
+              room.jawaban_asli.forEach((j, i) => {
+                const lj = j.toLowerCase().trim();
+                if (room.terjawab.includes(lj)) {
+                  mentions.push(room.penjawab[lj]);
+                  teks += `${i + 1}. ${j} (@${room.penjawab[lj].split("@")})\n`;
+                } else teks += `${i + 1}. ??\n`;
+              });
+              teks += `\n🎁 +5000 Money | +500 EXP${up ? "\n🎊 LEVEL UP!" : ""}`;
+              if (room.terjawab.length === room.jawaban.length) {
+                teks += `\n\n🎉 SEMUA TERJAWAB!`;
+                if (room.timeout) clearTimeout(room.timeout);
+                delete ryzu.game[from][room.tipe];
+              }
+              return ryzu.sendMessage(from, { text: teks, mentions }, { quoted: msg });
+            }
+          } else {
+            const targetJawaban = room.jawaban;
+            let benar = Array.isArray(targetJawaban)
+              ? targetJawaban.some((j) => bodyLow === j || similarity(bodyLow, j) >= 0.75)
+              : bodyLow === targetJawaban || similarity(bodyLow, targetJawaban) >= 0.75;
+            if (benar) {
+              let money = 5000, exp = 500;
+              if (room.hadiah) { money = room.hadiah.money; exp = room.hadiah.exp; }
+              global.rpg[senderId].money += money;
+              global.rpg[senderId].exp += exp;
+              const up = funcs.cekLevel(senderId);
+              if (room.timeout) clearTimeout(room.timeout);
+              delete ryzu.game[from][room.tipe];
+              funcs.saveRPG(senderId).catch(() => {});
+              return reply(`✅ *BENAR!*\n💰 +${money} Money\n✨ +${exp} EXP${up ? "\n🎊 LEVEL UP!" : ""}`);
+            }
           }
         }
       }
