@@ -100,16 +100,32 @@ module.exports = {
 
                 case "join":
                     if (room && room.status === "playing") return reply("❌ Game sudah dimulai.");
+                    
+                    if (!targetArg || targetArg.trim() === "") {
+                        return reply("❌ Masukkan nama anda! Contoh: *.ww join Ryzu*");
+                    }
+
                     if (!room) {
-                        ryzu.werewolf[from] = { status: "waiting", player: [], day: 1, phase: "day", history: [], seerUsed: {}, guardianProtected: {}, votes: {} };
+                        ryzu.werewolf[from] = { 
+                            status: "waiting", 
+                            player: [], 
+                            day: 1, 
+                            phase: "day", 
+                            history: [], 
+                            seerUsed: {}, 
+                            guardianProtected: {}, 
+                            votes: {} 
+                        };
                         room = ryzu.werewolf[from];
                     }
+
                     if (room.player.find(x => x.id === sender)) return reply("❌ Kamu sudah join.");
                     if (room.player.length >= 10) return reply("❌ Sudah penuh.");
                     
-                    let finalName = targetArg || sender.split("@");
+                    let finalName = targetArg.trim();
+                    
                     room.player.push({ id: sender, role: "", alive: true, nickname: finalName });
-                    return reply(`✅ Berhasil join game!\n\n👥 Peserta: ${room.player.length}/10\n${room.player.map((pl, i) => `${i + 1}. ${pl.nickname}`).join("\n")}`);
+                    return reply(`✅ Berhasil join game dengan nama *${finalName}*!\n\n👥 Peserta: ${room.player.length}/10\n${room.player.map((pl, i) => `${i + 1}. ${pl.nickname}`).join("\n")}`);
 
                 case "start":
                     if (!room || room.player.length < 4) return reply(`❌ Minimal 4 pemain.`);
