@@ -5,7 +5,7 @@ module.exports = {
     alias: ["gender"],
     
     execute: async ({ q, reply }) => {
-        if (!q) return reply("Contoh: .tebakgender Siti")
+        if (!q) return reply("Contoh: .tebakgender Ryzu")
         try {
           const res = await axios.get(`https://api.genderize.io/?name=${encodeURIComponent(q)}`)
           const icon = res.data.gender === "male" ? "♂️" : "♀️"

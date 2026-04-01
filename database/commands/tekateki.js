@@ -6,7 +6,9 @@ module.exports = {
     execute: async ({ ryzu, from, reply }) => {
 
         if (!ryzu.game) ryzu.game = {};
-        if (ryzu.game[from]) return reply("Masih ada game berjalan!");
+        if (ryzu.game[from] && ryzu.game[from].type === 'tekateki') {
+            return reply("Masih ada Teka-Teki lain yang berjalan! Jawab dulu atau ketik *nyerah*.");
+        }
 
         const soal = db.dbTekaTeki[Math.floor(Math.random() * db.dbTekaTeki.length)];
 

@@ -3,7 +3,7 @@ module.exports = {
   alias: ["umur"],
 
   execute: async ({ q, reply }) => {
-    if (!q) return reply("Contoh: .tebakumur Budi")
+    if (!q) return reply("Contoh: .tebakumur Ryzu")
 
     const rand = Math.random() * 100
     let umur

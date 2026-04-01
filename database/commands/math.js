@@ -6,8 +6,8 @@ module.exports = {
     execute: async ({ ryzu, from, reply, msg, args }) => {
 
         if (!ryzu.game) ryzu.game = {};
-        if (ryzu.game[from]) {
-            return reply("🎮 Masih ada game berjalan!\nJawab dulu atau ketik *nyerah*.");
+        if (ryzu.game[from] && ryzu.game[from].type === 'math') {
+            return reply("Masih ada Math lain yang berjalan! Jawab dulu atau ketik *nyerah*.");
         }
 
         // ===== JIKA TANPA MODE =====

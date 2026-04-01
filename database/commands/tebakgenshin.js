@@ -8,8 +8,8 @@ module.exports = {
 
         // === INIT GAME OBJECT ===
         if (!ryzu.game) ryzu.game = {};
-        if (ryzu.game[from]) {
-            return reply("🎮 Masih ada game berjalan! Jawab dulu atau ketik *nyerah*.");
+        if (ryzu.game[from] && ryzu.game[from].type === 'tebakgenshin') {
+            return reply("Masih ada Tebak Karakter Genshin lain yang berjalan! Jawab dulu atau ketik *nyerah*.");
         }
 
         const pick = db.dbGenshin;
@@ -20,13 +20,16 @@ module.exports = {
         // === RANDOM SOAL ===
         const soal = pick[Math.floor(Math.random() * pick.length)];
 
+        // === DESKRIPSI ===
+        const deskripsi = `🔰 ${soal.deskripsi}`;
+
         // === SIMPAN ROOM GAME ===
         ryzu.game[from] = {
             tipe: 'tebakgenshin',
             soal: soal.img,
             jawaban: soal.jawaban.toLowerCase().trim(),
             jawaban_asli: soal.jawaban,
-            deskripsi: soal.deskripsi,
+            deskripsi,
             timeout: setTimeout(() => {
                 if (ryzu.game[from]) {
                     ryzu.sendMessage(from, {
@@ -39,7 +42,6 @@ module.exports = {
 
         // === TAMPILAN GAME ===
         let caption = `🎮 *TEBAK GENSHIN IMPACT*\n\n`;
-        caption += `📝 Petunjuk:\n${soal.deskripsi}\n\n`;
         caption += `⏳ Waktu: 3 Menit\n`;
         caption += `💡 Gunakan *.hint* untuk bantuan\n`;
         caption += `🏳️ Ketik *nyerah* untuk menyerah`;

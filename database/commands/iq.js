@@ -20,7 +20,7 @@ module.exports = {
   name: "iq",
 
   execute: async ({ q, reply }) => {
-    if (!q) return reply("Contoh: .iq Budi")
+    if (!q) return reply("Contoh: .iq Ryzu")
     const iq = generateIQ()
     const iqDisplay = iq === Infinity ? "∞ (Infinity)" : iq
 

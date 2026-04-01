@@ -62677,6 +62677,41 @@ const dbCharAnime = [
     }
 ]
 
+const dbMlbb = [
+    {
+        "name": [
+            "Floryn",
+        ],
+        "img": "https://files.catbox.moe/o45b73.png",
+        "soal": "https://files.catbox.moe/wesr2m.png",
+        "role": "Support"
+    },
+    {
+        "name": [
+            "Kagura",
+        ],
+        "img": "https://files.catbox.moe/7z90uh.png",
+        "soal": "https://files.catbox.moe/099j60.png",
+        "role": "Mage"
+    },
+    {
+        "name": [
+            "Karina",
+        ],
+        "img": "https://files.catbox.moe/d9uqj4.png",
+        "soal": "https://files.catbox.moe/72pmfe.png",
+        "role": "Assassin"
+    },
+    {
+        "name": [
+            "Rafaela",
+        ],
+        "img": "https://files.catbox.moe/eqhig7.png",
+        "soal": "https://files.catbox.moe/88c20u.png",
+        "role": "Support"
+    }
+]
+
 module.exports = {
     dbAsahOtak,
     dbTekaTeki,
@@ -62684,5 +62719,6 @@ module.exports = {
     dbTebakGambar,
     dbMath,
     dbGenshin,
-    dbCharAnime
+    dbCharAnime,
+    dbMlbb
 };

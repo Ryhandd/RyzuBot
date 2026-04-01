@@ -7,8 +7,8 @@ module.exports = {
     execute: async ({ ryzu, from, reply, msg }) => {
 
         if (!ryzu.game) ryzu.game = {};
-        if (ryzu.game[from]) {
-            return reply("Masih ada game berjalan! Jawab dulu atau ketik *nyerah*.");
+        if (ryzu.game[from] && ryzu.game[from].type === 'tebakgambar') {
+            return reply("Masih ada Tebak Gambar lain yang berjalan! Jawab dulu atau ketik *nyerah*.");
         }
 
         const pick = db.dbTebakGambar;

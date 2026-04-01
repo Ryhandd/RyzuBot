@@ -6,8 +6,8 @@ module.exports = {
     execute: async ({ ryzu, from, reply }) => {
 
         if (!ryzu.game) ryzu.game = {};
-        if (ryzu.game[from]) {
-            return reply("Masih ada game berjalan!");
+        if (ryzu.game[from] && ryzu.game[from].type === 'asahotak') {
+            return reply("Masih ada Asah Otak lain yang berjalan! Jawab dulu atau ketik *nyerah*.");
         }
 
         const soal = db.dbAsahOtak[Math.floor(Math.random() * db.dbAsahOtak.length)];
