@@ -350,11 +350,11 @@ module.exports = async function ryzuHandler(ryzu, m) {
     funcs.checkUser(senderId)
 
     // === ANTI-SPAM "BOT" ===
-    if (!isCmd && bodyLow === "bot") {
+    if (!isCmd && bodyLow.includes("bot")) {
       if (!cooldowns.has(from)) {
         cooldowns.add(from)
         setTimeout(() => cooldowns.delete(from), 30000)
-        return reply("RyzuBot disini! 🤖\nKetik *.menu* untuk daftar perintah.")
+        return reply("RyzuBot disini!\nKetik *.menu* untuk daftar perintah.")
       }
       return
     }
