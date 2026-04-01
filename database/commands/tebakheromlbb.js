@@ -3,7 +3,7 @@ const db = require(path.join(process.cwd(), 'database', 'games.js'));
 
 module.exports = {
     name: "tebakheromlbb",
-    alias: ["mlbb", "tebakml"],
+    alias: ["mlbb", "tebakml", "tebakhero"],
     execute: async ({ ryzu, from, reply, msg }) => {
 
         if (!ryzu.game) ryzu.game = {};

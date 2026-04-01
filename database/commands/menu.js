@@ -63,6 +63,7 @@ module.exports = {
 ├ ${prefix}tebakgambar / tg
 ├ ${prefix}tebakgenshin
 ├ ${prefix}tebakcharanime / tca
+├ ${prefix}tebakheromlbb
 ├ ${prefix}tekateki
 ├ ${prefix}asahotak
 ├ ${prefix}math <noob|easy|normal|hard|insane>
