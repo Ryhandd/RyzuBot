@@ -212,8 +212,8 @@ module.exports = {
       if (!q.includes("|")) return reply(`Format: ${prefix}wm Pack|Author`)
 
       let [pack, author] = q.split("|")
-      pack = pack.trim() || "RyzuBot"
-      author = author.trim() || "RyzuBot"
+      pack = pack.trim() || ""
+      author = author.trim() || ""
 
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
