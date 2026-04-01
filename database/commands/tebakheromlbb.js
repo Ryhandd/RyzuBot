@@ -7,13 +7,15 @@ module.exports = {
     execute: async ({ ryzu, from, reply, msg }) => {
 
         if (!ryzu.game) ryzu.game = {};
-        if (ryzu.game[from] && ryzu.game[from].type === 'tebakheromlbb') {
+        if (!ryzu.game[from]) ryzu.game[from] = {};
+
+        if (ryzu.game[from]['tebakheromlbb']) {
             return reply("Masih ada Tebak Hero MLBB lain yang berjalan! Jawab dulu atau ketik *nyerah*.");
         }
 
         const pick = db.dbMlbb;
         if (!pick || !Array.isArray(pick)) {
-            return reply("❌ Database Character Anime tidak ditemukan.");
+            return reply("❌ Database Hero MLBB tidak ditemukan."); 
         }
 
         const soal = pick[Math.floor(Math.random() * pick.length)];
@@ -21,32 +23,34 @@ module.exports = {
         // ===== DESKRIPSI =====
         const deskripsi = `🏷️ Role: ${soal.role}`;
 
-        ryzu.game[from] = {
-            tipe: 'tebakcharanime',
+        let caption = `🎮 *TEBAK HERO MLBB*\n\n`;
+        caption += `⏳ Waktu: 3 Menit\n`;
+        caption += `💡 Balas/Reply pesan ini & ketik *.hint* untuk bantuan\n`;
+        caption += `🏳️ Balas/Reply pesan ini & ketik *nyerah* untuk menyerah`;
+
+        let kirimSoal = await ryzu.sendMessage(from, {
+            image: { url: soal.soal },
+            caption
+        }, { quoted: msg });
+
+        ryzu.game[from]['tebakheromlbb'] = {
+            id: kirimSoal.key.id,
+            tipe: 'tebakheromlbb',
             soal: soal.soal,
             img: soal.img,
             jawaban: soal.name.map(n => n.toLowerCase().trim()),
             jawaban_asli: soal.name,
             deskripsi,
             timeout: setTimeout(() => {
-                if (ryzu.game[from]) {
+                if (ryzu.game[from] && ryzu.game[from]['tebakheromlbb']) {
                     ryzu.sendMessage(from, {
                         image: { url: soal.img }, 
                         caption: `⏰ *WAKTU HABIS*\n\n🗝️ Jawaban:\n${soal.name.join(', ')}` 
-                    }, { quoted: msg });
-                    delete ryzu.game[from];
+                    }, { quoted: kirimSoal });
+                    
+                    delete ryzu.game[from]['tebakheromlbb'];
                 }
             }, 180000)
         };
-
-        let caption = `🎮 *TEBAK HERO MLBB*\n\n`;
-        caption += `⏳ Waktu: 3 Menit\n`;
-        caption += `💡 Gunakan *.hint* untuk bantuan\n`;
-        caption += `🏳️ Ketik *nyerah* untuk menyerah`;
-
-        return ryzu.sendMessage(from, {
-            image: { url: soal.soal },
-            caption
-        }, { quoted: msg });
     }
 };

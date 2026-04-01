@@ -2,52 +2,43 @@ module.exports = {
     name: "tictactoe",
     alias: ["ttt", "ttc"],
     execute: async ({ ryzu, from, sender, msg, mentionUser = [], reply, prefix, command }) => {
-        // mentionUser = [] di atas itu buat jaga-jaga biar gak error length kalau kosong
         
-        ryzu.ttt = ryzu.ttt ? ryzu.ttt : {};
+        if (!ryzu.ttt) ryzu.ttt = {};
+        if (!ryzu.ttt[from]) ryzu.ttt[from] = {};
 
-        // Cek jika user sedang main
-        if (ryzu.ttt[from]) return reply("Mainkan dulu game yang ada di grup ini atau tunggu selesai!");
-
-        // FIX: Cek mentionUser
         if (!mentionUser || mentionUser.length === 0) return reply(`Tag lawan! Contoh: ${prefix + command} @tag`);
         
-        let lawan = mentionUser[0];
+        let lawan = mentionUser;
         
-        if (lawan === sender) return reply("Masa main sama diri sendiri, anj?");
-        if (lawan === ryzu.user.id) return reply("Bot nggak mau main, lagi sibuk!");
+        if (lawan === sender) return reply("Masa main sama diri sendiri?");
+        if (lawan === ryzu.user?.id) return reply("Bot nggak mau main, lagi sibuk!");
 
-        let id = from;
-        let room = {
-            id,
+        let activeRooms = Object.values(ryzu.ttt[from]);
+        let isAlreadyPlaying = activeRooms.find(room => 
+            room.p1 === sender || room.p2 === sender || 
+            room.p1 === lawan || room.p2 === lawan
+        );
+
+        if (isAlreadyPlaying) {
+            return reply("❌ Kamu atau lawanmu masih dalam pertandingan TicTacToe yang belum selesai!");
+        }
+
+        let teks = `🎮 *TIC TAC TOE*\n\n`;
+        teks += `❌ @${sender.split('@')}\n`;
+        teks += `⭕ @${lawan.split('@')}\n\n`;
+        teks += `⬜⬜⬜\n⬜⬜⬜\n⬜⬜⬜\n\n`;
+        teks += `Giliran: @${sender.split('@')}\n`;
+        teks += `Balas/Reply pesan ini dengan angka *1-9* untuk mengisi.`;
+
+        let kirimSoal = await ryzu.sendMessage(from, { text: teks, mentions: [sender, lawan] }, { quoted: msg });
+
+        ryzu.ttt[from][kirimSoal.key.id] = {
+            id: kirimSoal.key.id,
             p1: sender,
             p2: lawan,
             board: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             turn: sender,
             status: "PLAYING"
         };
-
-        const renderBoard = (b) => {
-            let res = "";
-            for (let i = 0; i < 9; i++) {
-                let cell = b[i];
-                if (cell === "X") res += "❌";
-                else if (cell === "O") res += "⭕";
-                else res += "⬜";
-                if ((i + 1) % 3 === 0) res += "\n";
-            }
-            return res;
-        };
-
-        ryzu.ttt[id] = room;
-
-        let teks = `🎮 *TIC TAC TOE*\n\n`;
-        teks += `❌ @${sender.split('@')[0]}\n`;
-        teks += `⭕ @${lawan.split('@')[0]}\n\n`;
-        teks += renderBoard(room.board);
-        teks += `\nGiliran: @${room.turn.split('@')[0]}\n`;
-        teks += `Ketik angka *1-9* untuk mengisi.`;
-
-        return ryzu.sendMessage(from, { text: teks, mentions: [sender, lawan] }, { quoted: msg });
     }
 };

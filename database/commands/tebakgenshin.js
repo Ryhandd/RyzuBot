@@ -6,9 +6,10 @@ module.exports = {
     alias: ["genshin", "tebakgi"],
     execute: async ({ ryzu, from, reply, msg }) => {
 
-        // === INIT GAME OBJECT ===
         if (!ryzu.game) ryzu.game = {};
-        if (ryzu.game[from] && ryzu.game[from].type === 'tebakgenshin') {
+        if (!ryzu.game[from]) ryzu.game[from] = {};
+
+        if (ryzu.game[from]['tebakgenshin']) {
             return reply("Masih ada Tebak Karakter Genshin lain yang berjalan! Jawab dulu atau ketik *nyerah*.");
         }
 
@@ -17,39 +18,34 @@ module.exports = {
             return reply("❌ Database Tebak Genshin tidak ditemukan.");
         }
 
-        // === RANDOM SOAL ===
         const soal = pick[Math.floor(Math.random() * pick.length)];
-
-        // === DESKRIPSI ===
         const deskripsi = `🔰 ${soal.deskripsi}`;
 
-        // === SIMPAN ROOM GAME ===
-        ryzu.game[from] = {
+        let caption = `🎮 *TEBAK GENSHIN IMPACT*\n\n`;
+        caption += `⏳ Waktu: 3 Menit\n`;
+        caption += `💡 Balas/Reply pesan ini & ketik *.hint* untuk bantuan\n`;
+        caption += `🏳️ Balas/Reply pesan ini & ketik *nyerah* untuk menyerah`;
+
+        let kirimSoal = await ryzu.sendMessage(from, {
+            image: { url: soal.img },
+            caption
+        }, { quoted: msg });
+
+        ryzu.game[from]['tebakgenshin'] = {
+            id: kirimSoal.key.id,
             tipe: 'tebakgenshin',
             soal: soal.img,
             jawaban: soal.jawaban.toLowerCase().trim(),
             jawaban_asli: soal.jawaban,
             deskripsi,
             timeout: setTimeout(() => {
-                if (ryzu.game[from]) {
+                if (ryzu.game[from] && ryzu.game[from]['tebakgenshin']) {
                     ryzu.sendMessage(from, {
                         text: `⏰ *WAKTU HABIS*\n\n🗝️ Jawaban: *${soal.jawaban}*`
-                    }, { quoted: msg });
-                    delete ryzu.game[from];
+                    }, { quoted: kirimSoal });
+                    delete ryzu.game[from]['tebakgenshin'];
                 }
-            }, 180000) // 3 menit
+            }, 180000)
         };
-
-        // === TAMPILAN GAME ===
-        let caption = `🎮 *TEBAK GENSHIN IMPACT*\n\n`;
-        caption += `⏳ Waktu: 3 Menit\n`;
-        caption += `💡 Gunakan *.hint* untuk bantuan\n`;
-        caption += `🏳️ Ketik *nyerah* untuk menyerah`;
-
-        // === KIRIM GAMBAR ===
-        return ryzu.sendMessage(from, {
-            image: { url: soal.img },
-            caption
-        }, { quoted: msg });
     }
 };

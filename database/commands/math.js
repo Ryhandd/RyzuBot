@@ -6,12 +6,13 @@ module.exports = {
     execute: async ({ ryzu, from, reply, msg, args }) => {
 
         if (!ryzu.game) ryzu.game = {};
-        if (ryzu.game[from] && ryzu.game[from].type === 'math') {
+        if (!ryzu.game[from]) ryzu.game[from] = {};
+
+        if (ryzu.game[from]['math']) {
             return reply("Masih ada Math lain yang berjalan! Jawab dulu atau ketik *nyerah*.");
         }
 
-        // ===== JIKA TANPA MODE =====
-        if (!args[0]) {
+        if (!args) {
             return reply(
 `🧮 *MATH GAME*
 ━━━━━━━━━━━━━━
@@ -31,8 +32,7 @@ Pilih mode untuk memulai:
             );
         }
 
-        // ===== MODE CONFIG =====
-        const mode = args[0].toLowerCase();
+        const mode = args.toLowerCase();
 
         const modes = {
             noob:   { exp: 500,  money: 5000 },
@@ -49,52 +49,31 @@ Pilih mode untuk memulai:
         const rewardExp = modes[mode].exp;
         const rewardMoney = modes[mode].money;
 
-        // ===== AMBIL SOAL =====
         const pick = dbMath[Math.floor(Math.random() * dbMath.length)];
 
-        // ===== SIMPAN ROOM =====
-        ryzu.game[from] = {
+        let teksSoal = `🧮 *MATH GAME*\n━━━━━━━━━━━━━━\n🎚 Mode: *${mode.toUpperCase()}*\n⏳ Waktu: 30 Detik\n\n❓ Soal:\n${pick.soal}\n\n🎁 Hadiah:\n💰 ${rewardMoney.toLocaleString()} Money\n✨ ${rewardExp.toLocaleString()} EXP\n\n✍️ Balas/Reply pesan ini untuk menjawab!\n🏳️ Balas/Reply pesan ini & ketik *nyerah* untuk menyerah`;
+
+        let kirimSoal = await ryzu.sendMessage(from, { text: teksSoal }, { quoted: msg });
+
+        ryzu.game[from]['math'] = {
+            id: kirimSoal.key.id,
             tipe: 'math',
             mode,
             soal: pick.soal,
             jawaban: pick.jawaban.toString(),
+            jawaban_asli: pick.jawaban.toString(),
             hadiah: {
                 exp: rewardExp,
                 money: rewardMoney
             },
             timeout: setTimeout(() => {
-                if (ryzu.game[from]) {
+                if (ryzu.game[from] && ryzu.game[from]['math']) {
                     ryzu.sendMessage(from, {
-                        text:
-`⏰ *WAKTU HABIS!*
-
-🧮 Soal:
-${pick.soal}
-
-✅ Jawaban:
-*${pick.jawaban}*`
-                    }, { quoted: msg });
-                    delete ryzu.game[from];
+                        text: `⏰ *WAKTU HABIS!*\n\n🧮 Soal:\n${pick.soal}\n\n✅ Jawaban:\n*${pick.jawaban}*`
+                    }, { quoted: kirimSoal });
+                    delete ryzu.game[from]['math'];
                 }
             }, 30000)
         };
-
-        // ===== KIRIM SOAL =====
-        reply(
-`🧮 *MATH GAME*
-━━━━━━━━━━━━━━
-🎚 Mode: *${mode.toUpperCase()}*
-⏳ Waktu: 30 Detik
-
-❓ Soal:
-${pick.soal}
-
-🎁 Hadiah:
-💰 ${rewardMoney.toLocaleString()} Money
-✨ ${rewardExp.toLocaleString()} EXP
-
-✍️ Jawab langsung di chat!
-🏳️ Ketik *nyerah* untuk menyerah`
-        );
     }
 };
