@@ -487,11 +487,14 @@ module.exports = async function ryzuHandler(ryzu, m) {
           delete ryzu.game[from]
           return ryzu.sendMessage(from, { text: teks, mentions: Object.values(room.penjawab || {}) }, { quoted: msg })
         } else {
-          const jaw = Array.isArray(room.jawaban_asli) ? room.jawaban_asli : (room.jawaban_asli || room.jawaban);
-          const captionNyerah = `🏳️ *MENYERAH*\n\n🗝️ Jawaban: *${jaw.toUpperCase()}*`;
+          const listJawaban = Array.isArray(room.jawaban_asli) 
+            ? room.jawaban_asli.join(', ') 
+            : (room.jawaban_asli || room.jawaban);
+
+          const captionNyerah = `🏳️ *MENYERAH*\n\n🗝️ Jawaban: *${listJawaban.toUpperCase()}*`;
           
           if (room.timeout) clearTimeout(room.timeout)
-          const backupImg = room.img;
+          const backupImg = room.img; 
           const tipeGame = room.tipe;
           delete ryzu.game[from]
 
