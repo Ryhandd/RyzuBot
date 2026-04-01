@@ -5,9 +5,9 @@ const path = require("path")
 const ffmpeg = require("fluent-ffmpeg")
 const ffmpegPath = require("ffmpeg-static")
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys")
-const { createSticker, buildExifBuffer, injectExifChunkManual } = require("../../lib/sticker")
 
-// Menggunakan ffmpeg dari node_modules (otomatis)
+const { createSticker, injectExifChunkManual } = require("../../lib/sticker")
+
 ffmpeg.setFfmpegPath(ffmpegPath)
 
 const buildExifBuffer = (pack, author) => {
@@ -85,7 +85,6 @@ module.exports = {
       if (quoted?.stickerMessage) type = "sticker"
 
       const isVideo = type === "video"
-
       const buffer = await downloadMedia(media, type)
       const sticker = await createSticker(buffer, { isVideo })
 
@@ -116,11 +115,57 @@ module.exports = {
       }
     }
 
-    // VBRAT (ANIMASI)
+    // ================= QC =================
+    if (command === "qc") {
+      if (!q) return reply("Teksnya mana?")
+      let pp
+      try {
+        pp = await ryzu.profilePictureUrl(sender, "image")
+      } catch {
+        pp = "https://i.ibb.co/3c29h46/default-profile.png"
+      }
+
+      try {
+        const json = {
+          type: "quote",
+          format: "png",
+          backgroundColor: "#ffffff",
+          width: 512,
+          height: 512,
+          scale: 2,
+          messages: [{
+            avatar: true,
+            from: { name: pushname, photo: { url: pp } },
+            text: q
+          }]
+        }
+        const res = await axios.post("https://bot.lyo.su/quote/generate", json)
+        const buffer = Buffer.from(res.data.result.image, "base64")
+        const sticker = await createSticker(buffer)
+        return ryzu.sendMessage(from, { sticker }, { quoted: msg })
+      } catch (e) {
+        return reply("❌ QC error.")
+      }
+    }
+
+    // ================= BRAT (STATIC) =================
+    if (command === "brat") {
+      if (!q) return reply("Teksnya mana?")
+      try {
+        const res = await axios.get(`https://api.siputzx.my.id/api/m/brat?text=${encodeURIComponent(q)}`, { responseType: "arraybuffer" })
+        const sticker = await createSticker(res.data)
+        return ryzu.sendMessage(from, { sticker }, { quoted: msg })
+      } catch {
+        return reply("❌ Error server.")
+      }
+    }
+
+    // ================= VBRAT (ANIMASI) =================
     if (command === "vbrat") {
       if (!q) return reply("Teksnya mana?")
       const words = q.split(" ").slice(0, 6)
       if (words.length < 2) return reply("Minimal 2 kata biar jadi animasi.")
+      
       reply("⏳ Membuat brat animasi...")
       await ensureTmp()
       const files = []
@@ -131,6 +176,7 @@ module.exports = {
           await genBrat(text, file)
           files.push(file)
         }
+
         const listFile = tmp("list.txt")
         const videoFile = tmp("out.mp4")
         const listData = files.map(f => `file '${f.replace(/\\/g, "/")}'\nduration 0.45`).join("\n")
@@ -159,138 +205,6 @@ module.exports = {
       }
     }
 
-    // ================= QC =================
-    if (command === "qc") {
-      if (!q) return reply("Teksnya mana?")
-
-      let pp
-      try {
-        pp = await ryzu.profilePictureUrl(sender, "image")
-      } catch {
-        pp = "https://i.ibb.co/3c29h46/default-profile.png"
-      }
-
-      try {
-        const json = {
-          type: "quote",
-          format: "png",
-          backgroundColor: "#ffffff",
-          width: 512,
-          height: 512,
-          scale: 2,
-          messages: [
-            {
-              avatar: true,
-              from: {
-                name: pushname,
-                photo: { url: pp }
-              },
-              text: q
-            }
-          ]
-        }
-
-        const res = await axios.post(
-          "https://bot.lyo.su/quote/generate",
-          json
-        )
-
-        const buffer = Buffer.from(res.data.result.image, "base64")
-        const sticker = await createSticker(buffer)
-
-        return ryzu.sendMessage(from, { sticker }, { quoted: msg })
-      } catch (e) {
-        console.error(e)
-        return reply("❌ QC error.")
-      }
-    }
-
-    // ================= BRAT (STATIC) =================
-    if (command === "brat") {
-      if (!q) return reply("Teksnya mana?")
-
-      try {
-        const res = await axios.get(
-          `https://api.siputzx.my.id/api/m/brat?text=${encodeURIComponent(q)}`,
-          { responseType: "arraybuffer" }
-        )
-
-        const sticker = await createSticker(res.data)
-
-        return ryzu.sendMessage(from, { sticker }, { quoted: msg })
-      } catch {
-        return reply("❌ Error server.")
-      }
-    }
-
-    // ================= VBRAT (FINAL) =================
-    if (command === "vbrat") {
-      if (!q) return reply("Teksnya mana?")
-
-      // 🔥 limit kata
-      const words = q.split(" ").slice(0, 6)
-      if (words.length < 2)
-        return reply("Minimal 2 kata biar jadi animasi.")
-
-      reply("⏳ Membuat brat animasi...")
-
-      await ensureTmp()
-
-      const frames = []
-      const files = []
-
-      try {
-        // 1️⃣ generate frame brat bertahap
-        for (let i = 0; i < words.length; i++) {
-          const text = words.slice(0, i + 1).join(" ")
-          const file = tmp(`brat_${i}.png`)
-          await genBrat(text, file)
-          files.push(file)
-        }
-
-        const listFile = tmp("list.txt")
-        const videoFile = tmp("out.mp4")
-
-        // 2️⃣ ffmpeg concat list
-        const listData = files
-          .map(f => `file '${f.replace(/\\/g, "/")}'\nduration 0.45`)
-          .join("\n")
-
-        fs.writeFileSync(listFile, listData)
-
-        // 3️⃣ gabung jadi video
-        await new Promise((resolve, reject) => {
-          ffmpeg()
-            .input(listFile)
-            .inputOptions(["-f concat", "-safe 0"])
-            .outputOptions([
-              "-pix_fmt yuv420p",
-              "-movflags faststart",
-              "-vf scale=512:512:force_original_aspect_ratio=increase,crop=512:512"
-
-            ])
-            .save(videoFile)
-            .on("end", resolve)
-            .on("error", reject)
-        })
-
-        // 4️⃣ kirim sebagai video sticker
-        const videoBuffer = fs.readFileSync(videoFile)
-        const sticker = await createSticker(videoBuffer, { isVideo: true })
-
-        await ryzu.sendMessage(from, { sticker }, { quoted: msg })
-
-      } catch (e) {
-        console.error(e)
-        reply("❌ Gagal membuat vbrat.")
-      } finally {
-        // 🧹 auto cleanup
-        [...files, tmp("list.txt"), tmp("out.mp4")].forEach(f => {
-          if (fs.existsSync(f)) fs.unlinkSync(f)
-        })
-      }
-    }
-
     // ================= WM =================
     if (command === "wm") {
       const quoted = getQuoted(msg)
@@ -298,7 +212,7 @@ module.exports = {
       if (!q.includes("|")) return reply(`Format: ${prefix}wm Pack|Author`)
 
       let [pack, author] = q.split("|")
-      pack = pack.trim() || "Ryzu Pack"
+      pack = pack.trim() || "RyzuBot"
       author = author.trim() || "RyzuBot"
 
       try {
@@ -307,22 +221,14 @@ module.exports = {
         const img = new Image()
         await img.load(buffer)
 
-        // Penting: Generate EXIF yang valid untuk mobile
         const exifData = buildExifBuffer(pack, author)
         img.exif = exifData
 
         const stickerWithExif = await img.save(null)
-
-        // Kirim menggunakan buffer hasil olahan webpmux
-        return ryzu.sendMessage(from, { 
-          sticker: stickerWithExif 
-        }, { 
-          quoted: msg 
-        })
-
+        return ryzu.sendMessage(from, { sticker: stickerWithExif }, { quoted: msg })
       } catch (e) {
         console.error("WM Error:", e)
-        return reply("❌ Gagal menyisipkan WM. Pastikan library node-webpmux terinstal.")
+        return reply("❌ Gagal menyisipkan WM.")
       }
     }
   }
