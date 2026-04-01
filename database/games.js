@@ -62680,6 +62680,22 @@ const dbCharAnime = [
 const dbMlbb = [
     {
         "name": [
+            "Brody",
+        ],
+        "img": "https://files.catbox.moe/27ii06.png",
+        "soal": "https://files.catbox.moe/p1au8c.png",
+        "role": "Marksman"
+    },
+    {
+        "name": [
+            "Fanny",
+        ],
+        "img": "https://files.catbox.moe/fjgkbp.png",
+        "soal": "https://files.catbox.moe/zmd1w9.png",
+        "role": "Assassin"
+    },
+    {
+        "name": [
             "Floryn",
         ],
         "img": "https://files.catbox.moe/o45b73.png",
@@ -62704,20 +62720,20 @@ const dbMlbb = [
     },
     {
         "name": [
+            "Lapu lapu",
+        ],
+        "img": "https://files.catbox.moe/1r2a1v.png",
+        "soal": "https://files.catbox.moe/yzqpi9.png",
+        "role": "Fighter"
+    },
+    {
+        "name": [
             "Rafaela",
         ],
         "img": "https://files.catbox.moe/eqhig7.png",
         "soal": "https://files.catbox.moe/88c20u.png",
         "role": "Support"
-    },
-    {
-        "name": [
-            "Lapu lapu",
-        ],
-        "img": "https://files.catbox.moe/1r2a1v.png",
-        "soal": "https://files.catbox.moe/72pmfe.png",
-        "role": "Assassin"
-    },
+    }
 ]
 
 module.exports = {
