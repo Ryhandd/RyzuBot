@@ -8,7 +8,11 @@ if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
 
 // ================= HELPER =================
 async function downloadAndSend(ryzu, from, msg, url, type, caption = "") {
-    const ext = type === "video" ? ".mp4" : ".jpg"
+    // Penentuan ekstensi berdasarkan tipe
+    let ext = ".jpg" // default image
+    if (type === "video") ext = ".mp4"
+    if (type === "audio") ext = ".mp3" // Paksa jadi mp3 untuk audio
+
     const filePath = path.join(tmpDir, Date.now() + ext)
 
     const res = await axios({
@@ -27,7 +31,8 @@ async function downloadAndSend(ryzu, from, msg, url, type, caption = "") {
 
     await ryzu.sendMessage(from, {
         [type]: { url: filePath },
-        caption
+        caption,
+        mimetype: type === "audio" ? "audio/mpeg" : undefined // Tambahan agar WhatsApp baca sebagai mp3
     }, { quoted: msg })
 
     fs.unlinkSync(filePath)
@@ -54,7 +59,6 @@ module.exports = {
         const apikey = "Btz-eMcqb"
 
         try {
-
             // ================= [ TIKTOK ] =================
             if (command === "tt" || command === "tiktok") {
                 let audioUrl = null
@@ -71,60 +75,28 @@ module.exports = {
                     // SLIDE
                     if (dataSlide?.images?.length > 0) {
                         for (let i = 0; i < dataSlide.images.length; i++) {
-                            await downloadAndSend(
-                                ryzu,
-                                from,
-                                msg,
-                                dataSlide.images[i],
-                                "image"
-                            )
+                            await downloadAndSend(ryzu, from, msg, dataSlide.images[i], "image")
                         }
                         success = true
                     }
 
                     // VIDEO fallback
                     if (!success && dataVid?.video) {
-                        await downloadAndSend(
-                            ryzu,
-                            from,
-                            msg,
-                            dataVid.video,
-                            "video",
-                            dataVid.title || "Done"
-                        )
+                        await downloadAndSend(ryzu, from, msg, dataVid.video, "video", dataVid.title || "Done")
                         success = true
                     }
 
                     audioUrl = dataVid?.audio || dataSlide?.audio
 
-                    // AUDIO tambahan
-                    if (success && audioUrl) {
-                        await downloadAndSend(
-                            ryzu,
-                            from,
-                            msg,
-                            audioUrl,
-                            "audio"
-                        )
+                    // AUDIO tambahan (Otomatis jadi MP3 via helper)
+                    if (audioUrl) {
+                        await downloadAndSend(ryzu, from, msg, audioUrl, "audio")
+                        success = true
                     }
 
                 } catch (e) {
                     console.error("TikTok Error:", e)
                 }
-
-                if (success) {
-                    if (!sutan) {
-                        user.limit -= 1
-                        await funcs.saveRPG(sender)
-                        await reply(`✅ Berhasil! Sisa limit: ${user.limit}`)
-                    } else {
-                        await reply(`✅ Berhasil!`)
-                    }
-                } else {
-                    return reply("❌ Semua server gagal memproses link ini.")
-                }
-
-                return
             }
 
             // ================= [ INSTAGRAM ] =================
@@ -137,18 +109,10 @@ module.exports = {
                         for (let i of result) {
                             let link = i.url || i
                             let isVideo = link.includes('.mp4')
-
-                            await downloadAndSend(
-                                ryzu,
-                                from,
-                                msg,
-                                link,
-                                isVideo ? "video" : "image"
-                            )
+                            await downloadAndSend(ryzu, from, msg, link, isVideo ? "video" : "image")
                         }
                         success = true
                     }
-
                 } catch (e) {
                     console.error("IG Error:", e)
                 }
@@ -159,27 +123,18 @@ module.exports = {
                 try {
                     const resFb = await axios.get(`https://api.betabotz.eu.org/api/download/fbdown?url=${q}&apikey=${apikey}`)
                     const d = resFb.data.result
-
-                    let vid = d?.hd || d?.sd || (Array.isArray(d) ? d[0]?.url : null)
+                    let vid = d?.hd || d?.sd || (Array.isArray(d) ? d?.url : null)
 
                     if (vid) {
-                        await downloadAndSend(
-                            ryzu,
-                            from,
-                            msg,
-                            vid,
-                            "video",
-                            "Facebook Done"
-                        )
+                        await downloadAndSend(ryzu, from, msg, vid, "video", "Facebook Done")
                         success = true
                     }
-
                 } catch (e) {
                     console.error("FB Error:", e)
                 }
             }
 
-            // ================= RESULT =================
+            // ================= RESULT FINAL =================
             if (success) {
                 if (!sutan) {
                     user.limit -= 1
