@@ -5,7 +5,6 @@ const path = require("path")
 const ffmpeg = require("fluent-ffmpeg")
 const ffmpegPath = require("ffmpeg-static")
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys")
-const { createSticker } = require("../../lib/sticker")
 const { execSync } = require("child_process")
 const { Image } = require("node-webpmux")
 
@@ -26,27 +25,33 @@ const buildExifBuffer = (pack, author) => {
 }
 
 async function makeStickerWithWM(buffer, isVideo = false) {
-  await ensureTmp()
+  const { fileTypeFromBuffer } = require("file-type")
+  const webp = require("node-webpmux")
+  const { execSync } = require("child_process")
 
-  const input = tmp(`raw_${Date.now()}`)
-  const fixed = tmp(`fixed_${Date.now()}.webp`)
+  const type = await fileTypeFromBuffer(buffer)
+  if (!type) throw "File tidak valid"
+
+  const input = tmp(`in_${Date.now()}`)
+  const output = tmp(`out_${Date.now()}.webp`)
 
   fs.writeFileSync(input, buffer)
 
   if (isVideo) {
+    // INI YANG BENER (ngikut logic lib lu)
     execSync(
-      `ffmpeg -y -i "${input}" -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease,fps=15" -loop 0 -t 6 -an -vsync 0 "${fixed}"`,
+      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease,fps=30" -loop 0 -preset default -an -vsync 0 "${output}"`,
       { stdio: "ignore" }
     )
   } else {
     execSync(
-      `ffmpeg -y -i "${input}" -vf "scale=512:512:force_original_aspect_ratio=decrease" "${fixed}"`,
+      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease" "${output}"`,
       { stdio: "ignore" }
     )
   }
 
-  const img = new Image()
-  await img.load(fixed)
+  const img = new webp.Image()
+  await img.load(output)
 
   const exif = buildExifBuffer("RyzuBot", "+62 899-8821-419")
   img.exif = exif
@@ -54,7 +59,7 @@ async function makeStickerWithWM(buffer, isVideo = false) {
   const result = await img.save(null)
 
   fs.unlinkSync(input)
-  fs.unlinkSync(fixed)
+  fs.unlinkSync(output)
 
   return result
 }
@@ -320,8 +325,8 @@ module.exports = {
         fs.writeFileSync(input, buffer)
 
         execSync(
-          `ffmpeg -y -ignore_loop 0 -i "${input}" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=15" -movflags faststart -pix_fmt yuv420p "${output}"`,
-          { stdio: "pipe" }
+          `ffmpeg -y -ignore_loop 0 -i "${input}" -vf "fps=30,scale=trunc(iw/2)*2:trunc(ih/2)*2" -movflags faststart -pix_fmt yuv420p "${output}"`,
+          { stdio: "inherit" }
         )
 
         const result = fs.readFileSync(output)
