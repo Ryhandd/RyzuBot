@@ -573,7 +573,21 @@ module.exports = async function ryzuHandler(ryzu, m) {
             let benar = Array.isArray(targetJawaban)
               ? targetJawaban.some((j) => bodyLow === j || similarity(bodyLow, j) >= 0.75)
               : bodyLow === targetJawaban || similarity(bodyLow, targetJawaban) >= 0.75;
-            if (benar) {
+
+            const getSimilarity = (ans, input) => similarity(input, ans)
+
+            let maxSim = 0
+
+            if (Array.isArray(targetJawaban)) {
+              for (const j of targetJawaban) {
+                const sim = bodyLow === j ? 1 : getSimilarity(j, bodyLow)
+                if (sim > maxSim) maxSim = sim
+              }
+            } else {
+              maxSim = bodyLow === targetJawaban ? 1 : getSimilarity(targetJawaban, bodyLow)
+            }
+
+            if (maxSim >= 0.75) {
               let money = 5000, exp = 500;
               if (room.hadiah) { money = room.hadiah.money; exp = room.hadiah.exp; }
               global.rpg[senderId].money += money;
@@ -583,6 +597,10 @@ module.exports = async function ryzuHandler(ryzu, m) {
               delete ryzu.game[from][room.tipe];
               funcs.saveRPG(senderId).catch(() => {});
               return reply(`✅ *BENAR!*\n💰 +${money} Money\n✨ +${exp} EXP${up ? "\n🎊 LEVEL UP!" : ""}`);
+            }
+
+            if (maxSim >= 0.5) {
+              return reply("🤏 Dikit lagi!");
             }
           }
         }
