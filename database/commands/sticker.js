@@ -35,7 +35,7 @@ async function makeStickerWithWM(buffer, isVideo = false) {
 
   if (isVideo) {
     execSync(
-      `ffmpeg -y -i "${input}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=15" -loop 0 -t 6 -an -vsync 0 "${fixed}"`,
+      `ffmpeg -y -i "${input}" -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease,fps=15" -loop 0 -t 6 -an -vsync 0 "${fixed}"`,
       { stdio: "ignore" }
     )
   } else {
@@ -320,8 +320,8 @@ module.exports = {
         fs.writeFileSync(input, buffer)
 
         execSync(
-          `ffmpeg -y -i "${input}" -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "${output}"`,
-          { stdio: "ignore" }
+          `ffmpeg -y -ignore_loop 0 -i "${input}" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=15" -movflags faststart -pix_fmt yuv420p "${output}"`,
+          { stdio: "pipe" }
         )
 
         const result = fs.readFileSync(output)
