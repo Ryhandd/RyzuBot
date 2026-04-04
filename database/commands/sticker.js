@@ -39,7 +39,7 @@ async function makeStickerWithWM(buffer, isVideo = false) {
 
   if (isVideo) {
     execSync(
-      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "fps=30" -loop 0 -preset default -an -vsync 0 "${output}"`,
+      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease,fps=30" -loop 0 -preset default -an -vsync 0 "${output}"`,
       { stdio: "ignore" }
     )
   } else {
@@ -313,28 +313,18 @@ module.exports = {
 
       await ensureTmp()
 
-      let input, fixedInput, output
+      let input, output
 
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
 
         input = tmp(`raw_${Date.now()}.webp`)
-        fixedInput = tmp(`fixed_${Date.now()}.webp`)
         output = tmp(`out_${Date.now()}.mp4`)
 
-        // simpan raw dulu
         fs.writeFileSync(input, buffer)
 
-        // 🔥 NORMALIZE WEBP (ini kunci fix)
-        const img = new Image()
-        await img.load(input)
-
-        // buang metadata aneh, rebuild file
-        await img.save(fixedInput)
-
-        // 🔥 convert ke mp4
         execSync(
-          `ffmpeg -y -loglevel error -i "${fixedInput}" -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "${output}"`
+          `ffmpeg -y -loglevel error -i "${input}" -c:v libx264 -pix_fmt yuv420p -movflags faststart "${output}"`
         )
 
         const result = fs.readFileSync(output)
@@ -344,7 +334,7 @@ module.exports = {
         console.error("TOVID ERROR:", e)
         reply("❌ Gagal convert ke video.")
       } finally {
-        ;[input, fixedInput, output].forEach(f => {
+        ;[input, output].forEach(f => {
           if (f && fs.existsSync(f)) fs.unlinkSync(f)
         })
       }
