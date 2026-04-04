@@ -38,8 +38,10 @@ async function makeStickerWithWM(buffer, isVideo = false) {
   fs.writeFileSync(input, buffer)
 
   if (isVideo) {
-    execSync(`ffmpeg -y -loglevel error -i "${input}" -c:v libwebp -lossless 1 "${output}"`)
-    return cleaned
+    execSync(
+      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease,fps=30" -loop 0 -preset default -an -vsync 0 "${output}"`,
+      { stdio: "ignore" }
+    )
   } else {
     execSync(
       `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease" "${output}"`,
@@ -311,66 +313,51 @@ module.exports = {
 
       await ensureTmp()
 
-      let input, output
+      let input, output, frameDir
 
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
         
-        console.log(`[TOVID] Buffer size: ${buffer.length} bytes`)
-
         input = tmp(`raw_${Date.now()}.webp`)
         output = tmp(`out_${Date.now()}.mp4`)
+        frameDir = tmp(`frames_${Date.now()}`)
 
         fs.writeFileSync(input, buffer)
-
-        const checkCmd = `ffmpeg -i "${input}" -f null - 2>&1 | head -20`
-        try {
-          const checkOutput = execSync(checkCmd, { encoding: 'utf-8' })
-          console.log("[TOVID CHECK]:", checkOutput)
-        } catch (checkErr) {
-          console.log("[TOVID] File check:", checkErr.message)
-        }
-
-        console.log("[TOVID] Attempting direct conversion...")
+        fs.mkdirSync(frameDir, { recursive: true })
         
-        try {
-          execSync(`ffmpeg -y -i "${input}" -c:v libx264 -pix_fmt yuv420p -movflags faststart "${output}"`)
-        } catch (firstAttempt) {
-          console.log("[TOVID] First attempt failed, trying frame extraction...")
-          
-          const frameDir = tmp(`frames_${Date.now()}`)
-          fs.mkdirSync(frameDir, { recursive: true })
-          
-          execSync(
-            `ffmpeg -y -i "${input}" -vf "fps=10" "${frameDir}/frame_%04d.png"`,
-            { stdio: "ignore" }
-          )
-          
-          const frames = fs.readdirSync(frameDir)
-            .filter(f => f.endsWith('.png'))
-            .sort()
-          
-          if (frames.length === 0) throw new Error("Gak ada frame yang bisa diekstrak")
-          
-          const framePattern = `${frameDir}/frame_%04d.png`
-          execSync(
-            `ffmpeg -y -framerate 10 -i "${framePattern}" -c:v libx264 -pix_fmt yuv420p -movflags faststart "${output}"`,
-            { stdio: "ignore" }
-          )
-          
-          frames.forEach(f => {
-            try { fs.unlinkSync(path.join(frameDir, f)) } catch {}
-          })
-          fs.rmdirSync(frameDir)
-        }
+        execSync(
+          `ffmpeg -y -i "${input}" -vf "fps=10" "${frameDir}/frame_%04d.png"`,
+          { stdio: "ignore" }
+        )
+        
+        const frames = fs.readdirSync(frameDir)
+          .filter(f => f.endsWith('.png'))
+          .sort()
+        
+        if (frames.length === 0) throw new Error("Gak ada frame yang bisa diekstrak")
+        
+        const framePattern = `${frameDir}/frame_%04d.png`
+        execSync(
+          `ffmpeg -y -framerate 10 -i "${framePattern}" -c:v libvpx -pix_fmt yuv420p -crf 30 -b:v 500k "${output}"`,
+          { stdio: "ignore" }
+        )
 
         const result = fs.readFileSync(output)
         await ryzu.sendMessage(from, { video: result }, { quoted: msg })
 
       } catch (e) {
         console.error("[TOVID ERROR]:", e.message)
-        reply("❌ Gagal convert ke video. Stiker mungkin corrupt atau format tidak didukung.")
+        reply("❌ Gagal convert ke video.")
       } finally {
+        if (frameDir && fs.existsSync(frameDir)) {
+          try {
+            fs.readdirSync(frameDir).forEach(f => {
+              fs.unlinkSync(path.join(frameDir, f))
+            })
+            fs.rmdirSync(frameDir)
+          } catch {}
+        }
+        
         ;[input, output].forEach(f => {
           if (f && fs.existsSync(f)) fs.unlinkSync(f)
         })
