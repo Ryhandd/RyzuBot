@@ -7,9 +7,6 @@ const ffmpegPath = require("ffmpeg-static")
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys")
 const { createSticker } = require("../../lib/sticker")
 const { execSync } = require("child_process")
-const input = tmp(`in_${Date.now()}.webp`)
-const clean = tmp(`clean_${Date.now()}.webp`)
-const output = tmp(`out_${Date.now()}.mp4`)
 
 ffmpeg.setFfmpegPath(ffmpegPath)
 
@@ -292,16 +289,26 @@ module.exports = {
 
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
-        
+
+        const input = tmp(`in_${Date.now()}.webp`)
+        const output = tmp(`out_${Date.now()}.mp4`)
+        const frameDir = tmp(`frames_${Date.now()}`)
+
+        fs.mkdirSync(frameDir, { recursive: true })
         fs.writeFileSync(input, buffer)
 
-        execSync(`ffmpeg -y -i "${input}" "${clean}"`, { stdio: "pipe" })
+        const img = new Image()
+        await img.load(input)
+
+        let i = 0
+        for (const frame of img.frames) {
+          const framePath = path.join(frameDir, `frame_${i}.png`)
+          fs.writeFileSync(framePath, frame.data)
+          i++
+        }
 
         execSync(
-          `ffmpeg -y -i "${clean}" \
-          -movflags faststart -pix_fmt yuv420p \
-          -vf "fps=15,scale=512:512:force_original_aspect_ratio=increase,crop=512:512" \
-          "${output}"`,
+          `ffmpeg -y -framerate 15 -i "${frameDir}/frame_%d.png" -pix_fmt yuv420p "${output}"`,
           { stdio: "pipe" }
         )
 
@@ -309,10 +316,7 @@ module.exports = {
 
         await ryzu.sendMessage(from, { video: result }, { quoted: msg })
 
-        [input, clean, output].forEach(f => {
-          if (fs.existsSync(f)) fs.unlinkSync(f)
-        })
-
+        fs.rmSync(frameDir, { recursive: true, force: true })
         fs.unlinkSync(input)
         fs.unlinkSync(output)
 
