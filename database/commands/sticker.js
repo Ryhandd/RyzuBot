@@ -6,9 +6,36 @@ const ffmpeg = require("fluent-ffmpeg")
 const ffmpegPath = require("ffmpeg-static")
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys")
 
-const { createSticker, buildExifBuffer } = require("../../lib/sticker")
+const { createSticker } = require("../../lib/sticker")
 
 ffmpeg.setFfmpegPath(ffmpegPath)
+
+const buildExifBuffer = (pack, author) => {
+  const json = {
+    "sticker-pack-id": `ryzubot-${Date.now()}`,
+    "sticker-pack-name": pack,
+    "sticker-pack-publisher": author,
+    "emojis": ["🚀"]
+  }
+  const exifHeader = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00])
+  const jsonBuffer = Buffer.from(JSON.stringify(json), "utf-8")
+  const exif = Buffer.concat([exifHeader, jsonBuffer])
+  exif.writeUIntLE(jsonBuffer.length, 14, 4)
+  return exif
+}
+
+async function makeStickerWithWM(buffer, isVideo = false) {
+  const raw = await createSticker(buffer, { isVideo })
+
+  const { Image } = require("node-webpmux")
+  const img = new Image()
+  await img.load(raw)
+
+  const exif = buildExifBuffer("RyzuBot", "RyzuBot")
+  img.exif = exif
+
+  return await img.save(null)
+}
 
 // ================= UTIL =================
 function tmp(name) {
@@ -72,7 +99,7 @@ module.exports = {
 
       const isVideo = type === "video"
       const buffer = await downloadMedia(media, type)
-      const sticker = await createSticker(buffer, { isVideo })
+      const sticker = await makeStickerWithWM(buffer, isVideo)
 
       return ryzu.sendMessage(from, { sticker }, { quoted: msg })
     }
@@ -94,7 +121,7 @@ module.exports = {
         const bg = "https://images.weserv.nl/?url=" + encodeURIComponent(up.data.trim()) + "&output=png"
         const memeUrl = `https://api.memegen.link/images/custom/${encodeURIComponent(top)}/${encodeURIComponent(bottom)}.png?background=${encodeURIComponent(bg)}&font=impact`
         const meme = await axios.get(memeUrl, { responseType: "arraybuffer" })
-        const sticker = await createSticker(meme.data)
+        const sticker = await makeStickerWithWM(meme.data)
         return ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch (e) {
         return reply("❌ Gagal membuat smeme.")
@@ -127,7 +154,7 @@ module.exports = {
         }
         const res = await axios.post("https://bot.lyo.su/quote/generate", json)
         const buffer = Buffer.from(res.data.result.image, "base64")
-        const sticker = await createSticker(buffer)
+        const sticker = await makeStickerWithWM(buffer)
         return ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch (e) {
         return reply("❌ QC error.")
@@ -139,7 +166,7 @@ module.exports = {
       if (!q) return reply("Teksnya mana?")
       try {
         const res = await axios.get(`https://api.siputzx.my.id/api/m/brat?text=${encodeURIComponent(q)}`, { responseType: "arraybuffer" })
-        const sticker = await createSticker(res.data)
+        const sticker = await makeStickerWithWM(res.data)
         return ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch {
         return reply("❌ Error server.")
@@ -179,7 +206,7 @@ module.exports = {
         })
 
         const videoBuffer = fs.readFileSync(videoFile)
-        const sticker = await createSticker(videoBuffer, { isVideo: true })
+        const sticker = await makeStickerWithWM(videoBuffer, true)
         await ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch (e) {
         console.error(e)
