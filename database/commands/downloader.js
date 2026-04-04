@@ -56,38 +56,70 @@ module.exports = {
 
         try {
             if (command === "tt" || command === "tiktok") {
-                let audioUrl = null
+                const ONEPUNYA_KEY = process.env.ONEPUNYA_KEY
+                const encodedUrl = encodeURIComponent(q)
 
                 try {
-                    const [resSlide, resVid] = await Promise.all([
-                        axios.get(`https://api.betabotz.eu.org/api/download/ttslide?url=${q}&apikey=${apikey}`).catch(() => ({ data: {} })),
-                        axios.get(`https://api.betabotz.eu.org/api/download/tiktok?url=${q}&apikey=${apikey}`).catch(() => ({ data: {} }))
-                    ])
-
-                    const dataSlide = resSlide.data?.result
-                    const dataVid = resVid.data?.result
-
-                    if (dataSlide?.images?.length > 0) {
-                        for (let i = 0; i < dataSlide.images.length; i++) {
-                            await downloadAndSend(ryzu, from, msg, dataSlide.images[i], "image")
+                    console.log(`[SERVER] Mencoba Onepunya TikTok...`)
+                    const resOne = await axios.get(`https://onepunya.qzz.io/api/download/tiktok?url=${encodedUrl}&apikey=${ONEPUNYA_KEY}`)
+                    
+                    if (resOne.data && resOne.data.status) {
+                        const result = resOne.data.result
+                        
+                        if (result.images && result.images.length > 0) {
+                            for (let img of result.images) {
+                                await downloadAndSend(ryzu, from, msg, img, "image")
+                            }
+                            success = true
+                        } 
+                        
+                        if (result.video || result.nowm) {
+                            let vid = result.video || result.nowm
+                            await downloadAndSend(ryzu, from, msg, vid, "video", result.title || "Done")
+                            success = true
                         }
-                        success = true
+
+                        if (result.audio || result.music) {
+                            let aud = result.audio || result.music
+                            await downloadAndSend(ryzu, from, msg, aud, "audio")
+                            success = true
+                        }
                     }
-
-                    if (!success && dataVid?.video) {
-                        await downloadAndSend(ryzu, from, msg, dataVid.video, "video", dataVid.title || "Done")
-                        success = true
-                    }
-
-                    audioUrl = dataVid?.audio || dataSlide?.audio
-
-                    if (audioUrl) {
-                        await downloadAndSend(ryzu, from, msg, audioUrl, "audio")
-                        success = true
-                    }
-
                 } catch (e) {
-                    console.error("TikTok Error:", e)
+                    console.error("[SERVER] Onepunya TikTok Error:", e.message)
+                }
+
+                if (!success) {
+                    try {
+                        console.log(`[SERVER] Onepunya Gagal, Beralih ke Betabotz (TT)...`)
+                        const [resSlide, resVid] = await Promise.all([
+                            axios.get(`https://api.betabotz.eu.org/api/download/ttslide?url=${q}&apikey=${apikey}`).catch(() => ({ data: {} })),
+                            axios.get(`https://api.betabotz.eu.org/api/download/tiktok?url=${q}&apikey=${apikey}`).catch(() => ({ data: {} }))
+                        ])
+
+                        const dataSlide = resSlide.data?.result
+                        const dataVid = resVid.data?.result
+
+                        if (dataSlide?.images?.length > 0) {
+                            for (let i = 0; i < dataSlide.images.length; i++) {
+                                await downloadAndSend(ryzu, from, msg, dataSlide.images[i], "image")
+                            }
+                            success = true
+                        }
+
+                        if (!success && dataVid?.video) {
+                            await downloadAndSend(ryzu, from, msg, dataVid.video, "video", dataVid.title || "Done")
+                            success = true
+                        }
+
+                        let audioUrl = dataVid?.audio || dataSlide?.audio
+                        if (audioUrl) {
+                            await downloadAndSend(ryzu, from, msg, audioUrl, "audio")
+                            success = true
+                        }
+                    } catch (e) {
+                        console.error("[SERVER] Betabotz TikTok Error:", e.message)
+                    }
                 }
             }
 
