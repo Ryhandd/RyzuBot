@@ -299,6 +299,7 @@ module.exports = {
         fs.mkdirSync(frameDir, { recursive: true })
         fs.writeFileSync(input, buffer)
 
+        const { Image } = require("node-webpmux")
         const img = new Image()
         await img.load(input)
 
@@ -306,25 +307,32 @@ module.exports = {
           return reply("❌ Gagal membaca frame stiker.")
         }
 
-        let i = 0
-
+        // ambil semua frame valid
+        const validFrames = []
         for (const frame of img.frames) {
+          const data = frame.data || frame.image || frame.buffer
+          if (data) validFrames.push(data)
+        }
+
+        if (validFrames.length === 0) {
+          return reply("❌ Frame tidak valid.")
+        }
+
+        // convert semua frame ke PNG berurutan
+        for (let i = 0; i < validFrames.length; i++) {
           const frameWebp = path.join(frameDir, `frame_${i}.webp`)
           const framePng = path.join(frameDir, `frame_${i}.png`)
 
-          const data = frame.data || frame.image || frame.buffer
-          if (!data) continue
-
-          fs.writeFileSync(frameWebp, data)
+          fs.writeFileSync(frameWebp, validFrames[i])
 
           execSync(`ffmpeg -y -i "${frameWebp}" "${framePng}"`, {
             stdio: "ignore"
           })
 
           fs.unlinkSync(frameWebp)
-          i++
         }
 
+        // gabung jadi video
         execSync(
           `ffmpeg -y -framerate 15 -i "${frameDir}/frame_%d.png" -pix_fmt yuv420p "${output}"`,
           { stdio: "pipe" }
@@ -334,7 +342,7 @@ module.exports = {
         await ryzu.sendMessage(from, { video: result }, { quoted: msg })
 
       } catch (e) {
-        console.error(e)
+        console.error("TOVID ERROR:", e)
         reply("❌ Gagal convert ke video.")
       } finally {
         if (input && fs.existsSync(input)) fs.unlinkSync(input)
@@ -344,6 +352,6 @@ module.exports = {
         }
       }
     }
-
+    
   }
 }
