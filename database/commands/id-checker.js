@@ -7,7 +7,7 @@ module.exports = {
     async execute(ctx) {
         const { ryzu, from, msg, args, q, reply, user, funcs, isCreator, isPremium, sender, prefix } = ctx
 
-        if (!args || !args) {
+        if (!args || args.length < 2) {
             return reply(`⚠️ *Format Salah!*\n\nContoh penggunaan:\n*${prefix}id ff 404810410*\n*${prefix}id ml 14142141*\n*${prefix}id codm 142141214*\n\n*List Game:* ff, ml, codm, aov, gi`)
         }
 
@@ -16,6 +16,7 @@ module.exports = {
             return reply("❌ Limit lu abis! Beli di *.shop* atau upgrade ke *Premium* biar Unlimited.")
         }
 
+        // Ambil input dari args dengan aman
         const subCommand = args.toLowerCase()
         const targetId = args
         let gameName = ""
@@ -62,7 +63,7 @@ module.exports = {
                 let teks = `✅ *ID CHECKER FOUND*\n\n`
                 teks += `🎮 *Game:* ${gameName}\n`
                 teks += `🆔 *ID:* ${targetId}\n`
-                teks += `👤 *Nickname:* ${data.nickname || data.name || data.result || 'Terdeteksi'}\n`
+                teks += `👤 *Nickname:* ${data.nickname || data.name || data.result || 'Tidak ditemukan'}\n`
                 
                 if (data.region) teks += `🌍 *Region:* ${data.region}\n`
 
@@ -71,7 +72,7 @@ module.exports = {
                 if (!sutan) {
                     user.limit -= 1
                     await funcs.saveRPG(sender)
-                    await reply(`Sisa limit: ${user.limit}`)
+                    await reply(`✅ Berhasil! Sisa limit: ${user.limit}`)
                 }
             } else {
                 reply(`❌ Data tidak ditemukan. Pastikan ID *${targetId}* benar untuk game *${gameName}*.`)
@@ -79,7 +80,7 @@ module.exports = {
 
         } catch (e) {
             console.error("Checker Error:", e.response ? e.response.data : e.message)
-            reply("❌ Terjadi kesalahan pada server API atau Key tidak valid.")
+            reply("❌ Terjadi kesalahan pada server API. Coba lagi nanti.")
         }
     }
 }
