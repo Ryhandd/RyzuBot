@@ -307,14 +307,21 @@ module.exports = {
         }
 
         let i = 0
+
         for (const frame of img.frames) {
-          const framePath = path.join(frameDir, `frame_${i}.png`)
+          const frameWebp = path.join(frameDir, `frame_${i}.webp`)
+          const framePng = path.join(frameDir, `frame_${i}.png`)
 
           const data = frame.data || frame.image || frame.buffer
-
           if (!data) continue
 
-          fs.writeFileSync(framePath, data)
+          fs.writeFileSync(frameWebp, data)
+
+          execSync(`ffmpeg -y -i "${frameWebp}" "${framePng}"`, {
+            stdio: "ignore"
+          })
+
+          fs.unlinkSync(frameWebp)
           i++
         }
 
