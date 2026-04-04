@@ -38,7 +38,7 @@ module.exports = {
                     let teks = `⏰ *WAKTU HABIS*\n\n📝 Soal: *${room.soal}*\n\n🗝️ Jawaban:\n`;
                     room.jawaban_asli.forEach((j, i) => {
                         const p = room.penjawab?.[j.toLowerCase().trim()];
-                        teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")}` : " ❌"}\n`;
+                        teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")[0]}` : " ❌"}\n`;
                     });
                     ryzu.sendMessage(from, { 
                         text: teks, 
