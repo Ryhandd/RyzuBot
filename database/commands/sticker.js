@@ -38,9 +38,8 @@ async function makeStickerWithWM(buffer, isVideo = false) {
   fs.writeFileSync(input, buffer)
 
   if (isVideo) {
-    // INI YANG BENER (ngikut logic lib lu)
     execSync(
-      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease,fps=30" -loop 0 -preset default -an -vsync 0 "${output}"`,
+      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "fps=30" -loop 0 -preset default -an -vsync 0 "${output}"`,
       { stdio: "ignore" }
     )
   } else {
