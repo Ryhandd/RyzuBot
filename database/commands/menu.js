@@ -220,7 +220,8 @@ module.exports = {
 ━━━━━━━━━━━━━━━━━━━━━━
 
 ⚡ *SHORTCUT*
-┌ ${prefix}owner    — Kontak pemilik bot
+┌ ${prefix}help     — Cara menggunakan bot
+├ ${prefix}owner    — Kontak pemilik bot
 ├ ${prefix}register — Daftar akun RPG
 ├ ${prefix}me       — Profile & Inventory
 ├ ${prefix}daily    — Klaim hadiah harian
