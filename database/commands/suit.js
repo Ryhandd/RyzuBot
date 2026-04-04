@@ -45,6 +45,12 @@ module.exports = {
             }, 60000) // 1 menit waktu terima
         };
 
-        reply(`🥊 @${sender.split('@')[0]} menantang @${target.split('@')[0]} main suit!\n\nKetik *${prefix}suit acc* untuk menerima.`);
+        const senderNum = sender.split("@")[0].replace(/[^0-9]/g, "");
+        const targetNum = target.split("@")[0].replace(/[^0-9]/g, "");
+
+        await ryzu.sendMessage(from, {
+            text: `🥊 @${senderNum} menantang @${targetNum} main suit!\n\nKetik *${prefix}suit acc* untuk menerima.`,
+            mentions: [sender, target]
+        });
     }
 };

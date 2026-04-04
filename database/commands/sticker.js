@@ -65,7 +65,7 @@ function getImage(msg) {
 // ================= COMMAND =================
 module.exports = {
   name: "sticker",
-  alias: ["s", "stiker", "smeme", "qc", "wm", "brat", "vbrat"],
+  alias: ["s", "stiker", "smeme", "qc", "wm", "brat", "vbrat", "toimg", "tovideo", "tovid"],
   async execute({ ryzu, from, msg, command, q, reply, prefix, pushname, sender }) {
 
     // .S / .STIKER
@@ -231,5 +231,71 @@ module.exports = {
         return reply("❌ Gagal menyisipkan WM.")
       }
     }
+
+    // ================= TOIMG =================
+    if (command === "toimg") {
+      const quoted = getQuoted(msg)
+      if (!quoted?.stickerMessage) return reply("Reply stikernya.")
+
+      await ensureTmp()
+
+      try {
+        const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
+
+        const input = tmp(`in_${Date.now()}.webp`)
+        const output = tmp(`out_${Date.now()}.png`)
+
+        fs.writeFileSync(input, buffer)
+
+        execSync(`ffmpeg -y -i "${input}" "${output}"`)
+
+        const result = fs.readFileSync(output)
+
+        await ryzu.sendMessage(from, { image: result }, { quoted: msg })
+
+        fs.unlinkSync(input)
+        fs.unlinkSync(output)
+
+      } catch (e) {
+        console.error(e)
+        reply("❌ Gagal convert ke gambar.")
+      }
+    }
+
+    // ================= TOVIDEO =================
+    if (["tovideo", "tovid"].includes(command)) {
+      const quoted = getQuoted(msg)
+      if (!quoted?.stickerMessage) return reply("Reply stikernya.")
+
+      const isAnimated = quoted.stickerMessage.isAnimated
+      if (!isAnimated) return reply("Stiker ini bukan animasi.")
+
+      await ensureTmp()
+
+      try {
+        const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
+
+        const input = tmp(`in_${Date.now()}.webp`)
+        const output = tmp(`out_${Date.now()}.mp4`)
+
+        fs.writeFileSync(input, buffer)
+
+        execSync(
+          `ffmpeg -y -i "${input}" -movflags faststart -pix_fmt yuv420p -vf "scale=512:512:force_original_aspect_ratio=increase,crop=512:512" "${output}"`
+        )
+
+        const result = fs.readFileSync(output)
+
+        await ryzu.sendMessage(from, { video: result }, { quoted: msg })
+
+        fs.unlinkSync(input)
+        fs.unlinkSync(output)
+
+      } catch (e) {
+        console.error(e)
+        reply("❌ Gagal convert ke video.")
+      }
+    }
+
   }
 }

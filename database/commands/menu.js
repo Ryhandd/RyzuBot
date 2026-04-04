@@ -2,7 +2,6 @@ const sendCard = require('../../lib/sendCard')
 
 module.exports = {
   name: "menu",
-  alias: ["help", "start"],
   execute: async ({ ryzu, from, msg, reply, pushname, prefix, sender, funcs, args }) => {
     funcs.checkUser(sender)
     const user = global.rpg[sender]
