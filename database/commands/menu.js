@@ -221,11 +221,12 @@ module.exports = {
 
 ⚡ *SHORTCUT*
 ┌ ${prefix}owner    — Kontak pemilik bot
+├ ${prefix}register — Daftar akun RPG
 ├ ${prefix}me       — Profile & Inventory
 ├ ${prefix}daily    — Klaim hadiah harian
 ├ ${prefix}shop     — Lihat toko
-├ ${prefix}ping     — Cek kecepatan bot
-└ ${prefix}register — Daftar akun RPG
+├ ${prefix}premium  — List harga premium
+└ ${prefix}ping     — Cek kecepatan bot
 
 ━━━━━━━━━━━━━━━━━━━━━━
 💡 Tips: ketik ${prefix}menu <kategori>
