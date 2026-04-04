@@ -313,6 +313,9 @@ module.exports = {
           if (fs.existsSync(f)) fs.unlinkSync(f)
         })
 
+        fs.unlinkSync(input)
+        fs.unlinkSync(output)
+
       } catch (e) {
         console.error(e)
         reply("❌ Gagal convert ke video.")
