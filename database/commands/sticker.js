@@ -31,7 +31,7 @@ async function makeStickerWithWM(buffer, isVideo = false) {
   const img = new Image()
   await img.load(raw)
 
-  const exif = buildExifBuffer("RyzuBot", "RyzuBot")
+  const exif = buildExifBuffer("RyzuBot", "+62 899-8821-419")
   img.exif = exif
 
   return await img.save(null)
