@@ -94,7 +94,8 @@ module.exports = {
 ├ ${prefix}ytmp4 <link>
 ├ ${prefix}tt <link>
 ├ ${prefix}ig <link>
-└ ${prefix}fb <link>
+├ ${prefix}fb <link>
+└ ${prefix}mediafire <link>
 
 🖼️ *IMAGE*
 ┌ ${prefix}pinterest / pin <query>
