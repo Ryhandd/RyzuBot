@@ -552,16 +552,14 @@ module.exports = async function ryzuHandler(ryzu, m) {
               let teks = `✅ *BENAR!*\n📝 Soal: *${room.soal}*\n\n`;
               const mentions = [];
               room.jawaban_asli.forEach((j, i) => {
-                  const lj = j.toLowerCase().trim();
-                  const isTerjawab = room.terjawab.includes(lj);
-                  const penjawab = room.penjawab?.[lj];
+              const lj = j.toLowerCase().trim();
+              const isTerjawab = room.terjawab.includes(lj);
+              const penjawab = room.penjawab?.[lj];
 
-                  if (isTerjawab && penjawab) {
-                      mentions.push(penjawab);
-                      teks += `${i + 1}. ${j} ✅ (@${penjawab.split("@")})\n`;
-                  } else {
-                      teks += `${i + 1}. ${isTerjawab ? j : "????"} ❌\n`;
-                  }
+              if (isTerjawab && penjawab) {
+                  mentions.push(penjawab);
+                  teks += `${i + 1}. ${j} ✅ (@${penjawab.split("@")})\n`;
+                } else teks += `${i + 1}. ??\n`;
               });
               teks += `\n🎁 +5000 Money | +500 EXP${up ? "\n🎊 LEVEL UP!" : ""}`;
               if (room.terjawab.length === room.jawaban.length) {
