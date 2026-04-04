@@ -7,6 +7,7 @@ const ffmpegPath = require("ffmpeg-static")
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys")
 const { createSticker } = require("../../lib/sticker")
 const { execSync } = require("child_process")
+const { Image } = require("node-webpmux")
 
 ffmpeg.setFfmpegPath(ffmpegPath)
 
@@ -27,7 +28,6 @@ const buildExifBuffer = (pack, author) => {
 async function makeStickerWithWM(buffer, isVideo = false) {
   const raw = await createSticker(buffer, { isVideo })
 
-  const { Image } = require("node-webpmux")
   const img = new Image()
   await img.load(raw)
 
