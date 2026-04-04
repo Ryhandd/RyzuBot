@@ -26,15 +26,37 @@ const buildExifBuffer = (pack, author) => {
 }
 
 async function makeStickerWithWM(buffer, isVideo = false) {
-  const raw = await createSticker(buffer, { isVideo })
+  await ensureTmp()
+
+  const input = tmp(`raw_${Date.now()}`)
+  const fixed = tmp(`fixed_${Date.now()}.webp`)
+
+  fs.writeFileSync(input, buffer)
+
+  if (isVideo) {
+    execSync(
+      `ffmpeg -y -i "${input}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=15" -loop 0 -t 6 -an -vsync 0 "${fixed}"`,
+      { stdio: "ignore" }
+    )
+  } else {
+    execSync(
+      `ffmpeg -y -i "${input}" -vf "scale=512:512:force_original_aspect_ratio=decrease" "${fixed}"`,
+      { stdio: "ignore" }
+    )
+  }
 
   const img = new Image()
-  await img.load(raw)
+  await img.load(fixed)
 
   const exif = buildExifBuffer("RyzuBot", "+62 899-8821-419")
   img.exif = exif
 
-  return await img.save(null)
+  const result = await img.save(null)
+
+  fs.unlinkSync(input)
+  fs.unlinkSync(fixed)
+
+  return result
 }
 
 // ================= UTIL =================
@@ -287,55 +309,19 @@ module.exports = {
 
       await ensureTmp()
 
-      let input, output, frameDir
+      let input, output
 
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
 
         input = tmp(`in_${Date.now()}.webp`)
         output = tmp(`out_${Date.now()}.mp4`)
-        frameDir = tmp(`frames_${Date.now()}`)
 
-        fs.mkdirSync(frameDir, { recursive: true })
         fs.writeFileSync(input, buffer)
 
-        const { Image } = require("node-webpmux")
-        const img = new Image()
-        await img.load(input)
-
-        if (!img.frames || img.frames.length === 0) {
-          return reply("❌ Gagal membaca frame stiker.")
-        }
-
-        // ambil semua frame valid
-        const validFrames = []
-        for (const frame of img.frames) {
-          const data = frame.data || frame.image || frame.buffer
-          if (data) validFrames.push(data)
-        }
-
-        if (validFrames.length === 0) {
-          return reply("❌ Frame tidak valid.")
-        }
-
-        // convert semua frame ke PNG berurutan
-        for (let i = 0; i < validFrames.length; i++) {
-          const frameWebp = path.join(frameDir, `frame_${i}.webp`)
-          const framePng = path.join(frameDir, `frame_${i}.png`)
-
-          fs.writeFileSync(frameWebp, validFrames[i])
-
-          execSync(`ffmpeg -y -i "${frameWebp}" "${framePng}"`, {
-            stdio: "ignore"
-          })
-
-          fs.unlinkSync(frameWebp)
-        }
-
-        // gabung jadi video
         execSync(
-          `ffmpeg -y -framerate 15 -i "${frameDir}/frame_%d.png" -pix_fmt yuv420p "${output}"`,
-          { stdio: "pipe" }
+          `ffmpeg -y -i "${input}" -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "${output}"`,
+          { stdio: "ignore" }
         )
 
         const result = fs.readFileSync(output)
@@ -347,11 +333,8 @@ module.exports = {
       } finally {
         if (input && fs.existsSync(input)) fs.unlinkSync(input)
         if (output && fs.existsSync(output)) fs.unlinkSync(output)
-        if (frameDir && fs.existsSync(frameDir)) {
-          fs.rmSync(frameDir, { recursive: true, force: true })
-        }
       }
     }
-    
+
   }
 }
