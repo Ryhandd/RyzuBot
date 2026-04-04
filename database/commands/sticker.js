@@ -7,6 +7,9 @@ const ffmpegPath = require("ffmpeg-static")
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys")
 const { createSticker } = require("../../lib/sticker")
 const { execSync } = require("child_process")
+const input = tmp(`in_${Date.now()}.webp`)
+const clean = tmp(`clean_${Date.now()}.webp`)
+const output = tmp(`out_${Date.now()}.mp4`)
 
 ffmpeg.setFfmpegPath(ffmpegPath)
 
@@ -289,14 +292,13 @@ module.exports = {
 
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
-
-        const input = tmp(`in_${Date.now()}.webp`)
-        const output = tmp(`out_${Date.now()}.mp4`)
-
+        
         fs.writeFileSync(input, buffer)
 
+        execSync(`ffmpeg -y -i "${input}" "${clean}"`, { stdio: "pipe" })
+
         execSync(
-          `ffmpeg -y -loglevel error -analyzeduration 100M -probesize 100M -i "${input}" \
+          `ffmpeg -y -i "${clean}" \
           -movflags faststart -pix_fmt yuv420p \
           -vf "fps=15,scale=512:512:force_original_aspect_ratio=increase,crop=512:512" \
           "${output}"`,
@@ -307,8 +309,9 @@ module.exports = {
 
         await ryzu.sendMessage(from, { video: result }, { quoted: msg })
 
-        fs.unlinkSync(input)
-        fs.unlinkSync(output)
+        [input, clean, output].forEach(f => {
+          if (fs.existsSync(f)) fs.unlinkSync(f)
+        })
 
       } catch (e) {
         console.error(e)
