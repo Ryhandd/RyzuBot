@@ -25,11 +25,11 @@ const buildExifBuffer = (pack, author) => {
 }
 
 async function makeStickerWithWM(buffer, isVideo = false) {
-  const { fileTypeFromBuffer } = require("file-type")
+  const FileType = require("file-type")
   const webp = require("node-webpmux")
   const { execSync } = require("child_process")
 
-  const type = await fileTypeFromBuffer(buffer)
+  const type = await FileType.fromBuffer(buffer)
   if (!type) throw "File tidak valid"
 
   const input = tmp(`in_${Date.now()}`)
@@ -313,19 +313,28 @@ module.exports = {
 
       await ensureTmp()
 
-      let input, output
+      let input, fixedInput, output
 
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
 
-        input = tmp(`in_${Date.now()}.webp`)
+        input = tmp(`raw_${Date.now()}.webp`)
+        fixedInput = tmp(`fixed_${Date.now()}.webp`)
         output = tmp(`out_${Date.now()}.mp4`)
 
+        // simpan raw dulu
         fs.writeFileSync(input, buffer)
 
+        // 🔥 NORMALIZE WEBP (ini kunci fix)
+        const img = new Image()
+        await img.load(input)
+
+        // buang metadata aneh, rebuild file
+        await img.save(fixedInput)
+
+        // 🔥 convert ke mp4
         execSync(
-          `ffmpeg -y -ignore_loop 0 -i "${input}" -vf "fps=30,scale=trunc(iw/2)*2:trunc(ih/2)*2" -movflags faststart -pix_fmt yuv420p "${output}"`,
-          { stdio: "inherit" }
+          `ffmpeg -y -loglevel error -i "${fixedInput}" -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "${output}"`
         )
 
         const result = fs.readFileSync(output)
@@ -335,8 +344,9 @@ module.exports = {
         console.error("TOVID ERROR:", e)
         reply("❌ Gagal convert ke video.")
       } finally {
-        if (input && fs.existsSync(input)) fs.unlinkSync(input)
-        if (output && fs.existsSync(output)) fs.unlinkSync(output)
+        ;[input, fixedInput, output].forEach(f => {
+          if (f && fs.existsSync(f)) fs.unlinkSync(f)
+        })
       }
     }
 
