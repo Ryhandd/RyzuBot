@@ -42,13 +42,13 @@ global.SIMI_PROMPT = `Kamu adalah SIMI. Kepribadian: Ceria, polos, menggemaskan,
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null
 
 const decodeJid = (jid) => {
-  if (!jid) return jid
-  if (/:\d+@/gi.test(jid)) {
-    const decode = jidDecode(jid) || {}
-    return (decode.user && decode.server && decode.user + "@" + decode.server) || jid
-  }
-  return jid
-}
+    if (!jid) return jid;
+    if (/:\d+@/gi.test(jid)) {
+        const decode = jidDecode(jid) || {};
+        jid = (decode.user && decode.server && decode.user + "@" + decode.server) || jid;
+    }
+    return jid.replace(/:.*@/g, '@').split('@') + '@' + jid.split('@');
+};
 
 const funcs = {
   saveRPG: async (userId) => {
