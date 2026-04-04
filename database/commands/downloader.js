@@ -2,16 +2,13 @@ const axios = require('axios')
 const fs = require('fs')
 const path = require('path')
 
-// ================= TMP SETUP =================
 const tmpDir = path.join(__dirname, "../tmp")
 if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
 
-// ================= HELPER =================
 async function downloadAndSend(ryzu, from, msg, url, type, caption = "") {
-    // Penentuan ekstensi berdasarkan tipe
-    let ext = ".jpg" // default image
+    let ext = ".jpg"
     if (type === "video") ext = ".mp4"
-    if (type === "audio") ext = ".mp3" // Paksa jadi mp3 untuk audio
+    if (type === "audio") ext = ".mp3"
 
     const filePath = path.join(tmpDir, Date.now() + ext)
 
@@ -32,13 +29,12 @@ async function downloadAndSend(ryzu, from, msg, url, type, caption = "") {
     await ryzu.sendMessage(from, {
         [type]: { url: filePath },
         caption,
-        mimetype: type === "audio" ? "audio/mpeg" : undefined // Tambahan agar WhatsApp baca sebagai mp3
+        mimetype: type === "audio" ? "audio/mpeg" : undefined 
     }, { quoted: msg })
 
     fs.unlinkSync(filePath)
 }
 
-// ================= COMMAND =================
 module.exports = {
     name: "downloader",
     alias: ["tt", "tiktok", "ig", "igdl", "fb", "fbdl"],
@@ -56,10 +52,9 @@ module.exports = {
         await reply(`⏳ Sedang memproses...`)
 
         let success = false
-        const apikey = "Btz-eMcqb"
+        const apikey = process.env.BETABOTZ_KEY
 
         try {
-            // ================= [ TIKTOK ] =================
             if (command === "tt" || command === "tiktok") {
                 let audioUrl = null
 
@@ -72,7 +67,6 @@ module.exports = {
                     const dataSlide = resSlide.data?.result
                     const dataVid = resVid.data?.result
 
-                    // SLIDE
                     if (dataSlide?.images?.length > 0) {
                         for (let i = 0; i < dataSlide.images.length; i++) {
                             await downloadAndSend(ryzu, from, msg, dataSlide.images[i], "image")
@@ -80,7 +74,6 @@ module.exports = {
                         success = true
                     }
 
-                    // VIDEO fallback
                     if (!success && dataVid?.video) {
                         await downloadAndSend(ryzu, from, msg, dataVid.video, "video", dataVid.title || "Done")
                         success = true
@@ -88,7 +81,6 @@ module.exports = {
 
                     audioUrl = dataVid?.audio || dataSlide?.audio
 
-                    // AUDIO tambahan (Otomatis jadi MP3 via helper)
                     if (audioUrl) {
                         await downloadAndSend(ryzu, from, msg, audioUrl, "audio")
                         success = true
@@ -99,7 +91,6 @@ module.exports = {
                 }
             }
 
-            // ================= [ INSTAGRAM ] =================
             else if (command === "ig" || command === "igdl") {
                 try {
                     const resIg = await axios.get(`https://api.betabotz.eu.org/api/download/igdownloader?url=${q}&apikey=${apikey}`)
@@ -118,7 +109,6 @@ module.exports = {
                 }
             }
 
-            // ================= [ FACEBOOK ] =================
             else if (command === "fb" || command === "fbdl") {
                 try {
                     const resFb = await axios.get(`https://api.betabotz.eu.org/api/download/fbdown?url=${q}&apikey=${apikey}`)
@@ -134,7 +124,6 @@ module.exports = {
                 }
             }
 
-            // ================= RESULT FINAL =================
             if (success) {
                 if (!sutan) {
                     user.limit -= 1

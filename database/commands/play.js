@@ -24,50 +24,45 @@ module.exports = {
         videoTitle = vid.title
       }
 
-      await ryzu.sendMessage(from, { 
-        text: `⌛ Sedang memproses *${command.toUpperCase()}*...\n📝 Title: ${videoTitle}` 
-      }, { quoted: msg })
+      const encodedUrl = encodeURIComponent(videoUrl)
+      await ryzu.sendMessage(from, { text: `⌛ Sedang memproses *${command.toUpperCase()}*...` }, { quoted: msg })
 
       let dlUrl = null
-      const encodedUrl = encodeURIComponent(videoUrl)
 
-      if (!isVideoFormat) {
-        try {
+      try {
+        let endpoint = ""
+        if (command === "play") {
+          endpoint = `https://onepunya.qzz.io/api/search/ytmusic_play?url=${encodedUrl}&apikey=${ONEPUNYA_KEY}`
           console.log(`[SERVER] Mencoba Onepunya YT Music Play...`)
-          const resMusic = await axios.get(`https://onepunya.qzz.io/api/search/ytmusic_play?url=${encodedUrl}&apikey=${ONEPUNYA_KEY}`)
-          if (resMusic.data.status) {
-            dlUrl = resMusic.data.result.mp3 || resMusic.data.result.url
-          }
-        } catch (e) {
-          console.error(`[SERVER] YT Music Play Error.`)
-        }
-      }
-
-      if (!dlUrl) {
-        try {
+        } else if (command === "video") {
+          endpoint = `https://onepunya.qzz.io/api/search/youtube?url=${encodedUrl}&apikey=${ONEPUNYA_KEY}`
           console.log(`[SERVER] Mencoba Onepunya YouTube Search...`)
-          const resSearch = await axios.get(`https://onepunya.qzz.io/api/search/youtube?url=${encodedUrl}&apikey=${ONEPUNYA_KEY}`)
-          if (resSearch.data.status) {
-            const res = resSearch.data.result
-            dlUrl = isVideoFormat ? (res.mp4 || res.video) : (res.mp3 || res.audio)
-          }
-        } catch (e) {
-          console.error(`[SERVER] Onepunya Search Error.`)
+        } else if (command === "ytmp3" || command === "ytmp4") {
+          endpoint = `https://onepunya.qzz.io/api/download/youtube?url=${encodedUrl}&apikey=${ONEPUNYA_KEY}`
+          console.log(`[SERVER] Mencoba Onepunya Download YouTube...`)
         }
+
+        const oneRes = await axios.get(endpoint)
+        if (oneRes.data.status) {
+          const res = oneRes.data.result
+          dlUrl = isVideoFormat ? (res.mp4 || res.video || res.url) : (res.mp3 || res.audio || res.url)
+        }
+      } catch (e) {
+        console.error(`[SERVER] Onepunya API Error.`)
       }
 
       if (!dlUrl) {
         try {
-          console.log(`[SERVER] Mencoba Betabotz...`)
-          const endpoint = isVideoFormat ? "ytmp4" : "ytmp3"
-          const betaRes = await axios.get(`https://api.betabotz.eu.org/api/download/${endpoint}?url=${encodedUrl}&apikey=${BETA_KEY}`)
+          console.log(`[SERVER] Onepunya gagal, beralih ke Betabotz...`)
+          const betaEndpoint = isVideoFormat ? "ytmp4" : "ytmp3"
+          const betaRes = await axios.get(`https://api.betabotz.eu.org/api/download/${betaEndpoint}?url=${encodedUrl}&apikey=${BETA_KEY}`)
           dlUrl = isVideoFormat ? betaRes.data?.result?.mp4 : betaRes.data?.result?.mp3
         } catch (e) {
           console.error(`[SERVER] Betabotz juga gagal.`)
         }
       }
 
-      if (!dlUrl) return reply("❌ Gagal mendapatkan link download dari semua server.")
+      if (!dlUrl) return reply("❌ Gagal mendapatkan link download. Semua server tidak merespon.")
 
       if (isVideoFormat) {
         await ryzu.sendMessage(from, {
