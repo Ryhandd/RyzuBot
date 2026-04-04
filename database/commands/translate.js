@@ -44,9 +44,6 @@ module.exports = {
 
     } catch (err) {
       console.error("TRANSLATE ERROR:", err)
-      if (err.response && err.response.status === 401) {
-        return reply("❌ API Key Velixs tidak valid atau kadaluarsa.")
-      }
       reply("❌ Terjadi kesalahan pada server translate.")
     }
   }
