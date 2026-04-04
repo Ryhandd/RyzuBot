@@ -8,10 +8,9 @@ module.exports = {
     execute: async (ctx) => {
         const { ryzu, from, reply, msg, sender, funcs } = ctx;
 
-        if (!ryzu.game) ryzu.game = {};
-        if (!ryzu.game[from]) ryzu.game[from] = {};
+        if (!ryzu.family100) ryzu.family100 = {};
 
-        if (ryzu.game[from]['family100']) {
+        if (ryzu.family100[from]) {
             return reply("Masih ada Family100 yang berjalan di grup ini! Jawab soal yang ada atau ketik *nyerah*.");
         }
 
@@ -24,7 +23,7 @@ module.exports = {
             id: null,
             tipe: 'family100',
             soal: soalRaw.soal,
-            jawaban: soalRaw.jawaban.map(v => v.toLowerCase().trim()),
+            jawaban: soalRaw.jawaban.map(v => String(v).toLowerCase().trim()),
             jawaban_asli: soalRaw.jawaban,
             terjawab: [],
             penjawab: {},
@@ -37,7 +36,7 @@ module.exports = {
 
         let msgSoal = await ryzu.sendMessage(from, { text: caption }, { quoted: msg });
         room.id = msgSoal.key.id;
-        ryzu.game[from]['family100'] = room;
+        ryzu.family100[from] = room;
 
         const finishGame = async (judul) => {
             if (room.isGameOver) return;
@@ -55,21 +54,33 @@ module.exports = {
                 mentions: Object.values(room.penjawab) 
             }, { quoted: msgSoal });
 
-            delete ryzu.game[from]['family100'];
+            delete ryzu.family100[from];
             ryzu.ev.off('messages.upsert', handler);
         };
 
         const timeout = setTimeout(async () => {
-            if (ryzu.game[from]?.['family100'] && !room.isGameOver) {
+            if (ryzu.family100[from] && !room.isGameOver) {
                 finishGame("⏰ *WAKTU HABIS*");
             }
         }, 180000);
 
         const handler = async (chat) => {
+            if (!chat || !chat.messages || chat.messages.length === 0) return;
+            
             const m = chat.messages;
             if (!m || !m.message || m.key.fromMe || m.key.remoteJid !== from) return;
 
-            const body = (m.message.conversation || m.message.extendedTextMessage?.text || m.message.imageMessage?.caption || "").toLowerCase().trim();
+            const body = (
+                m.message.conversation ||
+                m.message.extendedTextMessage?.text ||
+                m.message.imageMessage?.caption ||
+                m.message.ephemeralMessage?.message?.extendedTextMessage?.text ||
+                m.message.ephemeralMessage?.message?.conversation ||
+                ""
+            ).toLowerCase().trim();
+
+            if (!body) return;
+
             const senderId = m.key.participant || m.key.remoteJid;
 
             if (body === 'nyerah') {
