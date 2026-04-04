@@ -309,7 +309,12 @@ module.exports = {
         let i = 0
         for (const frame of img.frames) {
           const framePath = path.join(frameDir, `frame_${i}.png`)
-          fs.writeFileSync(framePath, frame.data)
+
+          const data = frame.data || frame.image || frame.buffer
+
+          if (!data) continue
+
+          fs.writeFileSync(framePath, data)
           i++
         }
 
