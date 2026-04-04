@@ -5,8 +5,8 @@ const path = require("path")
 const ffmpeg = require("fluent-ffmpeg")
 const ffmpegPath = require("ffmpeg-static")
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys")
-
 const { createSticker } = require("../../lib/sticker")
+const { execSync } = require("child_process")
 
 ffmpeg.setFfmpegPath(ffmpegPath)
 
