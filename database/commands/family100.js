@@ -36,14 +36,19 @@ module.exports = {
                 if (ryzu.game[from] && ryzu.game[from]['family100']) {
                     const room = ryzu.game[from]['family100'];
                     let teks = `⏰ *WAKTU HABIS*\n\n📝 Soal: *${room.soal}*\n\n🗝️ Jawaban:\n`;
+                    
                     room.jawaban_asli.forEach((j, i) => {
-                        const p = room.penjawab?.[j.toLowerCase().trim()];
-                        teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")}` : " ❌"}\n`;
+                        const rawJid = room.penjawab?.[j.toLowerCase().trim()];
+                        const cleanJid = rawJid ? rawJid.split('@').split(':') : null;
+                        
+                        teks += `${i + 1}. ${j}${cleanJid ? ` ✅ @${cleanJid}` : " ❌"}\n`;
                     });
+
                     ryzu.sendMessage(from, { 
                         text: teks, 
-                        mentions: Object.values(room.penjawab || {}) 
+                        mentions: Object.values(room.penjawab || [])
                     }, { quoted: kirimSoal });
+
                     delete ryzu.game[from]['family100'];
                 }
             }, 180000)
