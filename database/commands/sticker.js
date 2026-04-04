@@ -38,10 +38,8 @@ async function makeStickerWithWM(buffer, isVideo = false) {
   fs.writeFileSync(input, buffer)
 
   if (isVideo) {
-    execSync(
-      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease,fps=30" -loop 0 -preset default -an -vsync 0 "${output}"`,
-      { stdio: "ignore" }
-    )
+    execSync(`ffmpeg -y -loglevel error -i "${input}" -c:v libwebp -lossless 1 "${output}"`)
+    return cleaned
   } else {
     execSync(
       `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease" "${output}"`,
@@ -336,10 +334,7 @@ module.exports = {
         console.log("[TOVID] Attempting direct conversion...")
         
         try {
-          execSync(
-            `ffmpeg -y -i "${input}" -c:v libx264 -pix_fmt yuv420p -movflags faststart "${output}"`,
-            { stdio: "pipe" }
-          )
+          execSync(`ffmpeg -y -i "${input}" -c:v libx264 -pix_fmt yuv420p -movflags faststart "${output}"`)
         } catch (firstAttempt) {
           console.log("[TOVID] First attempt failed, trying frame extraction...")
           
