@@ -287,18 +287,24 @@ module.exports = {
 
       await ensureTmp()
 
+      let input, output, frameDir
+
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
 
-        const input = tmp(`in_${Date.now()}.webp`)
-        const output = tmp(`out_${Date.now()}.mp4`)
-        const frameDir = tmp(`frames_${Date.now()}`)
+        input = tmp(`in_${Date.now()}.webp`)
+        output = tmp(`out_${Date.now()}.mp4`)
+        frameDir = tmp(`frames_${Date.now()}`)
 
         fs.mkdirSync(frameDir, { recursive: true })
         fs.writeFileSync(input, buffer)
 
         const img = new Image()
         await img.load(input)
+
+        if (!img.frames || img.frames.length === 0) {
+          return reply("❌ Gagal membaca frame stiker.")
+        }
 
         let i = 0
         for (const frame of img.frames) {
@@ -313,16 +319,17 @@ module.exports = {
         )
 
         const result = fs.readFileSync(output)
-
         await ryzu.sendMessage(from, { video: result }, { quoted: msg })
-
-        fs.rmSync(frameDir, { recursive: true, force: true })
-        fs.unlinkSync(input)
-        fs.unlinkSync(output)
 
       } catch (e) {
         console.error(e)
         reply("❌ Gagal convert ke video.")
+      } finally {
+        if (input && fs.existsSync(input)) fs.unlinkSync(input)
+        if (output && fs.existsSync(output)) fs.unlinkSync(output)
+        if (frameDir && fs.existsSync(frameDir)) {
+          fs.rmSync(frameDir, { recursive: true, force: true })
+        }
       }
     }
 
