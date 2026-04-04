@@ -116,6 +116,7 @@ module.exports = {
 ├ ${prefix}shorturl <url>
 ├ ${prefix}base64 / encode / decode
 ├ ${prefix}biner
+├ ${prefix}chatgpt
 ├ ${prefix}ai / tanya <pertanyaan>
 ├ ${prefix}aiimg <prompt>
 ├ ${prefix}remini / hd
