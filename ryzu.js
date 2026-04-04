@@ -213,13 +213,14 @@ const simiFastReply = {
 
 const cooldowns = new Set()
 
+// Cache LID -> nomor HP & owner JID
 const lidToNumber = new Map()
 const ownerJidCache = new Set()
 const ownerNumbers = ownerContacts.map(v => v.trim().replace(/[^0-9]/g, ""))
 
 module.exports = async function ryzuHandler(ryzu, m) {
   try {
-    const msg = m.messages
+    const msg = m.messages[0]
     if (!msg || !msg.message) return
     if (msg.key.fromMe) return
 
@@ -229,6 +230,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     const isGroup = from.endsWith("@g.us")
 
+    // === SENDER ===
     let sender
     if (isGroup) {
       sender = msg.key.participant || msg.participant || msg.key.remoteJid
@@ -239,8 +241,11 @@ module.exports = async function ryzuHandler(ryzu, m) {
     const senderId = decodeJid(sender)
     const pushname = msg.pushName || "User"
 
+    // === BOT IDENTITY ===
     const botId = decodeJid(ryzu.user?.id || ryzu.authState?.creds?.me?.id)
 
+    // === GRUP METADATA ===
+    // Dilakukan AWAL agar LID bisa di-resolve sebelum cek isCreator
     let groupMetadata = null
     let participants = []
     let isAdmin = false
@@ -253,13 +258,15 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
         for (const p of participants) {
           const pJid = decodeJid(p.id)
-          const pNum = pJid.split("@").replace(/[^0-9]/g, "")
+          const pNum = pJid.split("@")[0].replace(/[^0-9]/g, "")
 
+          // Simpan mapping LID -> nomor HP
           if (p.lid) {
-            const pLid = p.lid.split("@").replace(/[^0-9]/g, "")
+            const pLid = p.lid.split("@")[0].replace(/[^0-9]/g, "")
             if (pLid && pNum) lidToNumber.set(pLid, pNum)
           }
 
+          // Kalau participant ini adalah owner, cache JID-nya (termasuk LID)
           if (ownerNumbers.includes(pNum)) {
             ownerJidCache.add(pJid)
             if (p.lid) ownerJidCache.add(decodeJid(p.lid))
@@ -271,16 +278,18 @@ module.exports = async function ryzuHandler(ryzu, m) {
       } catch (_) {}
     }
 
-    let resolvedNum = senderId.split("@").replace(/[^0-9]/g, "")
+    // === RESOLVE NOMOR DARI LID ===
+    let resolvedNum = senderId.split("@")[0].replace(/[^0-9]/g, "")
     if (resolvedNum.length > 13 && lidToNumber.has(resolvedNum)) {
       resolvedNum = lidToNumber.get(resolvedNum)
     }
 
+    // === IS CREATOR ===
     const isCreator =
-      ownerJidCache.has(senderId) ||                          
-      ownerNumbers.includes(resolvedNum) ||                   
-      ownerNumbers.some(o => resolvedNum.endsWith(o)) ||      
-      ownerNumbers.some(o => o.endsWith(resolvedNum))         
+      ownerJidCache.has(senderId) ||                          // JID sudah dikenal owner
+      ownerNumbers.includes(resolvedNum) ||                   // Nomor resolved cocok
+      ownerNumbers.some(o => resolvedNum.endsWith(o)) ||      // Suffix match (62xxx vs 0xxx)
+      ownerNumbers.some(o => o.endsWith(resolvedNum))         // Reverse suffix
 
     const rawText = (
       msg.message?.conversation ||
@@ -301,6 +310,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
       return ryzu.sendMessage(from, { text: String(teks), contextInfo: { linkPreview: false } }, { quoted: msg })
     }
 
+    // === MEDIA ===
     const mediaType = getMediaType(msg.message)
     let mediaPath = null
     if (mediaType) {
@@ -314,31 +324,37 @@ module.exports = async function ryzuHandler(ryzu, m) {
       } catch (_) {}
     }
 
+    // === SQLITE ===
     try {
       await db.prepare(`INSERT OR IGNORE INTO messages (id, chat_id, sender, text, media_type, media_path, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)`)
         .run(msgId, from, senderId, rawText, mediaType, mediaPath, Date.now())
     } catch (_) {}
 
+    // === HISTORY ===
     global.msgHistory[from] = global.msgHistory[from] || []
     global.msgHistory[from].push({ id: msgId, sender: senderId, text: rawText, timestamp: Date.now() })
     if (global.msgHistory[from].length > 50) global.msgHistory[from].shift()
 
+    // === PARSING ===
     const body = rawText
     const text = body.trim()
     const bodyLow = text.toLowerCase()
     const prefixMatch = text.match(/^[\\/!#.]/)
-    const prefix = prefixMatch ? prefixMatch : "."
+    const prefix = prefixMatch ? prefixMatch[0] : "."
     const isCmd = prefixMatch !== null
     const args = text.slice(isCmd ? prefix.length : 0).trim().split(/ +/)
     const commandName = isCmd ? args.shift().toLowerCase() : ""
     const q = args.join(" ")
 
+    // === INIT USER ===
     funcs.checkUser(senderId)
 
+    // === ANTI-SPAM "BOT" ===
     if (!isCmd && bodyLow.includes("bot")) {
       return reply("RyzuBot disini!\nKetik *.menu* untuk daftar perintah.");
     }
 
+    // === CHESS ===
     const chessHandled = await chessHandler({ from, sender: senderId, text, reply })
     if (chessHandled) return
 
@@ -348,6 +364,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
       ? quoted.viewOnceMessageV2?.message || quoted.viewOnceMessage?.message || quoted
       : null
 
+    // === SHIMI ===
     if (!isCmd && shimiFastReply[bodyLow] && global.shimi?.[senderId]) {
       return ryzu.sendMessage(from, { text: shimiFastReply[bodyLow] })
     }
@@ -362,10 +379,11 @@ module.exports = async function ryzuHandler(ryzu, m) {
           messages: [{ role: "system", content: global.SHIMI_PROMPT }, { role: "user", content: text }],
           max_tokens: 150, temperature: 1.2
         })
-        return ryzu.sendMessage(from, { text: res.choices.message.content || "apaan dah" }, { quoted: msg })
+        return ryzu.sendMessage(from, { text: res.choices[0].message.content || "apaan dah" }, { quoted: msg })
       } catch (_) {}
     }
 
+    // === SIMI ===
     if (!isCmd && simiFastReply[bodyLow] && global.simi?.[senderId]) {
       return ryzu.sendMessage(from, { text: simiFastReply[bodyLow] })
     }
@@ -380,14 +398,16 @@ module.exports = async function ryzuHandler(ryzu, m) {
           messages: [{ role: "system", content: global.SIMI_PROMPT }, { role: "user", content: text }],
           max_tokens: 120, temperature: 0.6
         })
-        return ryzu.sendMessage(from, { text: res.choices.message.content || "hmm?? 🤔" }, { quoted: msg })
+        return ryzu.sendMessage(from, { text: res.choices[0].message.content || "hmm?? 🤔" }, { quoted: msg })
       } catch (_) {}
     }
 
+    // === GAME OBJECTS ===
     if (!ryzu.game) ryzu.game = {}
     if (!ryzu.ttt) ryzu.ttt = {}
     if (!ryzu.suit) ryzu.suit = {}
 
+    // === TIC TAC TOE ===
     if (ryzu.ttt?.[from] && Object.keys(ryzu.ttt[from]).length > 0) {
       let isReplyId = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
       if (isReplyId && ryzu.ttt[from][isReplyId]) {
@@ -436,30 +456,54 @@ module.exports = async function ryzuHandler(ryzu, m) {
       }
     }
 
+    // === AFK ===
     if (!isCmd || commandName !== "delafk") {
       for (const jid of mentionUser) {
         const t = global.rpg[jid]
         if (t?.afk > 0) {
           const waktu = funcs.runtime((Date.now() - t.afk) / 1000)
-          ryzu.sendMessage(from, { text: `🔇 @${jid.split("@")} sedang AFK!\nAlasan: ${t.afkReason || "-"}\nSejak: ${waktu} lalu.`, mentions: [jid] }, { quoted: msg })
+          ryzu.sendMessage(from, { text: `🔇 @${jid.split("@")[0]} sedang AFK!\nAlasan: ${t.afkReason || "-"}\nSejak: ${waktu} lalu.`, mentions: [jid] }, { quoted: msg })
         }
       }
       if (global.rpg[senderId]?.afk > 0) {
         const waktu = funcs.runtime((Date.now() - global.rpg[senderId].afk) / 1000)
-        ryzu.sendMessage(from, { text: `✨ @${senderId.split("@")} kembali online!\nBerhenti AFK setelah: ${waktu}`, mentions: [senderId] })
+        ryzu.sendMessage(from, { text: `✨ @${senderId.split("@")[0]} kembali online!\nBerhenti AFK setelah: ${waktu}`, mentions: [senderId] })
         global.rpg[senderId].afk = 0
         global.rpg[senderId].afkReason = ""
         funcs.saveRPG(senderId).catch(() => {})
       }
     }
 
+    // === GAME HANDLER ===
     if (ryzu.game[from] && Object.keys(ryzu.game[from]).length > 0 && body) {
+
       let isReplyId = msg.message?.extendedTextMessage?.contextInfo?.stanzaId; 
       let activeGames = Object.values(ryzu.game[from]);
-      let room = isReplyId ? activeGames.find(g => g.id === isReplyId) : null;
+      let room = null;
 
-      if (room) { 
+      if (isReplyId) {
+        room = activeGames.find(g => g.id === isReplyId);
+      }
+
+      if (!room && ryzu.game[from]["family100"]) {
+        const isJawabanFamily = ryzu.game[from]["family100"].jawaban.includes(bodyLow);
+        if (isJawabanFamily || bodyLow === "nyerah") {
+          room = ryzu.game[from]["family100"];
+        }
+      }
+
+      if (!room) {
+        if (bodyLow === "nyerah" || bodyLow === prefix + "hint") {
+          if (activeGames.length > 0 && activeGames.some(g => g.tipe !== "family100")) {
+             return reply("❌ Wajib reply pesan soal gamenya untuk nyerah/hint ya!");
+          }
+        }
+        
+      } else { 
+
+        // === HINT ===
         if (bodyLow === prefix + "hint") {
+          if (room.tipe === "family100") return reply("❌ Family 100 tidak memiliki hint!");
           const user = global.rpg[senderId];
           if (!user.premium && user.limit <= 0) return reply("❌ Limit habis!");
           if (!user.premium) { user.limit -= 1; funcs.saveRPG(senderId).catch(() => {}); }
@@ -469,40 +513,81 @@ module.exports = async function ryzuHandler(ryzu, m) {
           return reply(`💡 *HINT*\n\n${clue.toUpperCase()}`);
         }
 
+        // === NYERAH ===
         if (bodyLow === "nyerah") {
-          const listJawaban = Array.isArray(room.jawaban_asli) ? room.jawaban_asli.join(', ') : (room.jawaban_asli || room.jawaban);
-          const captionNyerah = `🏳️ *MENYERAH*\n\n🗝️ Jawaban: *${listJawaban.toUpperCase()}*`;
-          if (room.timeout) clearTimeout(room.timeout);
-          const backupImg = room.img; 
-          const tipeGame = room.tipe;
-          delete ryzu.game[from][room.tipe];
-          if (tipeGame === 'tebakheromlbb' && backupImg) {
-            return ryzu.sendMessage(from, { image: { url: backupImg }, caption: captionNyerah }, { quoted: msg });
-          }
-          return reply(captionNyerah);
-        }
-
-        if (!isCmd) {
-          const targetJawaban = room.jawaban;
-          let benar = Array.isArray(targetJawaban)
-            ? targetJawaban.some((j) => bodyLow === j || similarity(bodyLow, j) >= 0.75)
-            : bodyLow === targetJawaban || similarity(bodyLow, targetJawaban) >= 0.75;
-            
-          if (benar) {
-            let money = 5000, exp = 500;
-            if (room.hadiah) { money = room.hadiah.money; exp = room.hadiah.exp; }
-            global.rpg[senderId].money += money;
-            global.rpg[senderId].exp += exp;
-            const up = funcs.cekLevel(senderId);
+          if (room.tipe === "family100") {
+            let teks = `🏳️ *MENYERAH*\n\nSoal: *${room.soal}*\n\n🗝️ Jawaban:\n`;
+            room.jawaban_asli.forEach((j, i) => {
+              const p = room.penjawab?.[j.toLowerCase().trim()];
+              teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")}` : " ❌"}\n`;
+            });
             if (room.timeout) clearTimeout(room.timeout);
             delete ryzu.game[from][room.tipe];
-            funcs.saveRPG(senderId).catch(() => {});
-            return reply(`✅ *BENAR!*\n💰 +${money} Money\n✨ +${exp} EXP${up ? "\n🎊 LEVEL UP!" : ""}`);
+            return ryzu.sendMessage(from, { text: teks, mentions: Object.values(room.penjawab || {}) }, { quoted: msg });
+          } else {
+            const listJawaban = Array.isArray(room.jawaban_asli) ? room.jawaban_asli.join(', ') : (room.jawaban_asli || room.jawaban);
+            const captionNyerah = `🏳️ *MENYERAH*\n\n🗝️ Jawaban: *${listJawaban.toUpperCase()}*`;
+            if (room.timeout) clearTimeout(room.timeout);
+            const backupImg = room.img; 
+            const tipeGame = room.tipe;
+            delete ryzu.game[from][room.tipe];
+            if (tipeGame === 'tebakheromlbb' && backupImg) {
+              return ryzu.sendMessage(from, { image: { url: backupImg }, caption: captionNyerah }, { quoted: msg });
+            }
+            return reply(captionNyerah);
+          }
+        }
+
+        // === JAWABAN BENAR ===
+        if (!isCmd) {
+          if (room.tipe === "family100") {
+            const index = room.jawaban.indexOf(bodyLow);
+            if (index >= 0 && !room.terjawab.includes(bodyLow)) {
+              room.terjawab.push(bodyLow);
+              room.penjawab[bodyLow] = senderId;
+              global.rpg[senderId].money += 5000;
+              global.rpg[senderId].exp += 500;
+              const up = funcs.cekLevel(senderId);
+              funcs.saveRPG(senderId).catch(() => {});
+              let teks = `✅ *BENAR!*\n📝 Soal: *${room.soal}*\n\n`;
+              const mentions = [];
+              room.jawaban_asli.forEach((j, i) => {
+                const lj = j.toLowerCase().trim();
+                if (room.terjawab.includes(lj)) {
+                  mentions.push(room.penjawab[lj]);
+                  teks += `${i + 1}. ${j} (@${room.penjawab[lj].split("@")})\n`;
+                } else teks += `${i + 1}. ??\n`;
+              });
+              teks += `\n🎁 +5000 Money | +500 EXP${up ? "\n🎊 LEVEL UP!" : ""}`;
+              if (room.terjawab.length === room.jawaban.length) {
+                teks += `\n\n🎉 SEMUA TERJAWAB!`;
+                if (room.timeout) clearTimeout(room.timeout);
+                delete ryzu.game[from][room.tipe];
+              }
+              return ryzu.sendMessage(from, { text: teks, mentions }, { quoted: msg });
+            }
+          } else {
+            const targetJawaban = room.jawaban;
+            let benar = Array.isArray(targetJawaban)
+              ? targetJawaban.some((j) => bodyLow === j || similarity(bodyLow, j) >= 0.75)
+              : bodyLow === targetJawaban || similarity(bodyLow, targetJawaban) >= 0.75;
+            if (benar) {
+              let money = 5000, exp = 500;
+              if (room.hadiah) { money = room.hadiah.money; exp = room.hadiah.exp; }
+              global.rpg[senderId].money += money;
+              global.rpg[senderId].exp += exp;
+              const up = funcs.cekLevel(senderId);
+              if (room.timeout) clearTimeout(room.timeout);
+              delete ryzu.game[from][room.tipe];
+              funcs.saveRPG(senderId).catch(() => {});
+              return reply(`✅ *BENAR!*\n💰 +${money} Money\n✨ +${exp} EXP${up ? "\n🎊 LEVEL UP!" : ""}`);
+            }
           }
         }
       }
     }
 
+    // === COMMAND HANDLER ===
     if (isCmd) {
       const cmd = commands.get(commandName) || [...commands.values()].find((x) => x.alias?.includes(commandName))
       if (!cmd) return
@@ -560,9 +645,9 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
   } catch (e) {
     console.error("Error in main handler:", e)
-    if (ownerContacts) {
+    if (ownerContacts[0]) {
       try {
-        await ryzu.sendMessage(ownerContacts, { text: `⚠️ *BOT ERROR*\n\n${e.message}` })
+        await ryzu.sendMessage(ownerContacts[0], { text: `⚠️ *BOT ERROR*\n\n${e.message}` })
       } catch (_) {}
     }
   }
