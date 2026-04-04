@@ -32,7 +32,7 @@ module.exports = {
         };
 
         let caption = `🎮 *FAMILY 100*\n\n📝 Soal: *${room.soal}*\n\n`;
-        room.jawaban_asli.forEach((_, i) => caption += `${i + 1}. ❓❓❓\n`);
+        room.jawaban_asli.forEach((_, i) => caption += `${i + 1}. ???\n`);
         caption += `\n⏳ Waktu: 3 Menit\n🏳️ Ketik *nyerah* untuk menyerah.`;
 
         let msgSoal = await ryzu.sendMessage(from, { text: caption }, { quoted: msg });
@@ -47,7 +47,7 @@ module.exports = {
             let teks = `${judul}\n\n📝 Soal: *${room.soal}*\n\n🗝️ *JAWABAN:*\n`;
             room.jawaban_asli.forEach((j, i) => {
                 const jid = room.penjawab[j.toLowerCase().trim()];
-                teks += `${i + 1}. ${j} ${jid ? `✅ (@${jid.split('@')})` : "❌"}\n`;
+                teks += `${i + 1}. ${j} ${jid ? `✅ (@${jid.split('@')})` : "???"}\n`;
             });
 
             await ryzu.sendMessage(from, { 
@@ -99,7 +99,7 @@ module.exports = {
                 let updatedTeks = `✅ *BENAR!*\n\n📝 Soal: *${room.soal}*\n\n`;
                 room.jawaban_asli.forEach((j, i) => {
                     const jid = room.penjawab[j.toLowerCase().trim()];
-                    updatedTeks += `${i + 1}. ${jid ? `${j} ✅ (@${jid.split('@')})` : "❓❓❓"}\n`;
+                    updatedTeks += `${i + 1}. ${jid ? `${j} ✅ (@${jid.split('@')})` : "???"}\n`;
                 });
                 updatedTeks += `\n💰 +2000 Money | ✨ +200 EXP`;
 
