@@ -519,7 +519,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
             let teks = `🏳️ *MENYERAH*\n\nSoal: *${room.soal}*\n\n🗝️ Jawaban:\n`;
             room.jawaban_asli.forEach((j, i) => {
               const p = room.penjawab?.[j.toLowerCase().trim()];
-              teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")}` : " ❌"}\n`;
+              teks += `${i + 1}. ${j}${p ? ` ✅ @${p.split("@")[0]}` : " ❌"}\n`;
             });
             if (room.timeout) clearTimeout(room.timeout);
             delete ryzu.game[from][room.tipe];
@@ -558,7 +558,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
                 if (isTerjawab && penjawab) {
                     mentions.push(penjawab);
-                    teks += `${i + 1}. ${j} ✅ (@${penjawab.split("@")[0]})\n`;
+                    teks += `${i + 1}. ${j} ✅ @${penjawab.split("@")[0]}\n`;
                   } else teks += `${i + 1}. ??\n`;
               });
               teks += `\n🎁 +5000 Money | +500 EXP${up ? "\n🎊 LEVEL UP!" : ""}`;
