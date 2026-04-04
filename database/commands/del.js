@@ -1,6 +1,6 @@
 module.exports = {
     name: 'del',
-    alias: ['delete'],
+    alias: ['delete', 'd'],
     execute: async ({ ryzu, m, msg, from, isGroup, isAdmin, quoted, reply }) => {
 
         if (!isGroup) return reply("❌ Khusus grup");
