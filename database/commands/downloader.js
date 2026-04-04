@@ -92,20 +92,45 @@ module.exports = {
             }
 
             else if (command === "ig" || command === "igdl") {
+                const ONEPUNYA_KEY = process.env.ONEPUNYA_KEY
+                
                 try {
-                    const resIg = await axios.get(`https://api.betabotz.eu.org/api/download/igdownloader?url=${q}&apikey=${apikey}`)
-                    const result = resIg.data.result
+                    console.log(`[SERVER] Mencoba Onepunya Instagram DL...`)
+                    const resOne = await axios.get(`https://onepunya.qzz.io/api/download/insta?url=${encodeURIComponent(q)}&apikey=${ONEPUNYA_KEY}`)
+                    
+                    if (resOne.data && resOne.data.status) {
+                        const result = resOne.data.result
+                        
+                        const mediaList = Array.isArray(result) ? result : [result]
 
-                    if (result?.length > 0) {
-                        for (let i of result) {
+                        for (let i of mediaList) {
                             let link = i.url || i
-                            let isVideo = link.includes('.mp4')
+                            let isVideo = link.includes('.mp4') || i.type === 'video'
                             await downloadAndSend(ryzu, from, msg, link, isVideo ? "video" : "image")
                         }
                         success = true
                     }
                 } catch (e) {
-                    console.error("IG Error:", e)
+                    console.error("Onepunya IG Error:", e.message)
+                }
+
+                if (!success) {
+                    try {
+                        console.log(`[SERVER] Onepunya Gagal, mencoba Betabotz...`)
+                        const resIg = await axios.get(`https://api.betabotz.eu.org/api/download/igdownloader?url=${q}&apikey=${apikey}`)
+                        const result = resIg.data.result
+
+                        if (result?.length > 0) {
+                            for (let i of result) {
+                                let link = i.url || i
+                                let isVideo = link.includes('.mp4')
+                                await downloadAndSend(ryzu, from, msg, link, isVideo ? "video" : "image")
+                            }
+                            success = true
+                        }
+                    } catch (e) {
+                        console.error("Betabotz IG Error:", e.message)
+                    }
                 }
             }
 
