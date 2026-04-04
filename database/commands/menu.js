@@ -118,7 +118,12 @@ module.exports = {
 ├ ${prefix}ai / tanya <pertanyaan>
 ├ ${prefix}aiimg <prompt>
 ├ ${prefix}remini / hd
-└ ${prefix}say <teks>
+├ ${prefix}say <teks>
+├ ${prefix}id ff <id>
+├ ${prefix}id mlbb <id>
+├ ${prefix}id codm <id>
+├ ${prefix}id aov <id>
+└ ${prefix}id genshin <id>
 
 🤖 *AI CHAT*
 ┌ ${prefix}shimi on/off

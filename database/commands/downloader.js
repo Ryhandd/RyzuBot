@@ -35,9 +35,29 @@ async function downloadAndSend(ryzu, from, msg, url, type, caption = "") {
     fs.unlinkSync(filePath)
 }
 
+async function sendFile(ryzu, from, msg, url, fileName) {
+    const filePath = path.join(tmpDir, fileName)
+    const res = await axios({ url, method: "GET", responseType: "stream" })
+    const writer = fs.createWriteStream(filePath)
+
+    await new Promise((resolve, reject) => {
+        res.data.pipe(writer)
+        writer.on("finish", resolve)
+        writer.on("error", reject)
+    })
+
+    await ryzu.sendMessage(from, {
+        document: { url: filePath },
+        mimetype: "application/octet-stream",
+        fileName: fileName
+    }, { quoted: msg })
+
+    fs.unlinkSync(filePath)
+}
+
 module.exports = {
     name: "downloader",
-    alias: ["tt", "tiktok", "ig", "igdl", "fb", "fbdl"],
+    alias: ["tt", "tiktok", "ig", "igdl", "fb", "fbdl", "mediafire", "mf"],
 
     async execute(ctx) {
         const { ryzu, from, msg, command, q, reply, user, funcs, isCreator, isPremium, sender } = ctx
@@ -53,6 +73,7 @@ module.exports = {
 
         let success = false
         const apikey = process.env.BETABOTZ_KEY
+        const VELIXS_KEY = process.env.VELIXS_KEY
 
         try {
             if (command === "tt" || command === "tiktok") {
@@ -178,6 +199,24 @@ module.exports = {
                     }
                 } catch (e) {
                     console.error("FB Error:", e)
+                }
+            }
+
+            if (command === "mediafire" || command === "mf") {
+                try {
+                    console.log(`[SERVER] Mencoba Velixs Mediafire...`)
+                    const resMf = await axios.get(`https://api.velixs.com/mediafire?apikey=${VELIXS_KEY}&url=${encodeURIComponent(q)}`)
+                    
+                    if (resMf.data && resMf.data.status === 200) {
+                        const { url, filename, size, ext } = resMf.data.result
+                        
+                        await reply(`📄 *MEDIAFIRE DOWNLOADER*\n\n📝 Nama: ${filename}\n⚖️ Ukuran: ${size}\n📦 Ekstensi: ${ext}\n\n*File sedang dikirim, mohon tunggu...*`)
+                        
+                        await sendFile(ryzu, from, msg, url, filename)
+                        success = true
+                    }
+                } catch (e) {
+                    console.error("Mediafire Error:", e.message)
                 }
             }
 
