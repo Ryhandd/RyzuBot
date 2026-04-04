@@ -300,7 +300,7 @@ module.exports = {
           -movflags faststart -pix_fmt yuv420p \
           -vf "fps=15,scale=512:512:force_original_aspect_ratio=increase,crop=512:512" \
           "${output}"`,
-          { stdio: "ignore" }
+          { stdio: ["ignore", "pipe", "pipe"] }
         )
 
         const result = fs.readFileSync(output)
