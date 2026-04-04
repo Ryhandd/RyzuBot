@@ -260,7 +260,9 @@ module.exports = {
 
         fs.writeFileSync(input, buffer)
 
-        execSync(`ffmpeg -y -i "${input}" "${output}"`)
+        execSync(`ffmpeg -y -loglevel error -i "${input}" "${output}"`, {
+          stdio: "ignore"
+        })
 
         const result = fs.readFileSync(output)
 
@@ -293,7 +295,13 @@ module.exports = {
 
         fs.writeFileSync(input, buffer)
 
-        execSync(`ffmpeg -y -ignore_loop 0 -i "${input}" -movflags faststart -pix_fmt yuv420p -vf "fps=15,scale=512:512:force_original_aspect_ratio=increase,crop=512:512" "${output}"`)
+        execSync(
+          `ffmpeg -y -loglevel error -ignore_loop 0 -analyzeduration 100M -probesize 100M -i "${input}" \
+          -movflags faststart -pix_fmt yuv420p \
+          -vf "fps=15,scale=512:512:force_original_aspect_ratio=increase,crop=512:512" \
+          "${output}"`,
+          { stdio: "ignore" }
+        )
 
         const result = fs.readFileSync(output)
 
