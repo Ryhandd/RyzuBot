@@ -338,7 +338,7 @@ module.exports = {
         
         const framePattern = `${frameDir}/frame_%04d.png`
         execSync(
-          `ffmpeg -y -framerate 10 -i "${framePattern}" -c:v libvpx -pix_fmt yuv420p -crf 30 -b:v 500k "${output}"`,
+          `ffmpeg -y -framerate 10 -i "${framePattern}" -c:v libx264 -pix_fmt yuv420p -crf 23 "${output}"`,
           { stdio: "ignore" }
         )
 
