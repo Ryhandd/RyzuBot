@@ -1,9 +1,0 @@
-{
-  "profile": "openai",
-  "env": {
-    "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
-    "OPENAI_MODEL": "google/gemini-2.0-flash-001",
-    "OPENAI_API_KEY": "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"
-  },
-  "createdAt": "2026-04-05T19:08:28.387Z"
-}

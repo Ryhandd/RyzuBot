@@ -309,7 +309,7 @@ module.exports = {
       if (!quoted?.stickerMessage) return reply("Reply stikernya.")
 
       const isAnimated = quoted.stickerMessage.isAnimated
-      if (!isAnimated) return reply("Stiker ini bukan animasi.")
+      if (!isAnimated) return reply("Stiker yang dibalas bukan stiker animasi.")
 
       await ensureTmp()
 
