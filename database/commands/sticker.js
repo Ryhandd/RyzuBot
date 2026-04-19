@@ -180,7 +180,7 @@ module.exports = {
         }
         const res = await axios.post("https://bot.lyo.su/quote/generate", json)
         const buffer = Buffer.from(res.data.result.image, "base64")
-        const sticker = await makeStickerWithWM(buffer)
+        const sticker = await makeStickerWithWM(buffer, false)
         return ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch (e) {
         return reply("❌ QC error.")
@@ -204,7 +204,7 @@ module.exports = {
       if (!q) return reply("Teksnya mana?")
       const words = q.split(" ").slice(0, 6)
       if (words.length < 2) return reply("Minimal 2 kata biar jadi animasi.")
-      
+
       reply("⏳ Membuat brat animasi...")
       await ensureTmp()
       const files = []
@@ -317,25 +317,25 @@ module.exports = {
 
       try {
         const buffer = await downloadMedia(quoted.stickerMessage, "sticker")
-        
+
         input = tmp(`raw_${Date.now()}.webp`)
         output = tmp(`out_${Date.now()}.mp4`)
         frameDir = tmp(`frames_${Date.now()}`)
 
         fs.writeFileSync(input, buffer)
         fs.mkdirSync(frameDir, { recursive: true })
-        
+
         execSync(
           `ffmpeg -y -i "${input}" -vf "fps=10" "${frameDir}/frame_%04d.png"`,
           { stdio: "ignore" }
         )
-        
+
         const frames = fs.readdirSync(frameDir)
           .filter(f => f.endsWith('.png'))
           .sort()
-        
+
         if (frames.length === 0) throw new Error("Gak ada frame yang bisa diekstrak")
-        
+
         const framePattern = `${frameDir}/frame_%04d.png`
         execSync(
           `ffmpeg -y -framerate 10 -i "${framePattern}" -c:v libx264 -pix_fmt yuv420p -crf 23 "${output}"`,
@@ -357,7 +357,7 @@ module.exports = {
             fs.rmdirSync(frameDir)
           } catch {}
         }
-        
+
         ;[input, output].forEach(f => {
           if (f && fs.existsSync(f)) fs.unlinkSync(f)
         })
