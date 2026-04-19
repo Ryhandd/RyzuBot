@@ -234,33 +234,12 @@ module.exports = {
    contoh: *${prefix}menu games*
 _RyzuBot — by Ryhandd_`
 
-    await ryzu.sendMessage(from, {
-        text: `Halo ${pushname}`,
-        footer: "RyzuBot",
-        buttons: [
-                {
-                        buttonId: `${prefix}owner`,
-                        buttonText: { displayText: 'Owner' },
-                        type: 1
-                }],
-                        headerType: 1
-                }, { quoted: msg })
-
-                await ryzu.sendMessage(from, {
-                text: "Pilih menu:",
-                footer: "RyzuBot",
-                title: "Buka Menu",
-                buttonText: "Klik Di Sini",
-                sections: [
-                {
-                title: "Menu Utama",
-                rows: [
-                        { title: "Semua Fitur", rowId: `${prefix}menu all` },
-                        { title: "Menu Game", rowId: `${prefix}menu games` },
-                        { title: "Menu RPG", rowId: `${prefix}menu rpg` },
-                        { title: "Menu Tools", rowId: `${prefix}menu tools` }
-                ]}
-        ]
-    }, { quoted: msg })
+    await sendCard({
+        ryzu, from, msg,
+        text: textMenu,
+        title: "RYZUBOT MENU",
+        body: `Halo ${pushname}`,
+        image: "https://files.catbox.moe/cz6tt0.jpg"
+    })
   }
 }
