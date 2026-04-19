@@ -8,18 +8,24 @@ module.exports = {
     const sub = args.length ? args.shift().toLowerCase() : ""
 
     const categories = {
-      rpg:    "⚔️ RPG",
-      games:  "🎲 Games",
-      media:  "🎵 Media",
-      tools:  "🧰 Tools",
-      admin:  "👥 Admin",
-      gacha:  "🎰 Gacha",
-      fun:    "🎭 Fun",
+      rpg:    { name: "⚔️ RPG", id: "rpg" },
+      games:  { name: "🎲 Games", id: "games" },
+      media:  { name: "🎵 Media", id: "media" },
+      tools:  { name: "🧰 Tools", id: "tools" },
+      admin:  { name: "👥 Admin", id: "admin" },
+      gacha:  { name: "🎰 Gacha", id: "gacha" },
+      fun:    { name: "🎭 Fun", id: "fun" },
+      sticker:{ name: "🖼️ Sticker", id: "sticker" },
+      maker:  { name: "✏️ Maker", id: "maker" },
+      download:{ name: "⬇️ Download", id: "download" },
+      search: { name: "🔍 Search", id: "search" },
+      ai:     { name: "🤖 AI", id: "ai" },
+      owner:  { name: "👑 Owner", id: "owner" }
     }
 
-    if (sub && categories[sub]) {
-      const menus = {
-        rpg: `
+    // SUB-MENU DETAIL (teks biasa untuk ketika user pilih kategori)
+    const menuDetails = {
+      rpg: `
 👤 *PROFILE*
 ┌ ${prefix}register / daftar <nama>
 ├ ${prefix}me / profile / inv
@@ -54,7 +60,7 @@ module.exports = {
 ├ ${prefix}daily / weekly / monthly / yearly
 └ ${prefix}lotre`,
 
-        games: `
+      games: `
 🎲 *MINI GAMES*
 ┌ ${prefix}tictactoe @lawan
 ├ ${prefix}suit @lawan
@@ -86,7 +92,7 @@ module.exports = {
 ♟️ *CATUR*
 └ ${prefix}chess <elo>`,
 
-        media: `
+      media: `
 🎵 *DOWNLOADER*
 ┌ ${prefix}play <judul/link>
 ├ ${prefix}ytmp3 <link>
@@ -101,7 +107,7 @@ module.exports = {
 ├ ${prefix}meme
 └ ${prefix}darkjokes`,
 
-        tools: `
+      tools: `
 🧰 *TOOLS*
 ┌ ${prefix}ping
 ├ ${prefix}viewonce
@@ -130,7 +136,7 @@ module.exports = {
 ┌ ${prefix}shimi on/off
 └ ${prefix}simi on/off`,
 
-        admin: `
+      admin: `
 👥 *GROUP ADMIN*
 ┌ ${prefix}kick @tag
 ├ ${prefix}adduser <nomor>
@@ -155,7 +161,7 @@ module.exports = {
 ├ ${prefix}delafk @tag <jam>
 └ ${prefix}listpremium`,
 
-        gacha: `
+      gacha: `
 🎰 *GACHA SYSTEM*
 ┌ ${prefix}gacha / pull
 ├ ${prefix}gacha 10
@@ -173,7 +179,7 @@ module.exports = {
 ├ Legendary: 5%
 └ Limited  : 1% (pity 50)`,
 
-        fun: `
+      fun: `
 🎭 *FUN RANDOM*
 ┌ ${prefix}apakah <pertanyaan>
 ├ ${prefix}iq <nama>
@@ -188,58 +194,86 @@ module.exports = {
 ├ ${prefix}seberapatolol <nama>
 ├ ${prefix}seberapagila <nama>
 ├ ${prefix}tebakumur <nama>
-└ ${prefix}tebakgender <nama>`
+└ ${prefix}tebakgender <nama>`,
 
-      }
+      sticker: `🖼️ *STICKER*\n┌ ${prefix}sticker / s\n├ ${prefix}stickergif / sgif\n├ ${prefix}stickerwm / swm <pack>|<author>\n├ ${prefix}take <pack>|<author>\n└ ${prefix}emojimix <😎>+<😎>`,
 
+      maker: `✏️ *MAKER*\n┌ ${prefix}attp <teks>\n├ ${prefix}ttp <teks>\n├ ${prefix}brat <teks>\n└ ${prefix}quotemaker`,
+
+      download: `⬇️ *DOWNLOAD*\n┌ ${prefix}play <judul>\n├ ${prefix}ytmp3 <link>\n├ ${prefix}ytmp4 <link>\n├ ${prefix}tt <link>\n├ ${prefix}ig <link>\n├ ${prefix}fb <link>\n└ ${prefix}mediafire <link>`,
+
+      search: `🔍 *SEARCH*\n┌ ${prefix}pinterest <query>\n├ ${prefix}ytsearch <query>\n├ ${prefix}google <query>\n├ ${prefix}gimage <query>\n└ ${prefix}wikimedia <query>`,
+
+      ai: `🤖 *AI*\n┌ ${prefix}ai <pertanyaan>\n├ ${prefix}aiimg <prompt>\n├ ${prefix}remini / hd\n├ ${prefix}chatgpt <pertanyaan>\n└ ${prefix}blackbox <pertanyaan>`,
+
+      owner: `👑 *OWNER*\n┌ ${prefix}addpremium @tag <hari>\n├ ${prefix}delpremium @tag\n├ ${prefix}addmoney @tag <jumlah>\n├ ${prefix}addexp @tag <jumlah>\n├ ${prefix}setafk @tag <jam>\n├ ${prefix}delafk @tag\n└ ${prefix}listpremium`
+    }
+
+    // JIKA USER MEMILIH SUB-MENU
+    if (sub && menuDetails[sub]) {
       return reply(
-        `📋 *${categories[sub]}*\n` +
-        menus[sub] +
+        `📋 *${categories[sub]?.name || sub.toUpperCase()}*\n` +
+        menuDetails[sub] +
         `\n\n_Ketik ${prefix}menu untuk kembali ke menu utama_`
       )
     }
 
-    const textMenu =
-`╔══════════════════════╗
-║   🤖  *RYZU BOT* ║
+    // === MENU UTAMA DENGAN LIST MESSAGE (WHATSAPP BUSINESS STYLE) ===
+    const sections = [
+      {
+        title: "📂 MENU UTAMA",
+        rows: [
+          { title: "📋 Semua Fitur", description: "Lihat semua command tersedia", id: `${prefix}allmenu` },
+          { title: "🛒 Store Menu", description: "Topup & Jualan", id: `${prefix}store` },
+          { title: "📊 Menu Owner", description: "Khusus Owner Bot", id: `${prefix}menu owner` },
+          { title: "👨‍💻 Owner / Dev", description: "Info Pembuat Bot", id: `${prefix}owner` }
+        ]
+      },
+      {
+        title: "📁 KATEGORI MENU LAIN",
+        rows: [
+          { title: "🖼️ Menu Stickers", description: "Bikin stiker dari gambar/video", id: `${prefix}menu sticker` },
+          { title: "✏️ Menu Maker", description: "Text to image, brat, attp", id: `${prefix}menu maker` },
+          { title: "⬇️ Menu Download", description: "YT, TT, IG, FB Downloader", id: `${prefix}menu download` },
+          { title: "🔍 Menu Search", description: "Pinterest, Google, YT Search", id: `${prefix}menu search` },
+          { title: "🎮 Menu Game", description: "Tebak gambar, math, slot", id: `${prefix}menu games` },
+          { title: "🤖 Menu AI", description: "ChatGPT, AI Image, Remini", id: `${prefix}menu ai` },
+          { title: "⚔️ Menu RPG", description: "Adventure, mining, ekonomi", id: `${prefix}menu rpg` },
+          { title: "🎭 Menu Fun", description: "Apakah, kerang ajaib, rate", id: `${prefix}menu fun` },
+          { title: "🎰 Menu Gacha", description: "Gacha karakter & item", id: `${prefix}menu gacha` },
+          { title: "🧰 Menu Tools", description: "Ping, translate, QR, calc", id: `${prefix}menu tools` }
+        ]
+      }
+    ]
+
+    const buttonText = `╔══════════════════════╗
+║   🤖  *RYZU BOT*   ║
 ╚══════════════════════╝
 
 👋 Halo *${pushname}*!
 
-━━━━━━━━━━━━━━━━━━━━━━
+📌 *INFO BOT*
+┌ 🤖 Bot Name: RyzuBot
+├ 📦 Version: 2.0.0
+└ 📅 ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
 
-📂 *KATEGORI MENU*
-┌ ${prefix}menu rpg    — ⚔️ RPG & Ekonomi
-├ ${prefix}menu games  — 🎲 Mini Games & WW
-├ ${prefix}menu media  — 🎵 Downloader
-├ ${prefix}menu tools  — 🧰 Tools & AI
-├ ${prefix}menu fun    — 🎭 Random & Absurd
-├ ${prefix}menu admin  — 👥 Group Admin
-└ ${prefix}menu gacha  — 🎰 Gacha System
-
-━━━━━━━━━━━━━━━━━━━━━━
-
-⚡ *SHORTCUT*
-┌ ${prefix}help     — Cara menggunakan bot
-├ ${prefix}owner    — Kontak pemilik bot
-├ ${prefix}register — Daftar akun RPG
-├ ${prefix}me       — Profile & Inventory
-├ ${prefix}daily    — Klaim hadiah harian
-├ ${prefix}shop     — Lihat toko
-├ ${prefix}premium  — List harga premium
-└ ${prefix}ping     — Cek kecepatan bot
+📊 *INFO USER*
+┌ 👤 Status: ${user?.premium ? '⭐ Premium' : '🆓 Free User'}
+├ 📛 Name: ${pushname}
+├ 🎫 Limit: ${user?.limit || 0}/25 • Sisa: ${25 - (user?.limit || 0)}
+└ 🎭 Role: ${user?.premium ? 'Premium' : 'Free'}
 
 ━━━━━━━━━━━━━━━━━━━━━━
-💡 Tips: ketik ${prefix}menu <kategori>
-   contoh: *${prefix}menu games*
-_RyzuBot — by Ryhandd_`
+💡 *Tips:* Pilih kategori di bawah untuk melihat detail command.
+_Ketik ${prefix}help untuk panduan lengkap._`
 
-    await sendCard({
-        ryzu, from, msg,
-        text: textMenu,
-        title: "RYZUBOT MENU",
-        body: `Halo ${pushname}`,
-        image: "https://files.catbox.moe/cz6tt0.jpg"
-    })
+    // Kirim List Message
+    await ryzu.sendMessage(from, {
+      text: buttonText,
+      buttonText: "📂 BUKA MENU",
+      sections: sections,
+      footer: "Ryzu Bot • a calm & smart whatsapp assistant"
+    }, { quoted: msg })
+
   }
 }
