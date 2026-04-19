@@ -244,8 +244,6 @@ module.exports = {
                 title: "Menu Utama",
                 rows: [
                         { title: "Semua Fitur", rowId: `${prefix}menu all`, description: "Semua fitur bot" },
-                        { title: "Store Menu", rowId: `${prefix}menu store`, description: "Menu store" },
-                        { title: "Menu Owner", rowId: `${prefix}menu admin`, description: "Owner menu" },
                         { title: "Owner / Dev", rowId: `${prefix}owner`, description: "Kontak owner" }
                 ]
                 },
@@ -253,13 +251,9 @@ module.exports = {
                 title: "Kategori Menu Lain",
                 rows: [
                         { title: "Menu Stickers", rowId: `${prefix}menu sticker` },
-                        { title: "Menu Maker", rowId: `${prefix}menu maker` },
                         { title: "Menu Download", rowId: `${prefix}menu media` },
-                        { title: "Menu Search", rowId: `${prefix}menu search` },
                         { title: "Menu Game", rowId: `${prefix}menu games` },
                         { title: "Menu AI", rowId: `${prefix}menu tools` },
-                        { title: "Menu Enc", rowId: `${prefix}menu enc` },
-                        { title: "Menu Sertifikat", rowId: `${prefix}menu sertifikat` },
                         { title: "Menu Rpg", rowId: `${prefix}menu rpg` }
                 ]
                 }
