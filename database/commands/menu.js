@@ -238,39 +238,29 @@ _RyzuBot — by Ryhandd_`
         text: `Halo ${pushname}`,
         footer: "RyzuBot",
         buttons: [
-        {
-                buttonId: `${prefix}owner`,
-                buttonText: { displayText: 'Owner' },
-                type: 1
-        },
-        {
-                buttonId: 'menu_select',
-                buttonText: { displayText: 'Buka Menu' },
-                type: 4,
-                nativeFlowInfo: {
-                        name: 'single_select',
-                        paramsJson: JSON.stringify({
-                        title: 'Pilih Menu',
-                        sections: [
-                        {
-                        title: "Menu Utama",
-                        rows: [
-                                { title: "Semua Fitur", id: `${prefix}menu all` },
-                                { title: "Owner / Dev", id: `${prefix}owner` }
-                        ]},
-                        {
-                        title: "Kategori Menu",
-                        rows: [
-                                { title: "Menu Stickers", id: `${prefix}menu sticker` },
-                                { title: "Menu Download", id: `${prefix}menu media` },
-                                { title: "Menu Game", id: `${prefix}menu games` },
-                                { title: "Menu Tools", id: `${prefix}menu tools` },
-                                { title: "Menu RPG", id: `${prefix}menu rpg` }
-                        ]}]})
-                }
-        }
-        ],
-        headerType: 1
+                {
+                        buttonId: `${prefix}owner`,
+                        buttonText: { displayText: 'Owner' },
+                        type: 1
+                }],
+                        headerType: 1
+                }, { quoted: msg })
+
+                await ryzu.sendMessage(from, {
+                text: "Pilih menu:",
+                footer: "RyzuBot",
+                title: "Buka Menu",
+                buttonText: "Klik Di Sini",
+                sections: [
+                {
+                title: "Menu Utama",
+                rows: [
+                        { title: "Semua Fitur", rowId: `${prefix}menu all` },
+                        { title: "Menu Game", rowId: `${prefix}menu games` },
+                        { title: "Menu RPG", rowId: `${prefix}menu rpg` },
+                        { title: "Menu Tools", rowId: `${prefix}menu tools` }
+                ]}
+        ]
     }, { quoted: msg })
   }
 }
