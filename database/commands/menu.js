@@ -264,8 +264,8 @@ _RyzuBot — by Ryhandd_`
                                 { title: "Menu Stickers", id: `${prefix}menu sticker` },
                                 { title: "Menu Download", id: `${prefix}menu media` },
                                 { title: "Menu Game", id: `${prefix}menu games` },
-                                { title: "Menu AI", id: `${prefix}menu tools` },
-                                { title: "Menu Rpg", id: `${prefix}menu rpg` }
+                                { title: "Menu Tools", id: `${prefix}menu tools` },
+                                { title: "Menu RPG", id: `${prefix}menu rpg` }
                         ]}]})
                 }
         }
