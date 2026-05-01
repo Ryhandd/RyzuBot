@@ -2,17 +2,33 @@ const axios = require('axios')
 
 module.exports = {
   name: "waifu",
-  execute: async ({ ryzu, from, msg, reply }) => {
-    try {
-      const res = await axios.get('https://api.nekosia.cat/api/v1/images/cute?additionalTags=girl')
+  execute: async (ctx) => {
+    const { ryzu, from, msg, reply, user, isCreator, isPremium, sender, funcs } = ctx
 
-      const json = res.data
-      const imageUrl = json.image.original.url
+    const sultan = isPremium || isCreator
+    if (!sultan && user.limit <= 0) {
+      return reply("❌ Limit lu abis! Beli di *.shop* atau upgrade ke *Premium*.")
+    }
+
+    try {
+      const res = await axios.get(
+        'https://api.nekosia.cat/api/v1/images/cute?additionalTags=girl'
+      )
+
+      const imageUrl = res.data.image.original.url
 
       await ryzu.sendMessage(from, {
         image: { url: imageUrl },
         caption: "Berhasil!"
       }, { quoted: msg })
+
+      if (!sultan) {
+        user.limit -= 1
+        await funcs.saveRPG(sender)
+        await reply(`✅ Berhasil! Sisa limit: ${user.limit}`)
+      } else {
+        await reply(`✅ Berhasil!`)
+      }
 
     } catch (err) {
       console.error(err)
