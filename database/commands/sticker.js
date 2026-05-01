@@ -37,7 +37,7 @@ async function makeSticker(buffer, isVideo = false, pack = "RyzuBot", author = "
   fs.writeFileSync(input, buffer)
 
   // Scale proporsional: sisi terpanjang max 512, tidak ada crop/force square
-  const scaleFilter = "scale='if(gt(iw,ih),min(512,iw),-2)':'if(gt(iw,ih),-2,min(512,ih))'"
+  const scaleFilter = `scale='if(gt(iw,ih),512,-2)':'if(gt(iw,ih),-2,512)', pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000`
 
   if (isVideo) {
     execSync(
@@ -480,13 +480,11 @@ module.exports = {
         const encH = origH % 2 === 0 ? origH : origH + 1
         console.log(`[TOVID] Dimensi: ${origW}x${origH} → encode ${encW}x${encH}`)
 
-        // ── Coba ekstrak frame langsung via ffmpeg ──
-        // Gunakan -vf scale dua langkah: pertama ke dimensi encode, lalu fps
         let frameCount = 0
         try {
           execSync(
-            `ffmpeg -y -i "${inputPath}" -vf "scale=${encW}:${encH}:flags=lanczos,fps=${fps}" "${frameDir}/frame_%04d.png"`,
-            { stdio: "pipe" } // pipe supaya error message bisa kita baca
+            `ffmpeg -y -analyzeduration 100M -probesize 100M -i "${inputPath}" -vf "scale=${encW}:${encH}:flags=lanczos,fps=${fps}" "${frameDir}/frame_%04d.png"`,
+            { stdio: "pipe" }
           )
           frameCount = fs.readdirSync(frameDir).filter(f => f.endsWith(".png")).length
         } catch (ffErr) {
@@ -507,21 +505,18 @@ module.exports = {
           console.log(`[TOVID] Frame dari webpmux: ${frames.length}`)
 
           // Hitung ulang fps dari frame durations
-          const durations = frames.map(f => f.delay || 100) // delay dalam ms
+          const durations = frames.map(f => f.delay || 100)
           const avgDelay = durations.reduce((a, b) => a + b, 0) / durations.length
           fps = Math.round(1000 / avgDelay)
           if (fps < 5) fps = 10
           if (fps > 60) fps = 30
           console.log(`[TOVID] FPS dari delay: ${fps}`)
 
-          // Simpan tiap frame sebagai webp lalu convert ke png via ffmpeg
           for (let i = 0; i < frames.length; i++) {
             const singleImg = new webp.Image()
-            // Buat webp statis dari frame ini
-            await singleImg.initEmpty()
-            singleImg.data = frames[i].data
             singleImg.width = img.width
             singleImg.height = img.height
+            singleImg.data = frames[i].data
 
             const frameBuf = await singleImg.save(null)
             const frameWebp = path.join(frameDir, `raw_${String(i).padStart(4, "0")}.webp`)
