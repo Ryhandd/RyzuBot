@@ -18,8 +18,7 @@ module.exports = {
       const imageUrl = res.data.image.original.url
 
       await ryzu.sendMessage(from, {
-        image: { url: imageUrl },
-        caption: "Berhasil!"
+        image: { url: imageUrl }
       }, { quoted: msg })
 
       if (!sultan) {
