@@ -10,6 +10,7 @@ module.exports = {
     const categories = {
       rpg:    "⚔️ RPG",
       games:  "🎲 Games",
+      sticker: "🧷 Sticker",
       media:  "🎵 Media",
       tools:  "🧰 Tools",
       admin:  "👥 Admin",
@@ -86,6 +87,14 @@ module.exports = {
 ♟️ *CATUR*
 └ ${prefix}chess <elo>`,
 
+        sticker: `
+🧷 *STICKER MENU*
+┌ ${prefix}sticker / s
+├ ${prefix}smeme
+├ ${prefix}toimg
+├ ${prefix}wm <pack|author>
+└ ${prefix}qc`,
+
         media: `
 🎵 *DOWNLOADER*
 ┌ ${prefix}play <judul/link>
@@ -98,6 +107,7 @@ module.exports = {
 
 🖼️ *IMAGE*
 ┌ ${prefix}pinterest / pin <query>
+├ ${prefix}neko
 ├ ${prefix}meme
 └ ${prefix}darkjokes`,
 
@@ -211,6 +221,7 @@ module.exports = {
 📂 *KATEGORI MENU*
 ┌ ${prefix}menu rpg    — ⚔️ RPG & Ekonomi
 ├ ${prefix}menu games  — 🎲 Mini Games & WW
+├ ${prefix}menu sticker — 🧷 Sticker Tools
 ├ ${prefix}menu media  — 🎵 Downloader
 ├ ${prefix}menu tools  — 🧰 Tools & AI
 ├ ${prefix}menu fun    — 🎭 Random & Absurd
