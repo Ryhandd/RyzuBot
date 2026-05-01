@@ -108,6 +108,7 @@ module.exports = {
 🖼️ *IMAGE*
 ┌ ${prefix}pinterest / pin <query>
 ├ ${prefix}neko
+├ ${prefix}waifu
 ├ ${prefix}meme
 └ ${prefix}darkjokes`,
 
