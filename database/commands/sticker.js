@@ -24,26 +24,29 @@ const buildExifBuffer = (pack, author) => {
   return exif
 }
 
-async function makeStickerWithWM(buffer, isVideo = false) {
-  const FileType = require("file-type")
+// ================= STICKER MAKER =================
+// isVideo: false = gambar biasa, true = video/gif animasi
+// keepSize: true = pertahankan ukuran asli (max 512 di sisi terbesar, scale proporsional)
+//           false = paksa square 512x512 (legacy, tidak dipakai di s/smeme)
+async function makeSticker(buffer, isVideo = false, pack = "RyzuBot", author = "+62 899-8821-419") {
   const webp = require("node-webpmux")
-
-  const type = await FileType.fromBuffer(buffer)
-  if (!type) throw "File tidak valid"
 
   const input = tmp(`in_${Date.now()}`)
   const output = tmp(`out_${Date.now()}.webp`)
 
   fs.writeFileSync(input, buffer)
 
+  // Scale proporsional: sisi terpanjang max 512, tidak ada crop/force square
+  const scaleFilter = "scale='if(gt(iw,ih),min(512,iw),-2)':'if(gt(iw,ih),-2,min(512,ih))'"
+
   if (isVideo) {
     execSync(
-      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease,fps=30" -loop 0 -preset default -an -vsync 0 "${output}"`,
+      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "${scaleFilter},fps=15" -loop 0 -preset default -an -vsync 0 "${output}"`,
       { stdio: "ignore" }
     )
   } else {
     execSync(
-      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease" "${output}"`,
+      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "${scaleFilter}" "${output}"`,
       { stdio: "ignore" }
     )
   }
@@ -51,13 +54,13 @@ async function makeStickerWithWM(buffer, isVideo = false) {
   const img = new webp.Image()
   await img.load(output)
 
-  const exif = buildExifBuffer("RyzuBot", "+62 899-8821-419")
+  const exif = buildExifBuffer(pack, author)
   img.exif = exif
 
   const result = await img.save(null)
 
-  fs.unlinkSync(input)
-  fs.unlinkSync(output)
+  if (fs.existsSync(input)) fs.unlinkSync(input)
+  if (fs.existsSync(output)) fs.unlinkSync(output)
 
   return result
 }
@@ -78,20 +81,6 @@ async function genBrat(text, outPath) {
   fs.writeFileSync(outPath, res.data)
 }
 
-// Upload gambar ke imgbb (gratis, tanpa login, reliable)
-async function uploadToImgbb(buffer) {
-  const form = new FormData()
-  form.append("image", buffer.toString("base64"))
-  // Pakai API key publik imgbb atau upload ke tmpfiles.org
-  const res = await axios.post(
-    "https://api.imgbb.com/1/upload?key=2e49e9d44a8c5be3f4c0f8a7b1d23456",
-    form,
-    { headers: form.getHeaders(), timeout: 15000 }
-  )
-  return res.data.data.url
-}
-
-// Upload gambar ke tmpfiles.org (no API key needed)
 async function uploadToTmpfiles(buffer) {
   const form = new FormData()
   form.append("file", buffer, { filename: "img.jpg", contentType: "image/jpeg" })
@@ -99,13 +88,10 @@ async function uploadToTmpfiles(buffer) {
     headers: form.getHeaders(),
     timeout: 20000
   })
-  // tmpfiles return URL seperti https://tmpfiles.org/1234567/img.jpg
-  // ubah ke direct link: https://tmpfiles.org/dl/1234567/img.jpg
   const url = res.data.data.url.replace("tmpfiles.org/", "tmpfiles.org/dl/")
   return url
 }
 
-// Upload gambar ke catbox dengan timeout lebih panjang
 async function uploadToCatbox(buffer) {
   const form = new FormData()
   form.append("reqtype", "fileupload")
@@ -117,7 +103,6 @@ async function uploadToCatbox(buffer) {
   return res.data.trim()
 }
 
-// Upload dengan fallback: catbox → tmpfiles
 async function uploadImage(buffer) {
   try {
     const url = await uploadToCatbox(buffer)
@@ -156,8 +141,8 @@ function getImage(msg) {
   )
 }
 
-// Ambil dimensi asli dari file webp menggunakan ffprobe
-function getWebpDimensions(filePath) {
+// Ambil dimensi asli dari file menggunakan ffprobe
+function getDimensions(filePath) {
   try {
     const out = execSync(
       `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "${filePath}"`,
@@ -166,7 +151,7 @@ function getWebpDimensions(filePath) {
     const [w, h] = out.split("x").map(Number)
     if (w && h && w > 0 && h > 0) return { width: w, height: h }
   } catch (e) {
-    console.warn("[TOVID] ffprobe gagal:", e.message)
+    console.warn("[getDimensions] ffprobe gagal:", e.message)
   }
   return null
 }
@@ -177,7 +162,7 @@ module.exports = {
   alias: ["s", "stiker", "smeme", "qc", "wm", "brat", "vbrat", "toimg", "tovideo", "tovid"],
   async execute({ ryzu, from, msg, command, q, reply, prefix, pushname, sender }) {
 
-    // .S / .STIKER
+    // ================= S / STIKER =================
     if (["s", "stiker"].includes(command)) {
       const quoted = getQuoted(msg)
       const media =
@@ -195,7 +180,8 @@ module.exports = {
 
       const isVideo = type === "video"
       const buffer = await downloadMedia(media, type)
-      const sticker = await makeStickerWithWM(buffer, isVideo)
+      // Ukuran proporsional, tidak di-crop
+      const sticker = await makeSticker(buffer, isVideo)
 
       return ryzu.sendMessage(from, { sticker }, { quoted: msg })
     }
@@ -208,7 +194,7 @@ module.exports = {
       if (!q || !q.includes("|")) return reply(`Format salah!\nContoh: ${prefix}smeme teks atas|teks bawah`)
 
       let [top, bottom] = q.split("|")
-      top = (top?.trim() || "_").replace(/_/g, "__")    // memegen pakai __ untuk underscore
+      top = (top?.trim() || "_").replace(/_/g, "__")
       bottom = (bottom?.trim() || "_").replace(/_/g, "__")
 
       reply("⏳ Membuat smeme...")
@@ -221,17 +207,27 @@ module.exports = {
         return reply("❌ Gagal download gambar.")
       }
 
+      // Dapatkan dimensi asli gambar
+      const inputPath = tmp(`smeme_probe_${Date.now()}.jpg`)
+      fs.writeFileSync(inputPath, imgBuffer)
+      const dims = getDimensions(inputPath)
+      fs.unlinkSync(inputPath)
+
+      const origW = dims?.width || 512
+      const origH = dims?.height || 512
+      console.log(`[SMEME] Dimensi asli: ${origW}x${origH}`)
+
       try {
-        // Upload gambar dan dapatkan URL publik
         const imageUrl = await uploadImage(imgBuffer)
         console.log("[SMEME] Image URL:", imageUrl)
 
-        // Buat URL meme via memegen dengan background dari URL gambar
         const bgEncoded = encodeURIComponent(imageUrl)
         const topEncoded = encodeURIComponent(top)
         const botEncoded = encodeURIComponent(bottom)
 
-        const memeUrl = `https://api.memegen.link/images/custom/${topEncoded}/${botEncoded}.png?background=${bgEncoded}&font=impact&width=512&height=512`
+        // Gunakan dimensi asli, tanpa watermark (hapus font impact supaya default, tidak ada logo)
+        // memegen tidak menambah watermark sendiri, pastikan tidak ada param watermark
+        const memeUrl = `https://api.memegen.link/images/custom/${topEncoded}/${botEncoded}.png?background=${bgEncoded}&width=${origW}&height=${origH}`
         console.log("[SMEME] Meme URL:", memeUrl)
 
         const meme = await axios.get(memeUrl, {
@@ -241,40 +237,41 @@ module.exports = {
         })
 
         if (!meme.data || meme.data.byteLength < 1000) {
-          throw new Error("Response meme terlalu kecil, kemungkinan error")
+          throw new Error("Response meme terlalu kecil")
         }
 
-        const sticker = await makeStickerWithWM(Buffer.from(meme.data))
+        // Buat stiker dengan dimensi proporsional (tidak paksa 512x512)
+        const sticker = await makeSticker(Buffer.from(meme.data), false)
         return ryzu.sendMessage(from, { sticker }, { quoted: msg })
 
       } catch (e) {
         console.error("[SMEME] Error:", e.message)
 
-        // Fallback: overlay teks langsung pakai ffmpeg tanpa upload
+        // Fallback: overlay teks langsung pakai ffmpeg, dimensi asli
         try {
           console.log("[SMEME] Mencoba fallback ffmpeg overlay...")
-          const inputPath = tmp(`smeme_in_${Date.now()}.jpg`)
-          const outputPath = tmp(`smeme_out_${Date.now()}.png`)
+          const inPath = tmp(`smeme_in_${Date.now()}.jpg`)
+          const outPath = tmp(`smeme_out_${Date.now()}.png`)
 
-          fs.writeFileSync(inputPath, imgBuffer)
+          fs.writeFileSync(inPath, imgBuffer)
 
           const safeTop = top.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/:/g, "\\:")
           const safeBot = bottom.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/:/g, "\\:")
 
+          // Tidak ada resize paksa, pakai dimensi asli
           execSync(
-            `ffmpeg -y -i "${inputPath}" \
-            -vf "scale=512:512:force_original_aspect_ratio=increase,crop=512:512, \
-            drawtext=text='${safeTop}':fontsize=48:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=20, \
+            `ffmpeg -y -i "${inPath}" \
+            -vf "drawtext=text='${safeTop}':fontsize=48:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=20, \
             drawtext=text='${safeBot}':fontsize=48:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=h-text_h-20" \
-            "${outputPath}"`,
+            "${outPath}"`,
             { stdio: "ignore" }
           )
 
-          const result = fs.readFileSync(outputPath)
-          const sticker = await makeStickerWithWM(result)
+          const result = fs.readFileSync(outPath)
+          const sticker = await makeSticker(result, false)
 
-          if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath)
-          if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath)
+          if (fs.existsSync(inPath)) fs.unlinkSync(inPath)
+          if (fs.existsSync(outPath)) fs.unlinkSync(outPath)
 
           return ryzu.sendMessage(from, { sticker }, { quoted: msg })
         } catch (fallbackErr) {
@@ -310,7 +307,7 @@ module.exports = {
         }
         const res = await axios.post("https://bot.lyo.su/quote/generate", json)
         const buffer = Buffer.from(res.data.result.image, "base64")
-        const sticker = await makeStickerWithWM(buffer, false)
+        const sticker = await makeSticker(buffer, false)
         return ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch (e) {
         return reply("❌ QC error.")
@@ -322,7 +319,7 @@ module.exports = {
       if (!q) return reply("Teksnya mana?")
       try {
         const res = await axios.get(`https://api.siputzx.my.id/api/m/brat?text=${encodeURIComponent(q)}`, { responseType: "arraybuffer" })
-        const sticker = await makeStickerWithWM(res.data)
+        const sticker = await makeSticker(res.data)
         return ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch {
         return reply("❌ Error server.")
@@ -355,14 +352,14 @@ module.exports = {
           ffmpeg()
             .input(listFile)
             .inputOptions(["-f concat", "-safe 0"])
-            .outputOptions(["-pix_fmt yuv420p", "-movflags faststart", "-vf scale=512:512:force_original_aspect_ratio=increase,crop=512:512"])
+            .outputOptions(["-pix_fmt yuv420p", "-movflags faststart"])
             .save(videoFile)
             .on("end", resolve)
             .on("error", reject)
         })
 
         const videoBuffer = fs.readFileSync(videoFile)
-        const sticker = await makeStickerWithWM(videoBuffer, true)
+        const sticker = await makeSticker(videoBuffer, true)
         await ryzu.sendMessage(from, { sticker }, { quoted: msg })
       } catch (e) {
         console.error(e)
@@ -456,52 +453,93 @@ module.exports = {
         fs.writeFileSync(inputPath, buffer)
         fs.mkdirSync(frameDir, { recursive: true })
 
-        // Ambil dimensi asli dari webp
-        const dims = getWebpDimensions(inputPath)
-        let origW = dims?.width || 512
-        let origH = dims?.height || 512
-        console.log(`[TOVID] Dimensi original: ${origW}x${origH}`)
-
-        // Pastikan dimensi genap (syarat libx264)
-        const encW = origW % 2 === 0 ? origW : origW + 1
-        const encH = origH % 2 === 0 ? origH : origH + 1
-
-        // Ekstrak FPS asli dari webp
+        // ── Deteksi FPS dari webp animasi ──
         let fps = 15
         try {
-          const fpsOut = execSync(
+          const fpsRaw = execSync(
             `ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 "${inputPath}"`,
             { encoding: "utf-8" }
           ).trim()
-          // r_frame_rate bisa berupa "30000/1001" atau "30/1"
-          if (fpsOut.includes("/")) {
-            const [num, den] = fpsOut.split("/").map(Number)
-            fps = Math.round(num / den)
+          if (fpsRaw.includes("/")) {
+            const [num, den] = fpsRaw.split("/").map(Number)
+            if (den > 0) fps = Math.round(num / den)
           } else {
-            fps = parseInt(fpsOut) || 15
+            fps = parseInt(fpsRaw) || 15
           }
-          // Clamp ke range wajar
           if (fps < 5) fps = 10
           if (fps > 60) fps = 30
-        } catch {
-          fps = 15
-        }
+        } catch {}
         console.log(`[TOVID] FPS: ${fps}`)
 
-        // Ekstrak frame dengan FPS asli, skala sesuai dimensi original
-        execSync(
-          `ffmpeg -y -i "${inputPath}" -vf "scale=${encW}:${encH}:flags=lanczos,fps=${fps}" "${frameDir}/frame_%04d.png"`,
-          { stdio: "ignore" }
-        )
+        // ── Ekstrak dimensi asli ──
+        const dims = getDimensions(inputPath)
+        let origW = dims?.width || 512
+        let origH = dims?.height || 512
+        // libx264 butuh dimensi genap
+        const encW = origW % 2 === 0 ? origW : origW + 1
+        const encH = origH % 2 === 0 ? origH : origH + 1
+        console.log(`[TOVID] Dimensi: ${origW}x${origH} → encode ${encW}x${encH}`)
 
-        const frames = fs.readdirSync(frameDir)
-          .filter(f => f.endsWith(".png"))
-          .sort()
+        // ── Coba ekstrak frame langsung via ffmpeg ──
+        // Gunakan -vf scale dua langkah: pertama ke dimensi encode, lalu fps
+        let frameCount = 0
+        try {
+          execSync(
+            `ffmpeg -y -i "${inputPath}" -vf "scale=${encW}:${encH}:flags=lanczos,fps=${fps}" "${frameDir}/frame_%04d.png"`,
+            { stdio: "pipe" } // pipe supaya error message bisa kita baca
+          )
+          frameCount = fs.readdirSync(frameDir).filter(f => f.endsWith(".png")).length
+        } catch (ffErr) {
+          console.warn("[TOVID] ffmpeg frame extract gagal, coba metode webpmux:", ffErr.message)
+        }
 
+        // ── Fallback: ekstrak frame via node-webpmux ──
+        if (frameCount === 0) {
+          console.log("[TOVID] Mencoba ekstrak frame via node-webpmux...")
+          const webp = require("node-webpmux")
+          const img = new webp.Image()
+          await img.load(inputPath)
+
+          // node-webpmux: frames ada di img.frames untuk webp animasi
+          const frames = img.frames || []
+          if (frames.length === 0) throw new Error("Tidak ada frame yang bisa diekstrak dari webp animasi ini")
+
+          console.log(`[TOVID] Frame dari webpmux: ${frames.length}`)
+
+          // Hitung ulang fps dari frame durations
+          const durations = frames.map(f => f.delay || 100) // delay dalam ms
+          const avgDelay = durations.reduce((a, b) => a + b, 0) / durations.length
+          fps = Math.round(1000 / avgDelay)
+          if (fps < 5) fps = 10
+          if (fps > 60) fps = 30
+          console.log(`[TOVID] FPS dari delay: ${fps}`)
+
+          // Simpan tiap frame sebagai webp lalu convert ke png via ffmpeg
+          for (let i = 0; i < frames.length; i++) {
+            const singleImg = new webp.Image()
+            // Buat webp statis dari frame ini
+            await singleImg.initEmpty()
+            singleImg.data = frames[i].data
+            singleImg.width = img.width
+            singleImg.height = img.height
+
+            const frameBuf = await singleImg.save(null)
+            const frameWebp = path.join(frameDir, `raw_${String(i).padStart(4, "0")}.webp`)
+            const framePng = path.join(frameDir, `frame_${String(i + 1).padStart(4, "0")}.png`)
+            fs.writeFileSync(frameWebp, frameBuf)
+
+            execSync(`ffmpeg -y -i "${frameWebp}" "${framePng}"`, { stdio: "ignore" })
+            fs.unlinkSync(frameWebp)
+          }
+
+          frameCount = fs.readdirSync(frameDir).filter(f => f.endsWith(".png")).length
+        }
+
+        const frames = fs.readdirSync(frameDir).filter(f => f.endsWith(".png")).sort()
         if (frames.length === 0) throw new Error("Tidak ada frame yang berhasil diekstrak")
-        console.log(`[TOVID] Frame diekstrak: ${frames.length}`)
+        console.log(`[TOVID] Total frame siap: ${frames.length}`)
 
-        // Encode frame jadi mp4 dengan dimensi & fps asli
+        // ── Encode frame → mp4 ──
         execSync(
           `ffmpeg -y -framerate ${fps} -i "${frameDir}/frame_%04d.png" \
           -c:v libx264 -pix_fmt yuv420p -crf 18 -preset fast \
@@ -517,7 +555,6 @@ module.exports = {
         console.error("[TOVID ERROR]:", e.message)
         reply("❌ Gagal convert ke video. Pastikan stiker animasi valid.")
       } finally {
-        // Bersihkan frame dir
         if (frameDir && fs.existsSync(frameDir)) {
           try {
             fs.readdirSync(frameDir).forEach(f => {
@@ -526,7 +563,6 @@ module.exports = {
             fs.rmdirSync(frameDir)
           } catch {}
         }
-        // Bersihkan file temp
         ;[inputPath, outputPath].forEach(f => {
           if (f && fs.existsSync(f)) {
             try { fs.unlinkSync(f) } catch {}
