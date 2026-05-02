@@ -50,24 +50,27 @@ async function sendInteractiveMenu(ryzu, from, msg, pushname, prefix) {
 // ─── Layer 2: list message ────────────────────────────────────────────────────
 async function sendListMenu(ryzu, from, msg, pushname, prefix) {
   await ryzu.sendMessage(from, {
-    text: `╔══════════════════════╗\n║   🤖  *RYZU BOT*  ║\n╚══════════════════════╝\n\n👋 Halo *${pushname}*!\nPilih kategori menu di bawah 👇`,
-    footer: 'RyzuBot — by Ryhandd',
-    title: '🤖 RYZU BOT',
-    buttonText: '🗂️ Buka Menu',
-    sections: [{
-      title: '📂 Pilih Kategori',
-      rows: [
-        { title: '⚔️ RPG & Ekonomi',    description: 'Adventure, Mining, Shop, dll', id: `${prefix}menu rpg`     },
-        { title: '🎲 Games & Werewolf',  description: 'Minigame, WW, Catur',          id: `${prefix}menu games`   },
-        { title: '🎰 Gacha System',      description: 'Pull, Rate, Tiket',            id: `${prefix}menu gacha`   },
-        { title: '🎵 Media & Download',  description: 'YT, TikTok, IG, Pinterest',   id: `${prefix}menu media`   },
-        { title: '🧰 Tools & AI',        description: 'Translate, QR, ChatGPT, dll', id: `${prefix}menu tools`   },
-        { title: '🧷 Sticker',           description: 'Buat & edit sticker',         id: `${prefix}menu sticker` },
-        { title: '🎭 Fun & Random',      description: 'IQ, Seberapagay, dll',        id: `${prefix}menu fun`     },
-        { title: '👥 Group Admin',       description: 'Kick, Promote, Tagall, dll',  id: `${prefix}menu admin`   },
-        { title: '📋 Semua Menu',        description: 'Tampilkan semua perintah',    id: `${prefix}menu all`     },
-      ]
-    }]
+    listMessage: {
+      title: '🤖 RYZU BOT',
+      description: `👋 Halo *${pushname}*!\nPilih kategori menu di bawah 👇`,
+      buttonText: '🗂️ Buka Menu',
+      footerText: 'RyzuBot — by Ryhandd',
+      listType: 1,
+      sections: [{
+        title: '📂 Pilih Kategori',
+        rows: [
+          { title: '⚔️ RPG & Ekonomi',    description: 'Adventure, Mining, Shop, dll', rowId: `${prefix}menu rpg`     },
+          { title: '🎲 Games & Werewolf',  description: 'Minigame, WW, Catur',          rowId: `${prefix}menu games`   },
+          { title: '🎰 Gacha System',      description: 'Pull, Rate, Tiket',            rowId: `${prefix}menu gacha`   },
+          { title: '🎵 Media & Download',  description: 'YT, TikTok, IG, Pinterest',   rowId: `${prefix}menu media`   },
+          { title: '🧰 Tools & AI',        description: 'Translate, QR, ChatGPT, dll', rowId: `${prefix}menu tools`   },
+          { title: '🧷 Sticker',           description: 'Buat & edit sticker',         rowId: `${prefix}menu sticker` },
+          { title: '🎭 Fun & Random',      description: 'IQ, Seberapagay, dll',        rowId: `${prefix}menu fun`     },
+          { title: '👥 Group Admin',       description: 'Kick, Promote, Tagall, dll',  rowId: `${prefix}menu admin`   },
+          { title: '📋 Semua Menu',        description: 'Tampilkan semua perintah',    rowId: `${prefix}menu all`     },
+        ]
+      }]
+    }
   }, { quoted: msg })
 }
 
