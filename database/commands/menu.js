@@ -1,5 +1,74 @@
 const sendCard = require('../../lib/sendCard')
 
+// ─── Helper: kirim interactiveMessage (works di Baileys MD 2024-2026) ─────────
+async function sendInteractiveMenu(ryzu, from, msg, pushname, prefix) {
+  const buttons = [
+    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "⚔️ RPG & Ekonomi",   id: `${prefix}menu rpg`     }) },
+    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "🎲 Games & Werewolf", id: `${prefix}menu games`   }) },
+    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "🎰 Gacha System",     id: `${prefix}menu gacha`   }) },
+    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "🎵 Media & Download", id: `${prefix}menu media`   }) },
+    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "🧰 Tools & AI",       id: `${prefix}menu tools`   }) },
+    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "🧷 Sticker",          id: `${prefix}menu sticker` }) },
+    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "🎭 Fun & Random",     id: `${prefix}menu fun`     }) },
+    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "👥 Group Admin",      id: `${prefix}menu admin`   }) },
+    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "📋 Semua Menu",       id: `${prefix}menu all`     }) },
+  ]
+
+  const interactiveMsg = {
+    body:    { text: `👋 Halo *${pushname}*!\nPilih kategori menu di bawah 👇` },
+    footer:  { text: "RyzuBot — by Ryhandd" },
+    header:  {
+      hasMediaAttachment: true,
+      imageMessage: await ryzu.prepareMessageMedia(
+        { url: "https://files.catbox.moe/cz6tt0.jpg" },
+        "imageMessage"
+      )
+    },
+    nativeFlowMessage: {
+      buttons: buttons,
+      messageParamsJson: ""
+    }
+  }
+
+  await ryzu.sendMessage(from, {
+    viewOnceMessage: {
+      message: {
+        messageContextInfo: {
+          deviceListMetadata:      {},
+          deviceListMetadataVersion: 2
+        },
+        interactiveMessage: interactiveMsg
+      }
+    }
+  }, { quoted: msg })
+}
+
+// ─── Helper: kirim list message (fallback 1) ──────────────────────────────────
+async function sendListMenu(ryzu, from, msg, pushname, prefix) {
+  await ryzu.sendMessage(from, {
+    text: `╔══════════════════════╗\n║   🤖  *RYZU BOT*  ║\n╚══════════════════════╝\n\n👋 Halo *${pushname}*!\nPilih kategori menu di bawah 👇`,
+    footer: "RyzuBot — by Ryhandd",
+    title: "🤖 RYZU BOT",
+    buttonText: "🗂️ Buka Menu",
+    sections: [
+      {
+        title: "📂 Pilih Kategori",
+        rows: [
+          { title: "⚔️ RPG & Ekonomi",    description: "Adventure, Mining, Shop, dll",  id: `${prefix}menu rpg`     },
+          { title: "🎲 Games & Werewolf",  description: "Minigame, WW, Catur",           id: `${prefix}menu games`   },
+          { title: "🎰 Gacha System",      description: "Pull, Rate, Tiket",             id: `${prefix}menu gacha`   },
+          { title: "🎵 Media & Download",  description: "YT, TikTok, IG, Pinterest",    id: `${prefix}menu media`   },
+          { title: "🧰 Tools & AI",        description: "Translate, QR, ChatGPT, dll",  id: `${prefix}menu tools`   },
+          { title: "🧷 Sticker",           description: "Buat & edit sticker",          id: `${prefix}menu sticker` },
+          { title: "🎭 Fun & Random",      description: "IQ, Seberapagay, dll",         id: `${prefix}menu fun`     },
+          { title: "👥 Group Admin",       description: "Kick, Promote, Tagall, dll",   id: `${prefix}menu admin`   },
+          { title: "📋 Semua Menu",        description: "Tampilkan semua perintah",     id: `${prefix}menu all`     },
+        ]
+      }
+    ]
+  }, { quoted: msg })
+}
+
 module.exports = {
   name: "menu",
   execute: async ({ ryzu, from, msg, reply, pushname, prefix, sender, funcs, args }) => {
@@ -73,14 +142,12 @@ module.exports = {
 🐺 *WEREWOLF GAME*
 ┌ ${prefix}ww join <nama>
 ├ ${prefix}ww start
-├ ${prefix}ww cektim
-├ ${prefix}ww info
+├ ${prefix}ww cektim / info
 ├ ${prefix}ww kill @tag 🌙
 ├ ${prefix}ww protect @tag 🛡️
 ├ ${prefix}ww ramal @tag 🔮
 ├ ${prefix}ww vote @tag ☀️
-├ ${prefix}ww next
-├ ${prefix}ww out / reset
+├ ${prefix}ww next / out / reset
 ├ ${prefix}cekrole
 └ ${prefix}ww leaderboard / lb
 
@@ -223,51 +290,29 @@ module.exports = {
 └ ${prefix}buff
 
 💰 *EKONOMI*
-┌ ${prefix}money
-├ ${prefix}shop / buy / sell
-├ ${prefix}tf <item> <jumlah> @tag
-├ ${prefix}invest / tarik
-├ ${prefix}maling @tag
-├ ${prefix}rampok <nominal>
-└ ${prefix}top <kategori>
+┌ ${prefix}money / shop / buy / sell
+├ ${prefix}tf / invest / tarik
+├ ${prefix}maling / rampok / top
 
 📦 *BOX & CLAIM*
-┌ ${prefix}open <common|uncommon|mythic|legendary>
-├ ${prefix}daily / weekly / monthly / yearly
-└ ${prefix}lotre
+┌ ${prefix}open / daily / weekly
+└ ${prefix}monthly / yearly / lotre
 
 🎲 *MINI GAMES*
-┌ ${prefix}tictactoe @lawan
-├ ${prefix}suit @lawan
-├ ${prefix}family100
-├ ${prefix}tebakgambar / tg
-├ ${prefix}tebakgenshin
-├ ${prefix}tebakcharanime / tca
-├ ${prefix}tebakheromlbb
-├ ${prefix}tekateki
-├ ${prefix}asahotak
-├ ${prefix}math <noob|easy|normal|hard|insane>
-├ ${prefix}judi <bet> <x2-x10>
-└ ${prefix}slot <bet>
-
-🐺 *WEREWOLF GAME*
-┌ ${prefix}ww join <nama>
-├ ${prefix}ww start
-├ ${prefix}ww kill @tag 🌙
-├ ${prefix}ww protect @tag 🛡️
-├ ${prefix}ww ramal @tag 🔮
-├ ${prefix}ww vote @tag ☀️
-├ ${prefix}ww next / out / reset
-├ ${prefix}cekrole
-└ ${prefix}ww leaderboard / lb
-
-♟️ *CATUR*
+┌ ${prefix}tictactoe / suit / family100
+├ ${prefix}tebakgambar / tebakgenshin
+├ ${prefix}tebakcharanime / tebakheromlbb
+├ ${prefix}tekateki / asahotak / math
+├ ${prefix}judi / slot
 └ ${prefix}chess <elo>
 
+🐺 *WEREWOLF*
+┌ ${prefix}ww join/start/kill/protect
+├ ${prefix}ww ramal/vote/next/out/reset
+└ ${prefix}cekrole / ww leaderboard
+
 🧷 *STICKER*
-┌ ${prefix}sticker / s
-├ ${prefix}smeme
-├ ${prefix}toimg
+┌ ${prefix}sticker / smeme / toimg
 ├ ${prefix}wm <pack|author>
 └ ${prefix}qc
 
@@ -285,6 +330,10 @@ module.exports = {
 ├ ${prefix}remini / say / viewonce
 └ ${prefix}id ff|mlbb|codm|aov|genshin
 
+🤖 *AI CHAT*
+┌ ${prefix}shimi on/off
+└ ${prefix}simi on/off
+
 🎰 *GACHA*
 ┌ ${prefix}gacha / gacha 10
 ├ ${prefix}gachainfo / gachadex
@@ -296,11 +345,13 @@ module.exports = {
 └ ${prefix}seberapa<gay|ganteng|cantik|...>
 
 👥 *ADMIN*
-┌ ${prefix}kick / adduser / promote / demote
-├ ${prefix}tagall / tagadmin / hidetag
-└ ${prefix}del`
+┌ ${prefix}kick / adduser / promote
+├ ${prefix}demote / tagall / tagadmin
+├ ${prefix}hidetag / del
+└ ${prefix}addpremium / setpremium / listpremium`
     }
 
+    // ─── Jika ada sub kategori, langsung balas menunya ───────────────────────
     if (sub && categories[sub]) {
       return reply(
         `📋 *${categories[sub]}*\n` +
@@ -309,61 +360,16 @@ module.exports = {
       )
     }
 
-    const headerText =
-`╔══════════════════════╗
-║   🤖  *RYZU BOT*  ║
-╚══════════════════════╝
-
-👋 Halo *${pushname}*!
-Pilih kategori menu di bawah 👇`
-
-    const buttons = [
-      { buttonId: `${prefix}menu rpg`,     buttonText: { displayText: "⚔️ RPG & Ekonomi" },    type: 1 },
-      { buttonId: `${prefix}menu games`,   buttonText: { displayText: "🎲 Games & Werewolf" },  type: 1 },
-      { buttonId: `${prefix}menu gacha`,   buttonText: { displayText: "🎰 Gacha System" },       type: 1 },
-      { buttonId: `${prefix}menu media`,   buttonText: { displayText: "🎵 Media & Download" },   type: 1 },
-      { buttonId: `${prefix}menu tools`,   buttonText: { displayText: "🧰 Tools & AI" },         type: 1 },
-      { buttonId: `${prefix}menu sticker`, buttonText: { displayText: "🧷 Sticker" },            type: 1 },
-      { buttonId: `${prefix}menu fun`,     buttonText: { displayText: "🎭 Fun & Random" },       type: 1 },
-      { buttonId: `${prefix}menu admin`,   buttonText: { displayText: "👥 Group Admin" },        type: 1 },
-      { buttonId: `${prefix}menu all`,     buttonText: { displayText: "📋 Semua Menu" },         type: 1 },
-    ]
-
+    // ─── Kirim menu utama: coba interactiveMessage dulu ──────────────────────
     try {
-      await ryzu.sendMessage(from, {
-        image: { url: "https://files.catbox.moe/cz6tt0.jpg" },
-        caption: headerText,
-        footer: "RyzuBot — by Ryhandd",
-        buttons: buttons,
-        headerType: 4,
-      }, { quoted: msg })
-    } catch (e) {
+      await sendInteractiveMenu(ryzu, from, msg, pushname, prefix)
+    } catch (e1) {
+      console.log("[menu] interactiveMessage gagal, coba list:", e1.message)
       try {
-        const sections = [
-          {
-            title: "📂 Pilih Kategori",
-            rows: [
-              { title: "⚔️ RPG & Ekonomi",    description: "Adventure, Mining, Shop, dll",  id: `${prefix}menu rpg`     },
-              { title: "🎲 Games & Werewolf",  description: "Minigame, WW, Catur",           id: `${prefix}menu games`   },
-              { title: "🎰 Gacha System",      description: "Pull, Rate, Tiket",             id: `${prefix}menu gacha`   },
-              { title: "🎵 Media & Download",  description: "YT, TikTok, IG, Pinterest",    id: `${prefix}menu media`   },
-              { title: "🧰 Tools & AI",        description: "Translate, QR, ChatGPT, dll",  id: `${prefix}menu tools`   },
-              { title: "🧷 Sticker",           description: "Buat & edit sticker",          id: `${prefix}menu sticker` },
-              { title: "🎭 Fun & Random",      description: "IQ, Seberapagay, dll",         id: `${prefix}menu fun`     },
-              { title: "👥 Group Admin",       description: "Kick, Promote, Tagall, dll",   id: `${prefix}menu admin`   },
-              { title: "📋 Semua Menu",        description: "Tampilkan semua perintah",     id: `${prefix}menu all`     },
-            ]
-          }
-        ]
-
-        await ryzu.sendMessage(from, {
-          text: headerText,
-          footer: "RyzuBot — by Ryhandd",
-          title: "🤖 RYZU BOT",
-          buttonText: "🗂️ Buka Menu",
-          sections: sections,
-        }, { quoted: msg })
+        await sendListMenu(ryzu, from, msg, pushname, prefix)
       } catch (e2) {
+        console.log("[menu] listMessage gagal, fallback sendCard:", e2.message)
+        // ─── Fallback final: sendCard teks biasa ─────────────────────────────
         const textMenu =
 `╔══════════════════════╗
 ║   🤖  *RYZU BOT*  ║
