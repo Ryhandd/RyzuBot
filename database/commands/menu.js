@@ -1,33 +1,7 @@
 const sendCard = require('../../lib/sendCard')
 
-// ─── Coba kirim interactiveMessage pakai nativeFlowMessage ────────────────────
+// ─── Layer 1: interactiveMessage tanpa header media ───────────────────────────
 async function sendInteractiveMenu(ryzu, from, msg, pushname, prefix) {
-  const msgContent = {
-    interactiveMessage: {
-      body: { text: `👋 Halo *${pushname}*!\nPilih kategori menu di bawah 👇` },
-      footer: { text: 'RyzuBot — by Ryhandd' },
-      header: {
-        title: '🤖 RYZU BOT',
-        hasMediaAttachment: false
-      },
-      nativeFlowMessage: {
-        buttons: [
-          { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '⚔️ RPG & Ekonomi',   id: `${prefix}menu rpg`     }) },
-          { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎲 Games & Werewolf', id: `${prefix}menu games`   }) },
-          { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎰 Gacha System',     id: `${prefix}menu gacha`   }) },
-          { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎵 Media & Download', id: `${prefix}menu media`   }) },
-          { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🧰 Tools & AI',       id: `${prefix}menu tools`   }) },
-          { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🧷 Sticker',          id: `${prefix}menu sticker` }) },
-          { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎭 Fun & Random',     id: `${prefix}menu fun`     }) },
-          { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '👥 Group Admin',      id: `${prefix}menu admin`   }) },
-          { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '📋 Semua Menu',       id: `${prefix}menu all`     }) },
-        ],
-        messageParamsJson: ''
-      }
-    }
-  }
-
-  // Wrap dengan messageContextInfo agar diterima WA MD
   await ryzu.sendMessage(from, {
     viewOnceMessage: {
       message: {
@@ -35,13 +9,30 @@ async function sendInteractiveMenu(ryzu, from, msg, pushname, prefix) {
           deviceListMetadata: {},
           deviceListMetadataVersion: 2
         },
-        ...msgContent
+        interactiveMessage: {
+          body: { text: `👋 Halo *${pushname}*!\nPilih kategori menu di bawah 👇` },
+          footer: { text: 'RyzuBot — by Ryhandd' },
+          nativeFlowMessage: {
+            buttons: [
+              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '⚔️ RPG & Ekonomi',   id: `${prefix}menu rpg`     }) },
+              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎲 Games & Werewolf', id: `${prefix}menu games`   }) },
+              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎰 Gacha System',     id: `${prefix}menu gacha`   }) },
+              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎵 Media & Download', id: `${prefix}menu media`   }) },
+              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🧰 Tools & AI',       id: `${prefix}menu tools`   }) },
+              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🧷 Sticker',          id: `${prefix}menu sticker` }) },
+              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎭 Fun & Random',     id: `${prefix}menu fun`     }) },
+              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '👥 Group Admin',      id: `${prefix}menu admin`   }) },
+              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '📋 Semua Menu',       id: `${prefix}menu all`     }) },
+            ],
+            messageParamsJson: ''
+          }
+        }
       }
     }
   }, { quoted: msg })
 }
 
-// ─── Fallback: list message ───────────────────────────────────────────────────
+// ─── Layer 2: list message ────────────────────────────────────────────────────
 async function sendListMenu(ryzu, from, msg, pushname, prefix) {
   await ryzu.sendMessage(from, {
     text: `╔══════════════════════╗\n║   🤖  *RYZU BOT*  ║\n╚══════════════════════╝\n\n👋 Halo *${pushname}*!\nPilih kategori menu di bawah 👇`,
@@ -354,8 +345,7 @@ module.exports = {
       )
     }
 
-    // ─── Kirim menu utama dengan tombol ──────────────────────────────────────
-    // Layer 1: interactiveMessage (Baileys MD modern)
+    // ─── Layer 1: interactiveMessage (tanpa header media) ────────────────────
     try {
       await sendInteractiveMenu(ryzu, from, msg, pushname, prefix)
       return
@@ -363,7 +353,7 @@ module.exports = {
       console.log('[menu] interactiveMessage gagal:', e1.message)
     }
 
-    // Layer 2: listMessage
+    // ─── Layer 2: listMessage ─────────────────────────────────────────────────
     try {
       await sendListMenu(ryzu, from, msg, pushname, prefix)
       return
@@ -371,7 +361,7 @@ module.exports = {
       console.log('[menu] listMessage gagal:', e2.message)
     }
 
-    // Layer 3: sendCard biasa (pasti jalan, tapi tanpa tombol)
+    // ─── Layer 3: sendCard teks biasa (pasti jalan) ───────────────────────────
     const textMenu =
 `╔══════════════════════╗
 ║   🤖  *RYZU BOT*  ║
