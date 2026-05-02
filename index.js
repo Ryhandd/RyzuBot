@@ -112,11 +112,11 @@ async function connectToWhatsApp() {
       process.exit(1)
     }
     console.log(chalk.cyan.bold("\n[ RYZU PAIRING SYSTEM ]"))
-    console.log(chalk.yellow(`Meminta kode untuk nomor: ${phoneNumber}`))
+    console.log(`${chalk.yellow("Meminta kode untuk nomor:")} ${chalk.green(phoneNumber)}`)
     await delay(3000)
     try {
       const code = await ryzu.requestPairingCode(phoneNumber.replace(/[^0-9]/g, ""))
-      console.log(chalk.yellow(`\n KODE PAIRING ANDA: ${code} \n`))
+      console.log(`\n ${chalk.yellow("KODE PAIRING ANDA:")} ${chalk.cyan(code)} \n`)
       console.log(chalk.yellow("Masukkan kode ini di WhatsApp > Perangkat Tertaut > Tautkan dengan nomor telepon\n"))
     } catch (err) {
       console.error(chalk.red("Gagal meminta kode pairing:"), err.message)
