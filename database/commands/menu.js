@@ -2,6 +2,8 @@ const sendCard = require('../../lib/sendCard')
 
 // ─── Layer 1: interactiveMessage tanpa header media ───────────────────────────
 async function sendInteractiveMenu(ryzu, from, msg, pushname, prefix) {
+  const imageUrl = 'https://files.catbox.moe/cz6tt0.jpg'
+
   await ryzu.sendMessage(from, {
     viewOnceMessage: {
       message: {
@@ -10,6 +12,19 @@ async function sendInteractiveMenu(ryzu, from, msg, pushname, prefix) {
           deviceListMetadataVersion: 2
         },
         interactiveMessage: {
+          header: {
+            hasMediaAttachment: true,
+            imageMessage: {
+              url: imageUrl,
+              mimetype: 'image/jpeg',
+              fileSha256: Buffer.alloc(32),
+              fileEncSha256: Buffer.alloc(32),
+              fileLength: 0,
+              mediaKey: Buffer.alloc(32),
+              directPath: '',
+              mediaKeyTimestamp: 0,
+            }
+          },
           body: { text: `👋 Halo *${pushname}*!\nPilih kategori menu di bawah 👇` },
           footer: { text: 'RyzuBot — by Ryhandd' },
           nativeFlowMessage: {
@@ -364,7 +379,7 @@ module.exports = {
     // ─── Layer 3: sendCard teks biasa (pasti jalan) ───────────────────────────
     const textMenu =
 `╔══════════════════════╗
-║   🤖  *RYZU BOT*  ║
+║   🤖  *RYZU BOT*     ║
 ╚══════════════════════╝
 
 👋 Halo *${pushname}*!
