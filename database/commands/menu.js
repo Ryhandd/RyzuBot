@@ -1,13 +1,5 @@
 const sendCard = require('../../lib/sendCard')
 
-// ─── Helper: Format Option List ──────────────────────────────────────────────
-function formatOptionList(commands, prefix) {
-  return commands.map((cmd, i) => {
-    const num = String(i + 1).padStart(2, '0')
-    return `┌ ${num}. ${prefix}${cmd.name}${cmd.alias ? ` / ${cmd.alias}` : ''}\n│   └ ${cmd.desc}`
-  }).join('\n')
-}
-
 // ─── Layer 1: List Message (Baileys) ─────────────────────────────────────────
 async function sendListMenu(ryzu, from, msg, pushname, prefix) {
   const listMsg = {
@@ -41,9 +33,9 @@ async function sendButtonMenu(ryzu, from, msg, pushname, prefix) {
     text: `👋 Halo *${pushname}*!\nPilih kategori menu di bawah 👇`,
     footer: 'RyzuBot — by Ryhandd',
     buttons: [
-      { buttonId: `${prefix}menu rpg`,     buttonText: { displayText: '⚔️ RPG'   }, type: 1 },
-      { buttonId: `${prefix}menu games`,   buttonText: { displayText: '🎲 Games' }, type: 1 },
-      { buttonId: `${prefix}menu gacha`,   buttonText: { displayText: '🎰 Gacha' }, type: 1 },
+      { buttonId: `${prefix}menu rpg`,   buttonText: { displayText: '⚔️ RPG'   }, type: 1 },
+      { buttonId: `${prefix}menu games`, buttonText: { displayText: '🎲 Games' }, type: 1 },
+      { buttonId: `${prefix}menu gacha`, buttonText: { displayText: '🎰 Gacha' }, type: 1 },
     ],
     headerType: 1
   }, { quoted: msg })
@@ -133,47 +125,338 @@ module.exports = {
 ├ 04. ${prefix}tebakgambar / tg
 │   └ Tebak gambar
 ├ 05. ${prefix}tebakgenshin
-│   └ Tebak karakter Genshin
+│   └ Tebak karakter Genshin Impact
 ├ 06. ${prefix}tebakcharanime / tca
 │   └ Tebak karakter anime
 ├ 07. ${prefix}tebakheromlbb
 │   └ Tebak hero Mobile Legends
-├ 08. ${prefix}asahotak
+├ 08. ${prefix}tekateki
+│   └ Teka-teki seru & lucu
+├ 09. ${prefix}asahotak
 │   └ Puzzle & brain training
-├ 09. ${prefix}math <noob|easy|normal|hard|insane>
+├ 10. ${prefix}math <noob|easy|normal|hard|insane>
 │   └ Challenge matematika
-├ 10. ${prefix}judi <bet> <x2-x10>
+├ 11. ${prefix}judi <bet> <x2-x10>
 │   └ Game taruhan
-├ 11. ${prefix}slot
+├ 12. ${prefix}slot <bet>
 │   └ Spin slot machine
-└ 12. ${prefix}chess <elo>
+└ 13. ${prefix}chess <elo>
     └ Main catur dengan rating ELO
 
 [2] WEREWOLF GAME 🐺
-├ 13. ${prefix}ww join <nama>
+├ 14. ${prefix}ww join <nama>
 │   └ Join room Werewolf
-├ 14. ${prefix}ww start
+├ 15. ${prefix}ww start
 │   └ Mulai game Werewolf
-├ 15. ${prefix}ww info / cektim
-│   └ Cek info role & timer
-├ 16. ${prefix}ww kill @tag 🌙
-│   └ Werewolf membunuh target
-├ 17. ${prefix}ww protect @tag 🛡️
+├ 16. ${prefix}ww info / cektim
+│   └ Cek info role & status game
+├ 17. ${prefix}ww kill @tag 🌙
+│   └ Werewolf membunuh target (malam)
+├ 18. ${prefix}ww protect @tag 🛡️
 │   └ Guardian melindungi target
-├ 18. ${prefix}ww ramal @tag 🔮
+├ 19. ${prefix}ww ramal @tag 🔮
 │   └ Seer mengecek role target
-├ 19. ${prefix}ww vote @tag ☀️
+├ 20. ${prefix}ww vote @tag ☀️
 │   └ Voting eliminasi siang hari
-├ 20. ${prefix}ww next / out / reset
-│   └ Lanjut fase / keluar / reset
-├ 21. ${prefix}cekrole
-│   └ Cek role Werewolf (private)
-└ 22. ${prefix}ww leaderboard / lb
+├ 21. ${prefix}ww next
+│   └ Lanjut ke fase berikutnya
+├ 22. ${prefix}ww out / reset
+│   └ Keluar / reset game
+├ 23. ${prefix}cekrole
+│   └ Cek role Werewolf (via private)
+└ 24. ${prefix}ww leaderboard / lb
     └ Lihat ranking Werewolf
 
 💡 Ketik ${prefix}menu untuk kembali`,
 
-      // ... (format serupa untuk kategori lain: sticker, media, tools, admin, gacha, fun, all)
+      gacha: `
+📋 *🎰 GACHA SYSTEM*
+
+[1] GACHA PULL
+├ 01. ${prefix}gacha / pull
+│   └ Pull gacha 1x (butuh tiket)
+├ 02. ${prefix}gacha 10
+│   └ Pull gacha 10x sekaligus
+├ 03. ${prefix}gachainfo / ginfo
+│   └ Info rate & detail gacha
+└ 04. ${prefix}gachadex / igacha
+    └ Lihat koleksi karakter gacha
+
+[2] TIKET GACHA
+├ 05. ${prefix}shop
+│   └ Beli tiket di toko
+└ 06. ${prefix}buy gacha_ticket <1|5|10>
+    └ Beli langsung 1, 5, atau 10 tiket
+
+[3] RATE GACHA
+├ Common    : 55% — Item biasa
+├ Rare      : 25% — Item langka
+├ Epic      : 14% — Item sangat langka
+├ Legendary :  5% — Item terlangka
+└ Limited   :  1% — Pity system (50 pull)
+
+💡 Ketik ${prefix}menu untuk kembali`,
+
+      media: `
+📋 *🎵 MEDIA & DOWNLOADER*
+
+[1] DOWNLOADER MUSIK & VIDEO
+├ 01. ${prefix}play <judul/link>
+│   └ Download & kirim audio YouTube
+├ 02. ${prefix}ytmp3 <link>
+│   └ Download YouTube jadi MP3
+├ 03. ${prefix}ytmp4 <link>
+│   └ Download YouTube jadi MP4
+├ 04. ${prefix}tt <link>
+│   └ Download video TikTok (no watermark)
+├ 05. ${prefix}ig <link>
+│   └ Download foto/video Instagram
+├ 06. ${prefix}fb <link>
+│   └ Download video Facebook
+└ 07. ${prefix}mediafire <link>
+    └ Download file dari MediaFire
+
+[2] IMAGE & RANDOM MEDIA
+├ 08. ${prefix}pinterest / pin <query>
+│   └ Cari & kirim gambar Pinterest
+├ 09. ${prefix}neko
+│   └ Kirim gambar neko random
+├ 10. ${prefix}waifu
+│   └ Kirim gambar waifu random
+├ 11. ${prefix}meme
+│   └ Kirim meme random
+└ 12. ${prefix}darkjokes
+    └ Kirim dark jokes random
+
+💡 Ketik ${prefix}menu untuk kembali`,
+
+      tools: `
+📋 *🧰 TOOLS & AI*
+
+[1] UTILITIES
+├ 01. ${prefix}ping
+│   └ Cek kecepatan respon bot
+├ 02. ${prefix}viewonce
+│   └ Buka pesan view once
+├ 03. ${prefix}cuaca <kota>
+│   └ Info cuaca kota tertentu
+├ 04. ${prefix}kurs <100 USD ke IDR>
+│   └ Konversi mata uang
+├ 05. ${prefix}quote / motivasi
+│   └ Kirim quote motivasi random
+├ 06. ${prefix}kamus <kata>
+│   └ Cari arti kata di kamus
+├ 07. ${prefix}translate <en:id teks>
+│   └ Terjemahkan teks antar bahasa
+├ 08. ${prefix}qr <teks/url>
+│   └ Buat QR code dari teks/link
+├ 09. ${prefix}calc <ekspresi>
+│   └ Kalkulator ekspresi matematika
+├ 10. ${prefix}shorturl <url>
+│   └ Perpendek URL panjang
+├ 11. ${prefix}base64 / encode / decode
+│   └ Encode atau decode teks Base64
+└ 12. ${prefix}biner
+    └ Konversi teks ke biner & sebaliknya
+
+[2] GAME ID CHECKER
+├ 13. ${prefix}id ff <id>
+│   └ Cek info akun Free Fire
+├ 14. ${prefix}id mlbb <id>
+│   └ Cek info akun Mobile Legends
+├ 15. ${prefix}id codm <id>
+│   └ Cek info akun COD Mobile
+├ 16. ${prefix}id aov <id>
+│   └ Cek info akun Arena of Valor
+└ 17. ${prefix}id genshin <id>
+    └ Cek info akun Genshin Impact
+
+[3] AI & CHAT
+├ 18. ${prefix}chatgpt
+│   └ Chat dengan ChatGPT
+├ 19. ${prefix}ai / tanya <pertanyaan>
+│   └ Tanya AI apapun
+├ 20. ${prefix}aiimg <prompt>
+│   └ Generate gambar dengan AI
+├ 21. ${prefix}remini / hd
+│   └ Perjelas & enhance foto
+├ 22. ${prefix}say <teks>
+│   └ Bot bacakan teks (TTS)
+├ 23. ${prefix}shimi on/off
+│   └ Aktifkan/nonaktifkan Shimi AI
+└ 24. ${prefix}simi on/off
+    └ Aktifkan/nonaktifkan Simi AI
+
+💡 Ketik ${prefix}menu untuk kembali`,
+
+      sticker: `
+📋 *🧷 STICKER TOOLS*
+
+[1] BUAT STICKER
+├ 01. ${prefix}sticker / s
+│   └ Buat sticker dari gambar/video
+├ 02. ${prefix}smeme
+│   └ Buat sticker meme (reply gambar)
+├ 03. ${prefix}toimg
+│   └ Konversi sticker jadi gambar
+├ 04. ${prefix}wm <pack|author>
+│   └ Tambahkan watermark ke sticker
+└ 05. ${prefix}qc
+    └ Buat quote card dari teks/reply
+
+💡 Cara pakai:
+• Reply gambar lalu ketik ${prefix}sticker
+• Reply sticker lalu ketik ${prefix}toimg
+• Ketik ${prefix}qc lalu ikuti instruksi
+
+💡 Ketik ${prefix}menu untuk kembali`,
+
+      fun: `
+📋 *🎭 FUN & RANDOM*
+
+[1] TEBAK & RAMAL
+├ 01. ${prefix}apakah <pertanyaan>
+│   └ Jawaban ya/tidak dari bot
+├ 02. ${prefix}kerangajaib <pertanyaan>
+│   └ Tanya kerang ajaib
+├ 03. ${prefix}tekateki
+│   └ Teka-teki seru
+├ 04. ${prefix}tebakumur <nama>
+│   └ Tebak umur seseorang
+└ 05. ${prefix}tebakgender <nama>
+    └ Tebak jenis kelamin dari nama
+
+[2] RANDOM & LUCU
+├ 06. ${prefix}iq <nama>
+│   └ Cek IQ seseorang (random)
+├ 07. ${prefix}siapa
+│   └ Siapa yang paling... (random)
+├ 08. ${prefix}seberapagay <nama>
+│   └ Seberapa gay seseorang?
+├ 09. ${prefix}seberapalesbi <nama>
+│   └ Seberapa lesbi seseorang?
+├ 10. ${prefix}seberapaganteng <nama>
+│   └ Seberapa ganteng seseorang?
+├ 11. ${prefix}seberapacantik <nama>
+│   └ Seberapa cantik seseorang?
+├ 12. ${prefix}seberapaimut <nama>
+│   └ Seberapa imut seseorang?
+├ 13. ${prefix}seberapapintar <nama>
+│   └ Seberapa pintar seseorang?
+├ 14. ${prefix}seberapatolol <nama>
+│   └ Seberapa tolol seseorang?
+└ 15. ${prefix}seberapagila <nama>
+    └ Seberapa gila seseorang?
+
+💡 Ketik ${prefix}menu untuk kembali`,
+
+      admin: `
+📋 *👥 GROUP ADMIN*
+
+[1] MANAJEMEN ANGGOTA
+├ 01. ${prefix}kick @tag
+│   └ Keluarkan member dari grup
+├ 02. ${prefix}adduser <nomor>
+│   └ Tambahkan member ke grup
+├ 03. ${prefix}promote @tag
+│   └ Jadikan member sebagai admin
+├ 04. ${prefix}demote @tag
+│   └ Turunkan admin jadi member
+└ 05. ${prefix}del
+    └ Hapus pesan (reply pesan target)
+
+[2] BROADCAST & TAG
+├ 06. ${prefix}tagall <pesan>
+│   └ Tag semua member grup
+├ 07. ${prefix}tagadmin
+│   └ Tag semua admin grup
+└ 08. ${prefix}hidetag <pesan>
+    └ Tag semua tanpa mention terlihat
+
+[3] OWNER ONLY 👑
+├ 09. ${prefix}addpremium @tag <hari>
+│   └ Tambah hari premium user
+├ 10. ${prefix}addmoney @tag <jumlah>
+│   └ Tambah uang ke akun user
+├ 11. ${prefix}addexp @tag <jumlah>
+│   └ Tambah EXP ke akun user
+├ 12. ${prefix}addlevel @tag <jumlah>
+│   └ Tambah level ke akun user
+├ 13. ${prefix}setpremium @tag <hari|permanen>
+│   └ Set durasi premium user
+├ 14. ${prefix}setmoney @tag <jumlah>
+│   └ Set uang akun user
+├ 15. ${prefix}setexp @tag <jumlah>
+│   └ Set EXP akun user
+├ 16. ${prefix}setlevel @tag <jumlah>
+│   └ Set level akun user
+├ 17. ${prefix}setafk @tag <jam>
+│   └ Set status AFK user
+├ 18. ${prefix}delpremium @tag
+│   └ Hapus status premium user
+├ 19. ${prefix}delafk @tag <jam>
+│   └ Hapus status AFK user
+└ 20. ${prefix}listpremium
+    └ Lihat daftar semua user premium
+
+💡 Ketik ${prefix}menu untuk kembali`,
+
+      all: `
+📋 *SEMUA MENU*
+
+━━━ ⚔️ RPG & EKONOMI ━━━
+├ ${prefix}register / me / limit / kolam
+├ ${prefix}adventure / mining / fishing / hunt / heal
+├ ${prefix}craft / upgrade / repair / equipment / buff
+├ ${prefix}money / shop / buy / sell / tf / invest / tarik
+├ ${prefix}maling / rampok / top
+├ ${prefix}open / daily / weekly / monthly / yearly / lotre
+
+━━━ 🎲 GAMES ━━━
+├ ${prefix}tictactoe / suit / family100
+├ ${prefix}tebakgambar / tebakgenshin / tebakcharanime
+├ ${prefix}tebakheromlbb / tekateki / asahotak
+├ ${prefix}math / judi / slot / chess
+
+━━━ 🐺 WEREWOLF ━━━
+├ ${prefix}ww join / start / info / cektim
+├ ${prefix}ww kill / protect / ramal / vote
+├ ${prefix}ww next / out / reset / leaderboard
+└ ${prefix}cekrole
+
+━━━ 🎰 GACHA ━━━
+├ ${prefix}gacha / gacha 10
+├ ${prefix}gachainfo / gachadex
+└ ${prefix}buy gacha_ticket <1|5|10>
+
+━━━ 🎵 MEDIA ━━━
+├ ${prefix}play / ytmp3 / ytmp4
+├ ${prefix}tt / ig / fb / mediafire
+├ ${prefix}pinterest / neko / waifu / meme / darkjokes
+
+━━━ 🧰 TOOLS ━━━
+├ ${prefix}ping / viewonce / cuaca / kurs
+├ ${prefix}quote / kamus / translate / qr
+├ ${prefix}calc / shorturl / base64 / biner
+├ ${prefix}id ff / mlbb / codm / aov / genshin
+├ ${prefix}chatgpt / ai / aiimg / remini / say
+└ ${prefix}shimi on/off / simi on/off
+
+━━━ 🧷 STICKER ━━━
+├ ${prefix}sticker / smeme / toimg / wm / qc
+
+━━━ 🎭 FUN ━━━
+├ ${prefix}apakah / kerangajaib / tekateki
+├ ${prefix}iq / siapa / tebakumur / tebakgender
+└ ${prefix}seberapa<gay|lesbi|ganteng|cantik|imut|pintar|tolol|gila>
+
+━━━ 👥 ADMIN ━━━
+├ ${prefix}kick / adduser / promote / demote / del
+├ ${prefix}tagall / tagadmin / hidetag
+└ ${prefix}addpremium / setpremium / delpremium / listpremium
+
+💡 Ketik ${prefix}menu <kategori> untuk detail
+   Contoh: *${prefix}menu rpg*`
     }
 
     // ─── TAMPILKAN MENU BERDASARKAN SUB ─────────────────────────────────────
@@ -182,8 +465,8 @@ module.exports = {
     }
 
     // ─── MAIN MENU: OPTION LIST ─────────────────────────────────────────────
-    const mainMenu = `
-╔══════════════════════╗
+    const mainMenu =
+`╔══════════════════════╗
 ║   🤖  *RYZU BOT*     ║
 ╚══════════════════════╝
 
@@ -251,19 +534,4 @@ _RyzuBot — by Ryhandd_`
       image: 'https://files.catbox.moe/cz6tt0.jpg'
     })
   }
-}
-
-module.exports = async function sendCard({
-    ryzu, from, msg = null, text = '', title = 'Ryzu Bot',
-    body = 'Ryzu Bot Multi-Device',
-    image = 'https://files.catbox.moe/cz6tt0.jpg', target = null
-}) {
-    const contextInfo = {
-        externalAdReply: {
-            title, body, mediaType: 1, thumbnailUrl: image,
-            renderLargerThumbnail: true,
-            sourceUrl: target ? `https://wa.me/${target.split('@')[0]}` : 'https://github.com'
-        }
-    }
-    return ryzu.sendMessage(from, { text, contextInfo }, msg ? { quoted: msg } : {})
 }
