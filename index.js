@@ -16,6 +16,19 @@ const {
 
 const pino = require("pino")
 const chalk = require("chalk")
+const qrcode = require("qrcode-terminal")
+const readline = require("readline")
+
+const question = (text) => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
+  return new Promise((resolve) => rl.question(text, (answer) => {
+    rl.close()
+    resolve(answer)
+  }))
+}
 
 let askedNumber = false
 const SESI_DIR = "./RyzuSesi"
@@ -96,30 +109,93 @@ async function connectToWhatsApp() {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
     },
-    browser: ["Ubuntu", "Chrome", "20.0.04"],
+    browser: ["Mac OS", "chrome", "121.0.6167.159"],
     version,
     syncFullHistory: false,
     generateHighQualityLinkPreview: false,
     markOnlineOnConnect: false
   })
 
-  // ── PAIRING CODE ──
-  if (!ryzu.authState.creds.registered && !askedNumber) {
+  let currentMethod = ""
+  const isRegistered = !!(ryzu.authState?.creds?.me?.id || ryzu.authState?.creds?.registered)
+
+  if (isRegistered) {
     askedNumber = true
-    const phoneNumber = process.env.BOT_NUMBER
-    if (!phoneNumber) {
-      console.log(chalk.red("❌ Set BOT_NUMBER di Variables Railway!"))
-      process.exit(1)
+    console.log(chalk.green("ℹ️ Sesi terdeteksi, menghubungkan otomatis..."))
+  }
+
+  // ── AUTHENTICATION / LOGIN SYSTEM ──
+  if (!isRegistered && !askedNumber) {
+    askedNumber = true
+    let method = process.env.LOGIN_METHOD || ""
+    let phoneNumber = process.env.BOT_NUMBER || ""
+
+    if (!method) {
+      if (process.stdin.isTTY) {
+        console.log(chalk.cyan.bold("\n[ METODE LOGIN RYZU BOT ]"))
+        console.log(`1. ${chalk.green("QR Code")} (Scan via WhatsApp Web)`)
+        console.log(`2. ${chalk.green("Pairing Code")} (Tautkan menggunakan Nomor Telepon)`)
+        
+        let choice = ""
+        while (choice !== "1" && choice !== "2") {
+          choice = await question(chalk.yellow("Pilih metode login (1/2): "))
+          choice = choice.trim()
+        }
+        method = choice === "1" ? "qr" : "pairing"
+      } else {
+        method = "qr"
+      }
     }
-    console.log(chalk.cyan.bold("\n[ RYZU PAIRING SYSTEM ]"))
-    console.log(`${chalk.yellow("Meminta kode untuk nomor:")} ${chalk.green(phoneNumber)}`)
-    await delay(3000)
-    try {
-      const code = await ryzu.requestPairingCode(phoneNumber.replace(/[^0-9]/g, ""))
-      console.log(`\n ${chalk.yellow("KODE PAIRING ANDA:")} ${chalk.cyan(code)} \n`)
-      console.log(chalk.yellow("Masukkan kode ini di WhatsApp > Perangkat Tertaut > Tautkan dengan nomor telepon\n"))
-    } catch (err) {
-      console.error(chalk.red("Gagal meminta kode pairing:"), err.message)
+
+    currentMethod = method
+
+    if (method === "qr") {
+      console.log(chalk.cyan("\n[ RYZU QR SYSTEM ]"))
+      console.log(chalk.yellow("Tunggu sebentar, sedang menghasilkan QR Code..."))
+    } else if (method === "pairing") {
+      console.log(chalk.cyan("\n[ RYZU PAIRING SYSTEM ]"))
+      
+      let useEnvNumber = false
+      if (phoneNumber && process.stdin.isTTY) {
+        let ans = ""
+        while (ans !== "y" && ans !== "n" && ans !== "") {
+          ans = await question(chalk.yellow(`Gunakan nomor dari .env (${phoneNumber})? (Y/n): `))
+          ans = ans.trim().toLowerCase()
+        }
+        if (ans === "y" || ans === "") {
+          useEnvNumber = true
+        }
+      } else if (phoneNumber) {
+        useEnvNumber = true
+      }
+
+      if (!useEnvNumber) {
+        phoneNumber = ""
+        if (process.stdin.isTTY) {
+          while (!phoneNumber) {
+            phoneNumber = await question(chalk.yellow("Masukkan nomor WhatsApp Anda (contoh: 628123456789): "))
+            phoneNumber = phoneNumber.replace(/[^0-9]/g, "")
+            if (!phoneNumber) {
+              console.log(chalk.red("❌ Nomor tidak valid, silakan coba lagi."))
+            }
+          }
+        } else {
+          console.log(chalk.red("❌ Error: LOGIN_METHOD diset ke 'pairing' tapi BOT_NUMBER tidak diset di env, dan terminal non-interaktif!"))
+          process.exit(1)
+        }
+      } else {
+        phoneNumber = phoneNumber.replace(/[^0-9]/g, "")
+      }
+      
+      console.log(chalk.yellow(`Meminta kode pairing untuk nomor: ${chalk.green(phoneNumber)}`))
+      await delay(3000)
+      try {
+        const code = await ryzu.requestPairingCode(phoneNumber)
+        console.log(`\n ${chalk.yellow("KODE PAIRING ANDA:")} ${chalk.cyan.bold(code)} \n`)
+        console.log(chalk.yellow("Masukkan kode ini di WhatsApp > Perangkat Tertaut > Tautkan dengan nomor telepon\n"))
+      } catch (err) {
+        console.error(chalk.red("Gagal meminta kode pairing:"), err.message)
+      }
     }
   }
 
@@ -127,7 +203,12 @@ async function connectToWhatsApp() {
 
   // ── CONNECTION UPDATE ──
   ryzu.ev.on("connection.update", (update) => {
-    const { connection, lastDisconnect } = update
+    const { connection, lastDisconnect, qr } = update
+
+    if (qr && currentMethod !== "pairing") {
+      console.log(chalk.yellow("\n⚠️ Scan QR Code berikut untuk login:"))
+      qrcode.generate(qr, { small: true })
+    }
 
     if (connection === "open") {
       askedNumber = true
@@ -185,6 +266,15 @@ async function connectToWhatsApp() {
     console.log(chalk.yellow("\n👋 Bot dimatikan..."))
     ryzu.end()
     process.exit(0)
+  })
+
+  // ── PREVENT CRASH FROM UNHANDLED REJECTIONS / EXCEPTIONS ──
+  process.on("unhandledRejection", (reason, promise) => {
+    console.error(chalk.red("⚠️ Unhandled Rejection:"), reason)
+  })
+
+  process.on("uncaughtException", (err) => {
+    console.error(chalk.red("⚠️ Uncaught Exception:"), err)
   })
 }
 

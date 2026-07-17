@@ -36,8 +36,8 @@ async function makeSticker(buffer, isVideo = false, pack = "RyzuBot", author = "
 
   fs.writeFileSync(input, buffer)
 
-  // Scale proporsional: sisi terpanjang max 512, tidak ada crop/force square
-  const scaleFilter = `scale='if(gt(iw,ih),512,-2)':'if(gt(iw,ih),-2,512)', pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000`
+  // Format ke rgba untuk mendukung transparansi penuh, skala proporsional max 512, lalu pad ke 512x512 (transparan) agar tidak gepeng di WA
+  const scaleFilter = `format=rgba,scale='if(gt(iw,ih),512,-2)':'if(gt(iw,ih),-2,512)',pad=512:512:(512-iw)/2:(512-ih)/2:color=black@0`
 
   if (isVideo) {
     execSync(
@@ -81,6 +81,22 @@ async function genBrat(text, outPath) {
   fs.writeFileSync(outPath, res.data)
 }
 
+async function uploadToQuax(buffer) {
+  const form = new FormData()
+  form.append("files[]", buffer, { filename: "img.jpg", contentType: "image/jpeg" })
+  const res = await axios.post("https://qu.ax/upload.php", form, {
+    headers: {
+      ...form.getHeaders(),
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    },
+    timeout: 30000
+  })
+  if (res.data && res.data.success && res.data.files && res.data.files[0]) {
+    return res.data.files[0].url
+  }
+  throw new Error("qu.ax upload failed")
+}
+
 async function uploadToTmpfiles(buffer) {
   const form = new FormData()
   form.append("file", buffer, { filename: "img.jpg", contentType: "image/jpeg" })
@@ -97,7 +113,10 @@ async function uploadToCatbox(buffer) {
   form.append("reqtype", "fileupload")
   form.append("fileToUpload", buffer, { filename: "img.jpg", contentType: "image/jpeg" })
   const res = await axios.post("https://catbox.moe/user/api.php", form, {
-    headers: form.getHeaders(),
+    headers: {
+      ...form.getHeaders(),
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    },
     timeout: 30000
   })
   return res.data.trim()
@@ -105,16 +124,23 @@ async function uploadToCatbox(buffer) {
 
 async function uploadImage(buffer) {
   try {
-    const url = await uploadToCatbox(buffer)
+    const url = await uploadToQuax(buffer)
     if (url && url.startsWith("https://")) return url
-    throw new Error("Catbox gagal")
-  } catch (e1) {
-    console.warn("[SMEME] Catbox gagal, fallback ke tmpfiles:", e1.message)
+    throw new Error("qu.ax gagal")
+  } catch (e0) {
+    console.warn("[SMEME] qu.ax gagal, mencoba Catbox:", e0.message)
     try {
-      return await uploadToTmpfiles(buffer)
-    } catch (e2) {
-      console.error("[SMEME] Semua upload gagal:", e2.message)
-      throw new Error("Upload gambar gagal")
+      const url = await uploadToCatbox(buffer)
+      if (url && url.startsWith("https://")) return url
+      throw new Error("Catbox gagal")
+    } catch (e1) {
+      console.warn("[SMEME] Catbox gagal, fallback ke tmpfiles:", e1.message)
+      try {
+        return await uploadToTmpfiles(buffer)
+      } catch (e2) {
+        console.error("[SMEME] Semua upload gagal:", e2.message)
+        throw new Error("Upload gambar gagal")
+      }
     }
   }
 }
@@ -258,11 +284,14 @@ module.exports = {
           const safeTop = top.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/:/g, "\\:")
           const safeBot = bottom.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/:/g, "\\:")
 
-          // Tidak ada resize paksa, pakai dimensi asli
+          const hasImpact = fs.existsSync("C:/Windows/Fonts/impact.ttf")
+          const fontFile = hasImpact ? "C\\:/Windows/Fonts/impact.ttf" : "C\\:/Windows/Fonts/arial.ttf"
+
+          // Tidak ada resize paksa, pakai dimensi asli dengan font spesifik Windows
           execSync(
             `ffmpeg -y -i "${inPath}" \
-            -vf "drawtext=text='${safeTop}':fontsize=48:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=20, \
-            drawtext=text='${safeBot}':fontsize=48:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=h-text_h-20" \
+            -vf "drawtext=fontfile='${fontFile}':text='${safeTop}':fontsize=48:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=20, \
+            drawtext=fontfile='${fontFile}':text='${safeBot}':fontsize=48:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=h-text_h-20" \
             "${outPath}"`,
             { stdio: "ignore" }
           )

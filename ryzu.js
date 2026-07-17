@@ -53,11 +53,14 @@ const decodeJid = (jid) => {
 const funcs = {
   saveRPG: async (userId) => {
     try {
-      if (userId && global.rpg[userId]) {
-        await User.findByIdAndUpdate(userId, { _id: userId, data: global.rpg[userId] }, { upsert: true, returnDocument: 'after' })
-      } else {
-        for (const [id, data] of Object.entries(global.rpg)) {
-          await User.findByIdAndUpdate(id, { _id: id, data }, { upsert: true })
+      const mongoose = require("mongoose")
+      if (mongoose.connection.readyState === 1) {
+        if (userId && global.rpg[userId]) {
+          await User.findByIdAndUpdate(userId, { _id: userId, data: global.rpg[userId] }, { upsert: true, returnDocument: 'after' })
+        } else {
+          for (const [id, data] of Object.entries(global.rpg)) {
+            await User.findByIdAndUpdate(id, { _id: id, data }, { upsert: true })
+          }
         }
       }
       fs.writeFileSync(dbPath, JSON.stringify(global.rpg, null, 2))
@@ -170,8 +173,13 @@ const readCommands = async () => {
 
 async function init() {
   try {
-    await connect()
     await initDB()
+  } catch (err) {
+    console.error("Local SQLite DB failed to initialize:", err.message)
+  }
+
+  try {
+    await connect()
     const users = await User.find({})
     for (const u of users) {
       if (u._id !== "__sesi__") global.rpg[u._id] = u.data
@@ -228,6 +236,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
     if (!from || from === "status@broadcast") return
 
     const isGroup = from.endsWith("@g.us")
+    if (isGroup) return
 
     // === SENDER ===
     let sender
@@ -283,24 +292,90 @@ module.exports = async function ryzuHandler(ryzu, m) {
       resolvedNum = lidToNumber.get(resolvedNum)
     }
 
-    // === IS CREATOR ===
     const isCreator =
       ownerJidCache.has(senderId) ||                          // JID sudah dikenal owner
       ownerNumbers.includes(resolvedNum) ||                   // Nomor resolved cocok
       ownerNumbers.some(o => resolvedNum.endsWith(o)) ||      // Suffix match (62xxx vs 0xxx)
       ownerNumbers.some(o => o.endsWith(resolvedNum))         // Reverse suffix
 
-    const rawText = (
+    let rawText = (
       msg.message?.conversation ||
       msg.message?.extendedTextMessage?.text ||
       msg.message?.imageMessage?.caption ||
       msg.message?.videoMessage?.caption ||
       msg.message?.buttonsResponseMessage?.selectedDisplayText ||
+      msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
       msg.message?.listResponseMessage?.title ||
       msg.message?.ephemeralMessage?.message?.conversation ||
       msg.message?.ephemeralMessage?.message?.extendedTextMessage?.text ||
       ""
     ).trim()
+
+    // ─── HANDLE NATIVE FLOW INTERACTIVE MESSAGE RESPONSE ───────────────────
+    const interactiveResp = msg.message?.interactiveResponseMessage ||
+                            msg.message?.viewOnceMessage?.message?.interactiveResponseMessage ||
+                            msg.message?.viewOnceMessageV2?.message?.interactiveResponseMessage ||
+                            msg.message?.ephemeralMessage?.message?.interactiveResponseMessage ||
+                            msg.message?.ephemeralMessage?.message?.viewOnceMessage?.message?.interactiveResponseMessage ||
+                            msg.message?.ephemeralMessage?.message?.viewOnceMessageV2?.message?.interactiveResponseMessage;
+    if (interactiveResp) {
+      if (interactiveResp.nativeFlowResponseMessage?.paramsJson) {
+        try {
+          const params = JSON.parse(interactiveResp.nativeFlowResponseMessage.paramsJson);
+          if (params.id) {
+            rawText = params.id;
+          }
+        } catch (e) {
+          console.error("Failed to parse nativeFlowResponseMessage paramsJson:", e);
+        }
+      } else if (interactiveResp.singleSelectReply?.selectedRowId) {
+        rawText = interactiveResp.singleSelectReply.selectedRowId;
+      }
+    }
+
+    // ─── HANDLE POLL VOTE (untuk menu poll) ────────────────────────────────
+    if (msg.message?.pollUpdateMessage) {
+      try {
+        const crypto = require('crypto')
+        const { decryptPollVote } = require('@whiskeysockets/baileys')
+
+        const pollUpdateMsg = msg.message.pollUpdateMessage
+        const pollCreationKey = pollUpdateMsg.pollCreationMessageKey
+        const pollId = pollCreationKey?.id
+        const pollData = global.pollMenus?.[pollId]
+
+        if (!pollData) {
+          await ryzu.sendMessage(from, { text: '❌ Poll expired. Ketik .menu lagi.' }, { quoted: msg })
+          return
+        }
+
+
+        const votedHashes = decryptPollVote(pollUpdateMsg, {
+          pollEncKey: pollData.encKey,
+          voter: senderId,
+          pollCreator: decodeJid(ryzu.user?.id),
+          pollId
+        })
+
+        // Bandingkan SHA256 dari nama opsi dengan hash yang diterima
+        for (const [optName, optSub] of Object.entries(pollData.options)) {
+          const optHash = crypto.createHash('sha256').update(optName, 'utf8').digest()
+          const matched = votedHashes.some(h => Buffer.from(h).equals(optHash))
+          if (matched) {
+            const menuModule = require('./database/commands/menu')
+            if (typeof menuModule.getSubMenuText === 'function') {
+              const text = menuModule.getSubMenuText(optSub, pollData.prefix || '.')
+              if (text) await ryzu.sendMessage(from, { text }, { quoted: msg })
+            }
+            return
+          }
+        }
+      } catch (e) {
+        console.error('[POLL VOTE ERROR]', e)
+        await ryzu.sendMessage(from, { text: `❌ Poll error: ${e.message}` }, { quoted: msg })
+      }
+      return
+    }
 
     console.log(chalk.green(`[${isGroup ? "Grup" : "PC"}]`), chalk.yellow(pushname + ":"), rawText)
 

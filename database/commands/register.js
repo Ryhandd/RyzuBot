@@ -3,7 +3,7 @@ module.exports = {
     alias: ["daftar", "reg"],
     desc: "Daftar untuk bisa menggunakan fitur bot",
     async execute(ctx) {
-        const { m, args, reply, user, funcs } = ctx;
+        const { m, args, reply, user, funcs, sender } = ctx;
         
         if (user.registered) return reply("Kamu sudah terdaftar sebelumnya");
         

@@ -95,15 +95,11 @@ module.exports = {
             pp = "https://files.catbox.moe/cz6tt0.jpg"; // fallback
         }
 
-        await sendCard({
-            ryzu,
-            from,
-            msg,
-            text: txt,
-            title: "RPG PLAYER PROFILE",
-            body: `${name}`,
-            image: pp,
-            target
-        });
+        try {
+            await ryzu.sendMessage(from, {
+                image: { url: pp },
+                caption: txt
+            }, { quoted: msg });
+        } catch (e) {}
     }
 };
