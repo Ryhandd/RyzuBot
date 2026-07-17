@@ -8,6 +8,7 @@ function getSubMenuText(sub, prefix) {
 
 ┌  ◦ *PROFILE & STATUS*
 │  ◦ ${prefix}register / daftar <nama> — Daftar akun RPG baru
+│  ◦ ${prefix}unregister / unreg — Batalkan pendaftaran akun RPG
 │  ◦ ${prefix}me / profile / inv — Lihat profile & inventory
 │  ◦ ${prefix}limit — Cek limit harian
 └  ◦ ${prefix}kolam — Kelola kolam ikan & umpan
@@ -104,6 +105,8 @@ function getSubMenuText(sub, prefix) {
 │  ◦ ${prefix}play <judul/link> — Download audio YouTube
 │  ◦ ${prefix}ytmp3 <link> — Unduh YouTube jadi MP3
 │  ◦ ${prefix}ytmp4 <link> — Unduh YouTube jadi MP4
+│  ◦ ${prefix}spotify <link> — Unduh musik/lagu dari Spotify
+│  ◦ ${prefix}scribd <link> — Unduh dokumen/PDF dari Scribd
 │  ◦ ${prefix}tt <link> — Unduh video TikTok tanpa WM
 │  ◦ ${prefix}ig <link> — Unduh foto/video Instagram
 │  ◦ ${prefix}fb <link> — Unduh video Facebook
@@ -124,6 +127,7 @@ function getSubMenuText(sub, prefix) {
 ┌  ◦ *UTILITIES*
 │  ◦ ${prefix}ping — Cek kecepatan respon bot
 │  ◦ ${prefix}viewonce — Buka pesan sekali lihat (view once)
+│  ◦ ${prefix}who / w — Lacak pengirim asli dari reply berantai
 │  ◦ ${prefix}cuaca <kota> — Informasi cuaca kota tertentu
 │  ◦ ${prefix}kurs <USD ke IDR> — Konversi mata uang global
 │  ◦ ${prefix}quote / motivasi — Kirim kutipan motivasi random
@@ -202,6 +206,7 @@ function getSubMenuText(sub, prefix) {
 │  ◦ ${prefix}adduser <nomor> — Tambahkan nomor ke dalam grup
 │  ◦ ${prefix}promote @tag — Angkat member menjadi admin grup
 │  ◦ ${prefix}demote @tag — Turunkan jabatan admin jadi member
+│  ◦ ${prefix}list / members — Cek status registrasi member grup
 └  ◦ ${prefix}del — Hapus pesan bot/orang lain (reply pesan target)
 
 ┌  ◦ *BROADCAST & TAG*
@@ -229,55 +234,156 @@ function getSubMenuText(sub, prefix) {
 📋 *SEMUA MENU*
 
 ━━━ ⚔️ RPG & EKONOMI ━━━
-├ ${prefix}register / me / limit / kolam
-├ ${prefix}adventure / mining / fishing / hunt / heal
-├ ${prefix}craft / upgrade / repair / equipment / buff
-├ ${prefix}money / shop / buy / sell / tf / invest / tarik
-├ ${prefix}maling / rampok / top
-├ ${prefix}open / daily / weekly / monthly / yearly / lotre
+├ ${prefix}register
+├ ${prefix}unregister
+├ ${prefix}me
+├ ${prefix}limit
+├ ${prefix}kolam
+├ ${prefix}adventure
+├ ${prefix}mining
+├ ${prefix}fishing
+├ ${prefix}hunt
+├ ${prefix}heal
+├ ${prefix}craft
+├ ${prefix}upgrade
+├ ${prefix}repair
+├ ${prefix}equipment
+├ ${prefix}buff
+├ ${prefix}money
+├ ${prefix}shop
+├ ${prefix}buy
+├ ${prefix}sell
+├ ${prefix}tf
+├ ${prefix}invest
+├ ${prefix}tarik
+├ ${prefix}maling
+├ ${prefix}rampok
+├ ${prefix}top
+├ ${prefix}open
+├ ${prefix}daily
+├ ${prefix}weekly
+├ ${prefix}monthly
+├ ${prefix}yearly
+└ ${prefix}lotre
 
 ━━━ 🎲 GAMES ━━━
-├ ${prefix}tictactoe / suit / family100
-├ ${prefix}tebakgambar / tebakgenshin / tebakcharanime
-├ ${prefix}tebakheromlbb / tekateki / asahotak
-├ ${prefix}math / judi / slot / chess
+├ ${prefix}tictactoe
+├ ${prefix}suit
+├ ${prefix}family100
+├ ${prefix}tebakgambar
+├ ${prefix}tebakgenshin
+├ ${prefix}tebakcharanime
+├ ${prefix}tebakheromlbb
+├ ${prefix}tekateki
+├ ${prefix}asahotak
+├ ${prefix}math
+├ ${prefix}judi
+├ ${prefix}slot
+└ ${prefix}chess
 
 ━━━ 🐺 WEREWOLF ━━━
-├ ${prefix}ww join / start / info / cektim
-├ ${prefix}ww kill / protect / ramal / vote
-├ ${prefix}ww next / out / reset / leaderboard
+├ ${prefix}ww join
+├ ${prefix}ww start
+├ ${prefix}ww info
+├ ${prefix}ww cektim
+├ ${prefix}ww kill
+├ ${prefix}ww protect
+├ ${prefix}ww ramal
+├ ${prefix}ww vote
+├ ${prefix}ww next
+├ ${prefix}ww out
+├ ${prefix}ww reset
+├ ${prefix}ww leaderboard
 └ ${prefix}cekrole
 
 ━━━ 🎰 GACHA ━━━
-├ ${prefix}gacha / gacha 10
-├ ${prefix}gachainfo / gachadex
-└ ${prefix}buy gacha_ticket <1|5|10>
+├ ${prefix}gacha
+├ ${prefix}gacha 10
+├ ${prefix}gachainfo
+├ ${prefix}gachadex
+└ ${prefix}buy gacha_ticket
 
 ━━━ 🎵 MEDIA ━━━
-├ ${prefix}play / ytmp3 / ytmp4
-├ ${prefix}tt / ig / fb / mediafire
-├ ${prefix}pinterest / neko / waifu / meme / darkjokes
+├ ${prefix}play
+├ ${prefix}ytmp3
+├ ${prefix}ytmp4
+├ ${prefix}spotify
+├ ${prefix}scribd
+├ ${prefix}tt
+├ ${prefix}ig
+├ ${prefix}fb
+├ ${prefix}mediafire
+├ ${prefix}pinterest
+├ ${prefix}neko
+├ ${prefix}waifu
+├ ${prefix}meme
+└ ${prefix}darkjokes
 
 ━━━ 🧰 TOOLS ━━━
-├ ${prefix}ping / viewonce / cuaca / kurs
-├ ${prefix}quote / kamus / translate / qr
-├ ${prefix}calc / shorturl / base64 / biner
-├ ${prefix}id ff / mlbb / codm / aov / genshin
-├ ${prefix}chatgpt / ai / aiimg / remini / say
-└ ${prefix}shimi on/off / simi on/off
+├ ${prefix}ping
+├ ${prefix}viewonce
+├ ${prefix}who
+├ ${prefix}cuaca
+├ ${prefix}kurs
+├ ${prefix}quote
+├ ${prefix}kamus
+├ ${prefix}translate
+├ ${prefix}qr
+├ ${prefix}calc
+├ ${prefix}shorturl
+├ ${prefix}base64
+├ ${prefix}biner
+├ ${prefix}id ff
+├ ${prefix}id mlbb
+├ ${prefix}id codm
+├ ${prefix}id aov
+├ ${prefix}id genshin
+├ ${prefix}chatgpt
+├ ${prefix}ai
+├ ${prefix}aiimg
+├ ${prefix}remini
+├ ${prefix}say
+├ ${prefix}shimi
+└ ${prefix}simi
 
 ━━━ 🧷 STICKER ━━━
-├ ${prefix}sticker / smeme / toimg / wm / qc
+├ ${prefix}sticker
+├ ${prefix}smeme
+├ ${prefix}toimg
+├ ${prefix}wm
+└ ${prefix}qc
 
 ━━━ 🎭 FUN ━━━
-├ ${prefix}apakah / kerangajaib / tekateki
-├ ${prefix}iq / siapa / tebakumur / tebakgender
-└ ${prefix}seberapa<gay|lesbi|ganteng|cantik|imut|pintar|tolol|gila>
+├ ${prefix}apakah
+├ ${prefix}kerangajaib
+├ ${prefix}tekateki
+├ ${prefix}tebakumur
+├ ${prefix}tebakgender
+├ ${prefix}iq
+├ ${prefix}siapa
+├ ${prefix}seberapagay
+├ ${prefix}seberapalesbi
+├ ${prefix}seberapaganteng
+├ ${prefix}seberapacantik
+├ ${prefix}seberapaimut
+├ ${prefix}seberapapintar
+├ ${prefix}seberapatolol
+└ ${prefix}seberapagila
 
 ━━━ 👥 ADMIN ━━━
-├ ${prefix}kick / adduser / promote / demote / del
-├ ${prefix}tagall / tagadmin / hidetag
-└ ${prefix}addpremium / setpremium / delpremium / listpremium
+├ ${prefix}kick
+├ ${prefix}adduser
+├ ${prefix}promote
+├ ${prefix}demote
+├ ${prefix}list
+├ ${prefix}del
+├ ${prefix}tagall
+├ ${prefix}tagadmin
+├ ${prefix}hidetag
+├ ${prefix}addpremium
+├ ${prefix}setpremium
+├ ${prefix}delpremium
+└ ${prefix}listpremium
 
 💡 Ketik ${prefix}menu <kategori> untuk detail
    Contoh: *${prefix}menu rpg*`
