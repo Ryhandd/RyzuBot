@@ -321,8 +321,8 @@ const menuModule = {
 
 ╔══ Info Bot ══╗
 │ Bot Name : RyzuBot
-│ Total Fitur : 60+
-│ Owner Bot : wa.me/6285...
+│ Total Fitur : 100+
+│ Owner Bot : wa.me/628971614687
 ╚══════════════
 
 ╔══ Info User ══╗

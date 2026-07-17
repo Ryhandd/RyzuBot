@@ -10,3 +10,5 @@ package-lock.json
 *.id)
 v.admin
 media
+database/userRPG.json
+database/history.db*
