@@ -446,8 +446,7 @@ const menuModule = {
 │  ◦ ${prefix}menu tools
 │  ◦ ${prefix}menu sticker
 │  ◦ ${prefix}menu fun
-│  ◦ ${prefix}menu admin
-└  
+└  ◦ ${prefix}menu admin 
 
 *Note:* Ketik ${prefix}menu <category> untuk melihat menu spesifik
 Contoh: ${prefix}menu tools`
