@@ -114,10 +114,11 @@ function getSubMenuText(sub, prefix) {
 
 ┌  ◦ *IMAGE & MEDIA RANDOM*
 │  ◦ ${prefix}pinterest / pin <query> — Cari gambar di Pinterest
-│  ◦ ${prefix}neko — Kirim gambar anime Neko random
-│  ◦ ${prefix}waifu — Kirim gambar anime Waifu random
-│  ◦ ${prefix}meme — Kirim meme lucu random
-└  ◦ ${prefix}darkjokes — Kirim candaan gelap random
+│  ◦ ${prefix}neko — Kirim gambar anime Neko random (Nekosia)
+│  ◦ ${prefix}waifu — Kirim gambar anime Waifu random (Waifu.im)
+│  ◦ ${prefix}foxgirl / wolfgirl / maid / vtuber — Kirim gambar anime kategori terkait
+│  ◦ ${prefix}nekosia / ns — Cari gambar kustom via Nekosia Engine
+│  ◦ ${prefix}meme / darkjokes — Kirim gambar humor/dark jokes random
 
 💡 Ketik ${prefix}menu untuk kembali`,
 
@@ -316,6 +317,9 @@ function getSubMenuText(sub, prefix) {
 ├ ${prefix}pinterest
 ├ ${prefix}neko
 ├ ${prefix}waifu
+├ ${prefix}foxgirl / wolfgirl
+├ ${prefix}maid / vtuber
+├ ${prefix}nekosia / ns
 ├ ${prefix}meme
 └ ${prefix}darkjokes
 
