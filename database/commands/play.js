@@ -8,28 +8,55 @@ const ffmpegStatic = require("ffmpeg-static")
 ffmpeg.setFfmpegPath(ffmpegStatic)
 
 async function getDirectYtUrl(videoUrl) {
-  const siputRes = await axios.get(`https://api.siputzx.my.id/api/d/savefrom?url=${encodeURIComponent(videoUrl)}`);
+  let title = 'Video';
+  let urls = [];
+  let success = false;
   
-  if (!siputRes.data || !siputRes.data.status || !siputRes.data.data?.[0]) {
-    throw new Error('Gagal mendapatkan data dari SaveFrom.');
+  // 1️⃣ Coba Ummy API (lebih stabil daripada SaveFrom)
+  try {
+    const siputRes = await axios.get(`https://api.siputzx.my.id/api/d/ummy?url=${encodeURIComponent(videoUrl)}`);
+    if (siputRes.data && siputRes.data.status && siputRes.data.data) {
+      const item = siputRes.data.data;
+      title = item.meta?.title || title;
+      urls = item.url || [];
+      success = true;
+    }
+  } catch (e) {
+    console.error('[PLAY] Ummy API failed:', e.message);
   }
   
-  const firstItem = siputRes.data.data[0];
-  if (firstItem.type === "error" || !firstItem.data?.[0]) {
-    throw new Error('SaveFrom API error: ' + (firstItem.message || 'Unknown error'));
+  // 2️⃣ Fallback ke SaveFrom API
+  if (!success || urls.length === 0) {
+    const siputRes = await axios.get(`https://api.siputzx.my.id/api/d/savefrom?url=${encodeURIComponent(videoUrl)}`);
+    if (!siputRes.data || !siputRes.data.status || !siputRes.data.data?.[0]) {
+      throw new Error('Gagal mendapatkan data dari SaveFrom.');
+    }
+    const firstItem = siputRes.data.data[0];
+    if (firstItem.type === "error" || !firstItem.data?.[0]) {
+      throw new Error('SaveFrom API error: ' + (firstItem.message || 'Unknown error'));
+    }
+    const item = firstItem.data[0];
+    title = item.meta?.title || title;
+    urls = item.url || [];
   }
   
-  const item = firstItem.data[0];
-  const title = item.meta?.title || 'Video';
-  const urls = item.url || [];
+  const mp4Urls = urls.filter(u => 
+    (u.ext === 'mp4' || u.name === 'MP4') && 
+    u.url && 
+    u.no_audio !== true && 
+    u.no_audio !== 'true'
+  );
   
-  const videoObj = urls.find(u => (u.ext === 'mp4' || u.name === 'MP4') && (u.isConverterUI || u.downloadable) && u.url.includes('sf-converter.com'))
-                || urls.find(u => (u.ext === 'mp4' || u.name === 'MP4') && (u.isConverterUI || u.downloadable))
-                || urls.find(u => u.ext === 'mp4' || u.name === 'MP4');
-                
-  if (!videoObj) {
-    throw new Error('Format MP4 tidak ditemukan.');
+  if (mp4Urls.length === 0) {
+    throw new Error('Format MP4 dengan audio tidak ditemukan.');
   }
+
+  // Prioritaskan link direct googlevideo.com terlebih dahulu agar tidak memicu task konversi
+  const directObj = mp4Urls.find(u => u.url.includes('googlevideo.com'));
+  
+  const videoObj = directObj 
+                || mp4Urls.find(u => u.isConverterUI || u.downloadable)
+                || mp4Urls[0];
   
   const targetUrl = videoObj.url;
   
