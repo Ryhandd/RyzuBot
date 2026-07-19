@@ -118,7 +118,8 @@ function getSubMenuText(sub, prefix) {
 │  ◦ ${prefix}waifu — Kirim gambar anime Waifu random (Waifu.im)
 │  ◦ ${prefix}foxgirl / wolfgirl / maid / vtuber — Kirim gambar anime kategori terkait
 │  ◦ ${prefix}nekosia / ns — Cari gambar kustom via Nekosia Engine
-│  ◦ ${prefix}meme / darkjokes — Kirim gambar humor/dark jokes random
+│  ◦ ${prefix}keanu [w] [h] [-y] [-g] — Gambar Keanu Reeves resizable
+└  ◦ ${prefix}meme / darkjokes — Kirim gambar humor/dark jokes random
 
 💡 Ketik ${prefix}menu untuk kembali`,
 
@@ -138,9 +139,11 @@ function getSubMenuText(sub, prefix) {
 │  ◦ ${prefix}calc <rumus> — Kalkulator matematika instan
 │  ◦ ${prefix}shorturl <url> — Persingkat tautan link panjang
 │  ◦ ${prefix}base64 / encode / decode — Enkripsi/dekripsi Base64
+│  ◦ ${prefix}screenshot / ss <url> — Ambil screenshot website
 └  ◦ ${prefix}biner — Konversi teks ke biner dan sebaliknya
 
-┌  ◦ *GAME ID CHECKER*
+┌  ◦ *GAME DATABASE & ID CHECKER*
+│  ◦ ${prefix}genshin / gi — Database Wiki Genshin Impact
 │  ◦ ${prefix}id ff <id> — Cari info akun Free Fire
 │  ◦ ${prefix}id mlbb <id> — Cari info akun Mobile Legends
 │  ◦ ${prefix}id codm <id> — Cari info akun COD Mobile
@@ -320,6 +323,7 @@ function getSubMenuText(sub, prefix) {
 ├ ${prefix}foxgirl / wolfgirl
 ├ ${prefix}maid / vtuber
 ├ ${prefix}nekosia / ns
+├ ${prefix}keanu
 ├ ${prefix}meme
 └ ${prefix}darkjokes
 
@@ -336,12 +340,14 @@ function getSubMenuText(sub, prefix) {
 ├ ${prefix}calc
 ├ ${prefix}shorturl
 ├ ${prefix}base64
+├ ${prefix}screenshot
 ├ ${prefix}biner
 ├ ${prefix}id ff
 ├ ${prefix}id mlbb
 ├ ${prefix}id codm
 ├ ${prefix}id aov
 ├ ${prefix}id genshin
+├ ${prefix}genshin
 ├ ${prefix}chatgpt
 ├ ${prefix}ai
 ├ ${prefix}aiimg

@@ -139,5 +139,7 @@ RyzuBot dilengkapi dengan sinkronisasi sesi berbasis cloud yang sangat andal:
 
 ### 🔮 Fitur Lainnya
 - **Sistem Gacha**: `.gacha`, `.gacha 10`, `.gachainfo`, `.gachadex`, `.buy gacha_ticket`.
-- **Pencarian Media**: `.pinterest <query>`, `.neko`, `.waifu`, `.meme`, `.darkjokes`.
+- **Pencarian Media & Keanu**: `.pinterest <query>`, `.neko`, `.waifu`, `.meme`, `.darkjokes`, `.keanu [w] [h] [-y] [-g]`.
 - **Downloader**: Pengunduhan media langsung dari YouTube (audio `.play`/`.ytmp3` & video `.ytmp4`), TikTok (termasuk audio track asli), dan Instagram.
+- **Utilitas & Alat**: `.screenshot / .ss <url>`, `.qr <teks/link>`, `.shorturl <url>`, `.base64`, `.biner`, `.calc`.
+- **Wiki Game Database**: `.genshin / .gi` untuk eksplorasi data game Genshin Impact (karakter, senjata, artifak, musuh, dll.) dan mengunduh aset gambar/kartu karakter secara langsung.
