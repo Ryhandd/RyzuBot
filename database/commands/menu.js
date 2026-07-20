@@ -29,20 +29,25 @@ function getSubMenuText(sub, prefix) {
 
 ┌  ◦ *EKONOMI & TRADING*
 │  ◦ ${prefix}money — Cek saldo uang
-│  ◦ ${prefix}shop / buy / sell — Buka toko & transaksi item
+│  ◦ ${prefix}shop — Buka toko & list harga item
+│  ◦ ${prefix}buy <item> <jumlah> — Beli item di toko RPG
+│  ◦ ${prefix}sell <item> <jumlah> — Jual item untuk dapat uang
 │  ◦ ${prefix}tf <item> <jumlah> @tag — Kirim item ke user lain
-│  ◦ ${prefix}invest / tarik — Kelola investasi uang
+│  ◦ ${prefix}invest — Investasikan uang untuk bunga
+│  ◦ ${prefix}tarik — Tarik uang dari investasi RPG
 │  ◦ ${prefix}maling @tag — Curi item/uang user lain
 │  ◦ ${prefix}rampok <nominal> — Rampok uang user lain
 └  ◦ ${prefix}top <kategori> — Peringkat/leaderboard RPG
 
 ┌  ◦ *BOX & REWARDS*
 │  ◦ ${prefix}open <box> — Buka lootbox
-│  ◦ ${prefix}daily / weekly / monthly / yearly — Klaim hadiah periodik
+│  ◦ ${prefix}daily — Klaim hadiah harian
+│  ◦ ${prefix}weekly — Klaim hadiah mingguan
+│  ◦ ${prefix}monthly — Klaim hadiah bulanan
+│  ◦ ${prefix}yearly — Klaim hadiah tahunan
 └  ◦ ${prefix}lotre — Ikut undian lotre harian
 
 💡 Ketik ${prefix}menu untuk kembali`,
-
     games: `
 📋 *🎲 GAMES & WEREWOLF*
 
@@ -64,13 +69,15 @@ function getSubMenuText(sub, prefix) {
 ┌  ◦ *WEREWOLF GAME 🐺*
 │  ◦ ${prefix}ww join <nama> — Gabung room Werewolf
 │  ◦ ${prefix}ww start — Mulai permainan Werewolf
-│  ◦ ${prefix}ww info / cektim — Info status & role aktif
+│  ◦ ${prefix}ww info — Info status & role aktif
+│  ◦ ${prefix}ww cektim — Info status tim aktif
 │  ◦ ${prefix}ww kill @tag — [Role Werewolf] Bunuh target
 │  ◦ ${prefix}ww protect @tag — [Role Guardian] Lindungi target
 │  ◦ ${prefix}ww ramal @tag — [Role Seer] Intip role target
 │  ◦ ${prefix}ww vote @tag — Voting eliminasi siang hari
 │  ◦ ${prefix}ww next — Lompati fase permainan
-│  ◦ ${prefix}ww out / reset — Keluar / reset room game
+│  ◦ ${prefix}ww out — Keluar dari room Werewolf
+│  ◦ ${prefix}ww reset — Reset room game Werewolf
 │  ◦ ${prefix}cekrole — Cek role Werewolf pribadi via private chat
 └  ◦ ${prefix}ww leaderboard / lb — Papan peringkat Werewolf
 
@@ -116,10 +123,14 @@ function getSubMenuText(sub, prefix) {
 │  ◦ ${prefix}pinterest / pin <query> — Cari gambar di Pinterest
 │  ◦ ${prefix}neko — Kirim gambar anime Neko random (Nekosia)
 │  ◦ ${prefix}waifu — Kirim gambar anime Waifu random (Waifu.im)
-│  ◦ ${prefix}foxgirl / wolfgirl / maid / vtuber — Kirim gambar anime kategori terkait
+│  ◦ ${prefix}foxgirl — Kirim gambar anime Foxgirl random (Nekosia)
+│  ◦ ${prefix}wolfgirl — Kirim gambar anime Wolfgirl random (Nekosia)
+│  ◦ ${prefix}maid — Kirim gambar anime Maid random (Nekosia)
+│  ◦ ${prefix}vtuber — Kirim gambar anime Vtuber random (Nekosia)
 │  ◦ ${prefix}nekosia / ns — Cari gambar kustom via Nekosia Engine
 │  ◦ ${prefix}keanu [w] [h] [-y] [-g] — Gambar Keanu Reeves resizable
-└  ◦ ${prefix}meme / darkjokes — Kirim gambar humor/dark jokes random
+│  ◦ ${prefix}meme — Kirim gambar humor random
+└  ◦ ${prefix}darkjokes — Kirim gambar dark jokes random
 
 💡 Ketik ${prefix}menu untuk kembali`,
 
@@ -320,9 +331,11 @@ function getSubMenuText(sub, prefix) {
 ├ ${prefix}pinterest
 ├ ${prefix}neko
 ├ ${prefix}waifu
-├ ${prefix}foxgirl / wolfgirl
-├ ${prefix}maid / vtuber
-├ ${prefix}nekosia / ns
+├ ${prefix}foxgirl
+├ ${prefix}wolfgirl
+├ ${prefix}maid
+├ ${prefix}vtuber
+├ ${prefix}nekosia
 ├ ${prefix}keanu
 ├ ${prefix}meme
 └ ${prefix}darkjokes
