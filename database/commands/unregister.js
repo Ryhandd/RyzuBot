@@ -3,7 +3,7 @@ module.exports = {
     alias: ["unregister", "bataldaftar"],
     desc: "Membatalkan registrasi nama (Harta tetap aman)",
     async execute(ctx) {
-        const { user, reply, funcs } = ctx;
+        const { user, reply, funcs, sender } = ctx;
 
         if (!user.registered) return reply("Lu emang belum daftar, Bro. Mau unreg apanya? 😂");
 

@@ -13,18 +13,17 @@ Selamat datang di RyzuBot
 ━━━━━━━━━━━━━━━━━━━━━━
 
 🚀 *CARA MULAI*
-┌ 1. Daftar akun dulu
+┌ 1. Semua fitur umum (AI, Downloader, Game, Media) bisa dipakai langsung tanpa daftar!
+│
+├ 2. Daftar akun jika ingin main RPG & Ekonomi:
 │   ${prefix}register nama_kamu
 │
-├ 2. Cek profile kamu
-│   ${prefix}me
-│
-└ 3. Ambil hadiah gratis
-    ${prefix}daily
+└ 3. Cek profile RPG kamu & klaim daily:
+    ${prefix}me / ${prefix}daily
 
 ━━━━━━━━━━━━━━━━━━━━━━
 
-⚔️ *MAIN RPG*
+⚔️ *MAIN RPG* *(Butuh .daftar)*
 ┌ ${prefix}adventure  → cari resource
 ├ ${prefix}mining     → tambang
 ├ ${prefix}fishing    → mancing
@@ -32,25 +31,17 @@ Selamat datang di RyzuBot
 
 ━━━━━━━━━━━━━━━━━━━━━━
 
-🎮 *MAIN GAME*
-┌ ${prefix}suit @tag
-├ ${prefix}tebakgambar
-└ ${prefix}family100
+🎮 *MAIN GAME & FITUR UMUM* *(Bisa Tanpa Daftar)*
+┌ ${prefix}play / ${prefix}ai / ${prefix}sticker
+├ ${prefix}tebakgambar / ${prefix}family100
+└ ${prefix}tictactoe / ${prefix}genshin
 
 ━━━━━━━━━━━━━━━━━━━━━━
 
-💰 *DAPET UANG*
-┌ ${prefix}daily
-├ ${prefix}adventure
-├ ${prefix}jual item di ${prefix}shop
-└ ${prefix}top
-
-━━━━━━━━━━━━━━━━━━━━━━
-
-👑 *PREMIUM (OPSIONAL)*
-┌ Akses fitur lebih banyak
-├ Limit lebih besar
-└ Cek: ${prefix}premium
+👑 *PREMIUM (FREE MODE)*
+┌ Semua user saat ini bebas limit!
+├ Semua fitur premium terbuka gratis
+└ Cek status: ${prefix}limit
 
 ━━━━━━━━━━━━━━━━━━━━━━
 

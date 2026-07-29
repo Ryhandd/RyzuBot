@@ -123,23 +123,27 @@ RyzuBot dilengkapi dengan sinkronisasi sesi berbasis cloud yang sangat andal:
 
 ## 📋 Fitur Utama & Perintah
 
-### ⚔️ RPG & Ekonomi
-- **Registrasi & Profil**: `.register`, `.me`, `.limit`, `.kolam`.
+> [!NOTE]
+> - **Akses Tanpa Daftar & Bebas Limit**: Seluruh fitur utama bot (AI, Downloader, Media, Games, Sticker, Tools, Fun) dapat digunakan oleh **semua pengguna tanpa perlu mendaftar (`.daftar`)** dan **tanpa batasan limit/premium**.
+> - **Pendaftaran Akun (`.daftar`)**: Pendaftaran akun hanya diperlukan apabila Anda ingin menggunakan fitur **RPG & Ekonomi**.
+
+### ⚔️ RPG & Ekonomi *(Memerlukan Registrasi `.daftar`)*
+- **Registrasi & Profil**: `.register / .daftar <nama>`, `.me`, `.limit`, `.kolam`.
 - **Aktivitas RPG**: `.adventure`, `.mining`, `.fishing`, `.hunt`, `.heal`.
 - **Kerajinan & Perlengkapan**: `.craft`, `.upgrade`, `.repair`, `.equipment`, `.buff`.
 - **Ekonomi & Toko**: `.money`, `.shop`, `.buy`, `.sell`, `.tf`, `.invest`, `.tarik`.
 - **Kriminal & Peringkat**: `.maling`, `.rampok`, `.top`.
 - **Hadiah & Lotre**: `.open`, `.daily`, `.weekly`, `.monthly`, `.yearly`, `.lotre`.
 
-### 🎲 Game Interaktif & Werewolf Multiplayer
+### 🎲 Game Interaktif & Werewolf Multiplayer *(Bisa Tanpa Daftar)*
 - **Multiplayer**: `.tictactoe`, `.suit`, `.family100`.
 - **Tebak-tebakan**: `.tebakgambar`, `.tebakgenshin`, `.tebakcharanime`, `.tebakheromlbb`, `.tekateki`, `.asahotak`.
 - **Kasino & Klasik**: `.math`, `.judi`, `.slot`, `.chess`.
 - **Werewolf Room**: `.ww join`, `.ww start`, `.ww info`, `.ww cektim`, `.ww kill`, `.ww protect`, `.ww ramal`, `.ww vote`, `.ww next`, `.ww out`, `.ww reset`, `.ww leaderboard`, `.cekrole`.
 
-### 🔮 Fitur Lainnya
+### 🔮 Fitur Lainnya *(Bisa Tanpa Daftar & Bebas Limit)*
 - **Sistem Gacha**: `.gacha`, `.gacha 10`, `.gachainfo`, `.gachadex`, `.buy gacha_ticket`.
 - **Pencarian Media & Keanu**: `.pinterest <query>`, `.neko`, `.waifu`, `.meme`, `.darkjokes`, `.keanu [w] [h] [-y] [-g]`.
-- **Downloader**: Pengunduhan media langsung dari YouTube (audio `.play`/`.ytmp3` & video `.ytmp4`), TikTok (termasuk audio track asli), dan Instagram.
+- **Downloader**: Pengunduhan media langsung dari YouTube (audio `.play`/`.ytmp3` & video `.ytmp4`), TikTok (termasuk audio track asli), Instagram, Facebook, Scribd, dan MediaFire.
 - **Utilitas & Alat**: `.screenshot / .ss <url>`, `.qr <teks/link>`, `.shorturl <url>`, `.base64`, `.biner`, `.calc`.
 - **Wiki Game Database**: `.genshin / .gi` untuk eksplorasi data game Genshin Impact (karakter, senjata, artifak, musuh, dll.) dan mengunduh aset gambar/kartu karakter secara langsung.

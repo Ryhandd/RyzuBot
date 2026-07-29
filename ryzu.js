@@ -342,20 +342,23 @@ module.exports = async function ryzuHandler(ryzu, m) {
         const pollUpdateMsg = msg.message.pollUpdateMessage
         const pollCreationKey = pollUpdateMsg.pollCreationMessageKey
         const pollId = pollCreationKey?.id
+
         const pollData = global.pollMenus?.[pollId]
 
         if (!pollData) {
-          await ryzu.sendMessage(from, { text: '❌ Poll expired. Ketik .menu lagi.' }, { quoted: msg })
+          // If not in pollMenus, do nothing or show expired message (but only if it's actually meant for poll menus)
+          // Since it might be some other poll, let's only reply if it was specifically a registered pollMenu that expired.
           return
         }
 
 
-        const votedHashes = decryptPollVote(pollUpdateMsg, {
+        const decryptedVote = decryptPollVote(pollUpdateMsg.vote, {
           pollEncKey: pollData.encKey,
-          voter: senderId,
-          pollCreator: decodeJid(ryzu.user?.id),
-          pollId
+          voterJid: senderId,
+          pollCreatorJid: decodeJid(ryzu.user?.id),
+          pollMsgId: pollId
         })
+        const votedHashes = decryptedVote.selectedOptions || []
 
         // Bandingkan SHA256 dari nama opsi dengan hash yang diterima
         for (const [optName, optSub] of Object.entries(pollData.options)) {
@@ -579,8 +582,9 @@ module.exports = async function ryzuHandler(ryzu, m) {
         if (bodyLow === prefix + "hint") {
           if (room.tipe === "family100") return reply("❌ Family 100 tidak memiliki hint!");
           const user = global.rpg[senderId];
-          if (!user.premium && user.limit <= 0) return reply("❌ Limit habis!");
-          if (!user.premium) { user.limit -= 1; funcs.saveRPG(senderId).catch(() => {}); }
+          const isPremium = true;
+          if (!isPremium && user.limit <= 0) return reply("❌ Limit habis!");
+          if (!isPremium) { user.limit -= 1; funcs.saveRPG(senderId).catch(() => {}); }
           if (room.deskripsi) return reply(`💡 *PETUNJUK*\n\n${room.deskripsi}`);
           const jaw = Array.isArray(room.jawaban) ? room.jawaban : room.jawaban;
           const clue = jaw.replace(/[a-zA-Z]/g, (c, i) => i === 0 || jaw[i - 1] === " " ? c : "_");
@@ -688,22 +692,55 @@ module.exports = async function ryzuHandler(ryzu, m) {
       if (!cmd) return
 
       const user = global.rpg[senderId]
-      const whiteList = ["register", "reg", "daftar", "help", "menu", "rules", "owner", "s", "ping", "runtime", "speed", "start", "shop", "buy", "sell", "money", "profile", "me", "inv", "afk", "unreg", "unregister", "tictactoe", "limit", "ceklimit", "sisalimit"]
-      const isPremium = user.premium || isCreator
-      
-      if (!user.registered && !whiteList.includes(commandName)) {
-        return reply("Anda belum terdaftar.\nSilahkan daftar dengan .daftar nama")
+
+      // Kategori command RPG yang memerlukan pendaftaran user
+      const rpgCommands = new Set([
+        "adventure", "adv",
+        "buff",
+        "daily", "weekly", "monthly", "yearly", "claim", "klaim",
+        "craft",
+        "equipment", "equip",
+        "exp",
+        "fishing", "mancing",
+        "gacha", "pull",
+        "gachadex", "igacha",
+        "gachainfo", "ginfo",
+        "judi", "slot",
+        "heal",
+        "hunt", "berburu",
+        "invest",
+        "kolam",
+        "level",
+        "lotre",
+        "maling",
+        "mining", "tambang",
+        "money",
+        "open", "openbox",
+        "profile", "me", "inv", "inventory",
+        "rampok", "merampok",
+        "repair",
+        "shop", "buy", "sell",
+        "tarik",
+        "top", "leaderboard",
+        "transfer", "tf",
+        "upgrade"
+      ])
+
+      const isRpgCmd = rpgCommands.has(commandName) || rpgCommands.has(cmd.name) || (cmd.category && cmd.category.toLowerCase() === "rpg")
+      const isRegistrationCmd = ["register", "reg", "daftar", "unregister", "unreg", "bataldaftar"].includes(commandName) || ["register", "unreg"].includes(cmd.name)
+
+      // Fitur daftar hanya berlaku jika user meminta command-command RPG
+      if (!user.registered && isRpgCmd && !isRegistrationCmd) {
+        return reply("❌ *FITUR RPG TERKUNCI*\n\nAnda belum terdaftar. Silahkan daftar terlebih dahulu dengan *.daftar nama* untuk mengakses fitur RPG!")
       }
 
-      if (!isPremium && !whiteList.includes(commandName) && user.limit <= 0) {
-        return reply(`❌ *LIMIT HABIS*\n\nBeli limit di *.shop* atau upgrade ke *Premium*.`)
-      }
+      // Nonaktifkan fitur khusus premium (semua user dianggap premium / bebas limit)
+      const isPremium = true
 
       if (user.premium && user.premiumTime !== -1 && Date.now() > user.premiumTime) {
         user.premium = false
         user.premiumTime = 0
         funcs.saveRPG(senderId).catch(() => {})
-        ryzu.sendMessage(senderId, { text: "⏰ Premium kamu sudah berakhir. Perpanjang ya! 🥲" })
       }
 
       const rawQuotedUser = msg.message.extendedTextMessage?.contextInfo?.participant ||
@@ -719,19 +756,9 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
       try {
         await cmd.execute(ctx)
-        if (!whiteList.includes(commandName)) {
-          user.exp += 10
-          
-          if (!isPremium) {
-            user.limit -= 1
-            await ryzu.sendMessage(from, { 
-              text: "*Limit -1*"
-            }).catch(() => {}) 
-          }
-          
-          funcs.cekLevel(senderId)
-          funcs.saveRPG(senderId).catch(() => {})
-        }
+        user.exp += 10
+        funcs.cekLevel(senderId)
+        funcs.saveRPG(senderId).catch(() => {})
       } catch (err) {
         console.error(`Error di command ${commandName}:`, err)
         reply(`❌ Error: ${err.message}`)

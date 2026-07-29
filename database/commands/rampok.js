@@ -3,16 +3,17 @@ module.exports = {
     alias: ["merampok"],
     desc: "Merampok bank dengan risiko tinggi",
     async execute(ctx) {
-        const { sender, reply, args, funcs } = ctx
+        const { sender, reply, args, funcs, isPremium } = ctx
         funcs.checkUser(sender)
         let user = global.rpg[sender]
+        const sultan = isPremium || user.premium
 
         let nominal = parseInt(args[0])
         if (!nominal || nominal < 1000)
             return reply("❌ Contoh: *.rampok 100000*\nMinimal Rp1.000")
 
         // === CEK LIMIT ===
-        if (!user.premium && user.limit < 1)
+        if (!sultan && user.limit < 1)
             return reply("❌ Limit kamu habis")
 
         const now = Date.now()
@@ -24,7 +25,7 @@ module.exports = {
             return reply("⏳ Kamu masih dalam pelarian setelah merampok bank.")
 
         // === POTONG LIMIT ===
-        if (!user.premium) user.limit -= 1
+        if (!sultan) user.limit -= 1
 
         // === CHANCE SUKSES ===
         let successChance =

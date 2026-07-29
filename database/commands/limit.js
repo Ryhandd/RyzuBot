@@ -6,13 +6,8 @@ module.exports = {
         const isPremium = u.premium ? "Infinity (Premium 💎)" : u.limit;
         
         let txt = `📊 *USER LIMIT STATUS*\n\n`;
-        txt += `🔋 Sisa Limit: *${isPremium}*\n\n`;
-        
-        if (!u.premium) {
-            txt += `💡 _Limit akan berkurang setiap menggunakan fitur AI atau Game. Beli limit di *.shop* atau upgrade ke Premium._`;
-        } else {
-            txt += `✨ _Kamu bebas menggunakan semua fitur tanpa batas!_`;
-        }
+        txt += `🔋 Status Access: *Infinity (Free Premium Mode 💎)*\n\n`;
+        txt += `✨ _Saat ini semua fitur bot dan limit aktif secara gratis tanpa batasan untuk seluruh user!_`;
 
         await reply(txt);
     }
