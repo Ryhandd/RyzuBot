@@ -379,11 +379,22 @@ module.exports = async function ryzuHandler(ryzu, m) {
       return
     }
 
-    console.log(chalk.green(`[${isGroup ? "Grup" : "PC"}]`), chalk.yellow(pushname + ":"), rawText)
+    const sendMsg = async (content, options = {}) => {
+      try {
+        return await ryzu.sendMessage(from, content, { quoted: msg, ...options })
+      } catch (err) {
+        console.warn(`[Baileys sendMsg] Warning sending quoted msg (${err.message}). Retrying unquoted...`)
+        try {
+          return await ryzu.sendMessage(from, content, options)
+        } catch (err2) {
+          console.error(`[Baileys sendMsg Error]`, err2.message)
+        }
+      }
+    }
 
-    const reply = (teks) => {
+    const reply = (teks, options = {}) => {
       if (!teks) return
-      return ryzu.sendMessage(from, { text: String(teks), contextInfo: { linkPreview: false } }, { quoted: msg })
+      return sendMsg({ text: String(teks), contextInfo: { linkPreview: false, ...(options?.contextInfo || {}) } }, options)
     }
 
     // === MEDIA ===
@@ -442,7 +453,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     // === SHIMI ===
     if (!isCmd && shimiFastReply[bodyLow] && global.shimi?.[senderId]) {
-      return ryzu.sendMessage(from, { text: shimiFastReply[bodyLow] })
+      return sendMsg({ text: shimiFastReply[bodyLow] })
     }
     if (!isCmd && global.shimi?.[senderId] && text && openai) {
       const now = Date.now()
@@ -455,13 +466,13 @@ module.exports = async function ryzuHandler(ryzu, m) {
           messages: [{ role: "system", content: global.SHIMI_PROMPT }, { role: "user", content: text }],
           max_tokens: 150, temperature: 1.2
         })
-        return ryzu.sendMessage(from, { text: res.choices[0].message.content || "apaan dah" }, { quoted: msg })
+        return sendMsg({ text: res.choices[0].message.content || "apaan dah" })
       } catch (_) {}
     }
 
     // === SIMI ===
     if (!isCmd && simiFastReply[bodyLow] && global.simi?.[senderId]) {
-      return ryzu.sendMessage(from, { text: simiFastReply[bodyLow] })
+      return sendMsg({ text: simiFastReply[bodyLow] })
     }
     if (!isCmd && global.simi?.[senderId] && text && openai) {
       const now = Date.now()
@@ -474,7 +485,7 @@ module.exports = async function ryzuHandler(ryzu, m) {
           messages: [{ role: "system", content: global.SIMI_PROMPT }, { role: "user", content: text }],
           max_tokens: 120, temperature: 0.6
         })
-        return ryzu.sendMessage(from, { text: res.choices[0].message.content || "hmm?? 🤔" }, { quoted: msg })
+        return sendMsg({ text: res.choices[0].message.content || "hmm?? 🤔" })
       } catch (_) {}
     }
 
@@ -516,15 +527,16 @@ module.exports = async function ryzuHandler(ryzu, m) {
           const boardTeks = renderBoard(room.board);
           
           if (winner) {
-            await ryzu.sendMessage(from, { text: `🎮 *TIC TAC TOE*\n\n${boardTeks}\n🎉 @${senderId.split("@")} MENANG!`, mentions: [senderId] }, { quoted: msg });
+            await sendMsg({ text: `🎮 *TIC TAC TOE*\n\n${boardTeks}\n🎉 @${senderId.split("@")} MENANG!`, mentions: [senderId] });
             delete ryzu.ttt[from][isReplyId];
           } else if (tie) {
-            await ryzu.sendMessage(from, { text: `🎮 *TIC TAC TOE*\n\n${boardTeks}\n🤝 SERI!`, mentions: [room.p1, room.p2] }, { quoted: msg });
+            await sendMsg({ text: `🎮 *TIC TAC TOE*\n\n${boardTeks}\n🤝 SERI!`, mentions: [room.p1, room.p2] });
             delete ryzu.ttt[from][isReplyId];
           } else {
-            let nextMsg = await ryzu.sendMessage(from, { text: `🎮 *TIC TAC TOE*\n\n${boardTeks}\nGiliran: @${room.turn.split("@")}\nBalas pesan ini untuk membalas!`, mentions: [room.turn] }, { quoted: msg });
-            
-            ryzu.ttt[from][nextMsg.key.id] = room;
+            let nextMsg = await sendMsg({ text: `🎮 *TIC TAC TOE*\n\n${boardTeks}\nGiliran: @${room.turn.split("@")}\nBalas pesan ini untuk membalas!`, mentions: [room.turn] });
+            if (nextMsg?.key?.id) {
+              ryzu.ttt[from][nextMsg.key.id] = room;
+            }
             delete ryzu.ttt[from][isReplyId];
           }
           return;
@@ -538,12 +550,12 @@ module.exports = async function ryzuHandler(ryzu, m) {
         const t = global.rpg[jid]
         if (t?.afk > 0) {
           const waktu = funcs.runtime((Date.now() - t.afk) / 1000)
-          ryzu.sendMessage(from, { text: `🔇 @${jid.split("@")[0]} sedang AFK!\nAlasan: ${t.afkReason || "-"}\nSejak: ${waktu} lalu.`, mentions: [jid] }, { quoted: msg })
+          sendMsg({ text: `🔇 @${jid.split("@")[0]} sedang AFK!\nAlasan: ${t.afkReason || "-"}\nSejak: ${waktu} lalu.`, mentions: [jid] })
         }
       }
       if (global.rpg[senderId]?.afk > 0) {
         const waktu = funcs.runtime((Date.now() - global.rpg[senderId].afk) / 1000)
-        ryzu.sendMessage(from, { text: `✨ @${senderId.split("@")[0]} kembali online!\nBerhenti AFK setelah: ${waktu}`, mentions: [senderId] })
+        sendMsg({ text: `✨ @${senderId.split("@")[0]} kembali online!\nBerhenti AFK setelah: ${waktu}`, mentions: [senderId] })
         global.rpg[senderId].afk = 0
         global.rpg[senderId].afkReason = ""
         funcs.saveRPG(senderId).catch(() => {})

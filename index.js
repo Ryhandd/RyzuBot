@@ -254,7 +254,11 @@ async function connectToWhatsApp() {
       try {
         await ryzuHandler(ryzu, { ...m, messages: [msg] })
       } catch (e) {
-        console.error(chalk.red("❌ Handler crash:"), e.message)
+        if (e.message && (e.message.includes("No sessions") || e.message.includes("Session") || e.message.includes("bad mac"))) {
+          console.warn(chalk.yellow("⚠️ Signal Session notice:"), e.message)
+        } else {
+          console.error(chalk.red("❌ Handler crash:"), e.message)
+        }
       }
     })
 
