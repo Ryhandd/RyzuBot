@@ -41,6 +41,28 @@ function hapusSesi() {
   }
 }
 
+// ── BERSIHKAN FILE SESI SIGNAL YANG STALE/RUSAK ──
+function cleanSessionKeys() {
+  if (!fs.existsSync(SESI_DIR)) return
+  try {
+    const files = fs.readdirSync(SESI_DIR)
+    let cleaned = 0
+    for (const file of files) {
+      if (file.startsWith("session-") || file.startsWith("sender-key-")) {
+        try {
+          fs.unlinkSync(`${SESI_DIR}/${file}`)
+          cleaned++
+        } catch (_) {}
+      }
+    }
+    if (cleaned > 0) {
+      console.log(chalk.yellow(`🧹 Dibersihkan ${cleaned} file sesi Signal kadaluarsa`))
+    }
+  } catch (e) {
+    console.error("Gagal membersihkan file sesi:", e.message)
+  }
+}
+
 // ── BACKUP SESI KE MONGODB ──
 async function backupSesi() {
   try {
@@ -49,16 +71,20 @@ async function backupSesi() {
     if (!fs.existsSync(SESI_DIR)) return
     const sesiFiles = {}
     for (const file of fs.readdirSync(SESI_DIR)) {
-      try {
-        sesiFiles[file] = fs.readFileSync(`${SESI_DIR}/${file}`, "utf-8")
-      } catch (_) {}
+      if (file === "creds.json" || file.startsWith("app-state-")) {
+        try {
+          sesiFiles[file] = fs.readFileSync(`${SESI_DIR}/${file}`, "utf-8")
+        } catch (_) {}
+      }
     }
-    await User.findByIdAndUpdate(
-      "__sesi__",
-      { _id: "__sesi__", data: sesiFiles },
-      { upsert: true }
-    )
-    console.log(chalk.green("✅ Sesi di-backup ke MongoDB"))
+    if (Object.keys(sesiFiles).length > 0) {
+      await User.findByIdAndUpdate(
+        "__sesi__",
+        { _id: "__sesi__", data: sesiFiles },
+        { upsert: true }
+      )
+      console.log(chalk.green("✅ Sesi (creds) di-backup ke MongoDB"))
+    }
   } catch (e) {
     console.error(chalk.red("Backup sesi gagal:"), e.message)
   }
@@ -73,7 +99,9 @@ async function restoreSesi() {
     if (sesiDoc?.data && Object.keys(sesiDoc.data).length > 0) {
       if (!fs.existsSync(SESI_DIR)) fs.mkdirSync(SESI_DIR, { recursive: true })
       for (const [filename, content] of Object.entries(sesiDoc.data)) {
-        fs.writeFileSync(`${SESI_DIR}/${filename}`, content)
+        if (filename === "creds.json" || filename.startsWith("app-state-")) {
+          fs.writeFileSync(`${SESI_DIR}/${filename}`, content)
+        }
       }
       console.log(chalk.green("✅ Sesi dipulihkan dari MongoDB"))
       return true
@@ -99,6 +127,9 @@ async function hapusSesiMongo() {
 async function connectToWhatsApp() {
   // Restore sesi dari MongoDB
   await restoreSesi()
+
+  // Bersihkan session-*.json & sender-key-*.json stale yang memicu 'No sessions'
+  cleanSessionKeys()
 
   const { state, saveCreds } = await useMultiFileAuthState(SESI_DIR)
   const { version } = await fetchLatestBaileysVersion()
@@ -155,40 +186,37 @@ async function connectToWhatsApp() {
     } else if (method === "pairing") {
       console.log(chalk.cyan("\n[ RYZU PAIRING SYSTEM ]"))
       
-      let useEnvNumber = false
-      if (phoneNumber && process.stdin.isTTY) {
-        let ans = ""
-        while (ans !== "y" && ans !== "n" && ans !== "") {
-          ans = await question(chalk.yellow(`Gunakan nomor dari .env (${phoneNumber})? (Y/n): `))
-          ans = ans.trim().toLowerCase()
-        }
-        if (ans === "y" || ans === "") {
-          useEnvNumber = true
-        }
-      } else if (phoneNumber) {
-        useEnvNumber = true
-      }
+      if (process.stdin.isTTY) {
+        let promptText = phoneNumber
+          ? `Masukkan nomor WhatsApp Anda (atau tekan ${chalk.cyan("[ENTER]")} untuk pakai ${chalk.green(phoneNumber)} dari .env): `
+          : `Masukkan nomor WhatsApp Anda (contoh: 628123456789): `
 
-      if (!useEnvNumber) {
-        phoneNumber = ""
-        if (process.stdin.isTTY) {
-          while (!phoneNumber) {
-            phoneNumber = await question(chalk.yellow("Masukkan nomor WhatsApp Anda (contoh: 628123456789): "))
-            phoneNumber = phoneNumber.replace(/[^0-9]/g, "")
-            if (!phoneNumber) {
-              console.log(chalk.red("❌ Nomor tidak valid, silakan coba lagi."))
-            }
+        let inputNum = ""
+        while (true) {
+          inputNum = await question(chalk.yellow(promptText))
+          inputNum = inputNum.trim().replace(/[^0-9]/g, "")
+          
+          if (inputNum) {
+            phoneNumber = inputNum
+            break
+          } else if (phoneNumber) {
+            // User menekan Enter dan ada nomor default dari .env
+            break
+          } else {
+            console.log(chalk.red("❌ Nomor tidak boleh kosong! Silakan masukkan nomor WhatsApp Anda."))
           }
-        } else {
-          console.log(chalk.red("❌ Error: LOGIN_METHOD diset ke 'pairing' tapi BOT_NUMBER tidak diset di env, dan terminal non-interaktif!"))
-          process.exit(1)
         }
       } else {
-        phoneNumber = phoneNumber.replace(/[^0-9]/g, "")
+        phoneNumber = (phoneNumber || "").replace(/[^0-9]/g, "")
+      }
+
+      if (!phoneNumber) {
+        console.log(chalk.red("❌ Error: LOGIN_METHOD diset ke 'pairing' tapi BOT_NUMBER tidak diset di env, dan terminal non-interaktif!"))
+        process.exit(1)
       }
       
-      console.log(chalk.yellow(`Meminta kode pairing untuk nomor: ${chalk.green(phoneNumber)}`))
-      await delay(3000)
+      console.log(chalk.yellow(`\nMeminta kode pairing untuk nomor: ${chalk.green(phoneNumber)}...`))
+      await delay(2000)
       try {
         const code = await ryzu.requestPairingCode(phoneNumber)
         console.log(`\n ${chalk.yellow("KODE PAIRING ANDA:")} ${chalk.cyan.bold(code)} \n`)
