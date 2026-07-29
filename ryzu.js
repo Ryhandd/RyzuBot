@@ -436,8 +436,8 @@ module.exports = async function ryzuHandler(ryzu, m) {
     // === INIT USER ===
     funcs.checkUser(senderId)
 
-    // === ANTI-SPAM "BOT" ===
-    if (!isCmd && bodyLow.includes("bot")) {
+    // === BOT TRIGGER ===
+    if (!isCmd && (bodyLow === "bot" || bodyLow === "ryzu" || bodyLow === "ryzubot")) {
       return reply("RyzuBot disini!\nKetik *.menu* untuk daftar perintah.");
     }
 

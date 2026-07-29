@@ -138,7 +138,7 @@ async function connectToWhatsApp() {
     logger: pino({ level: "silent" }),
     auth: {
       creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
+      keys: state.keys
     },
     browser: ["Mac OS", "chrome", "121.0.6167.159"],
     version,
