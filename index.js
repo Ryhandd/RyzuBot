@@ -67,7 +67,8 @@ function cleanSessionKeys() {
 async function backupSesi() {
   try {
     const { User, connect } = require("./lib/mongo")
-    await connect()
+    const connected = await connect()
+    if (!connected) return
     if (!fs.existsSync(SESI_DIR)) return
     const sesiFiles = {}
     for (const file of fs.readdirSync(SESI_DIR)) {
@@ -93,8 +94,20 @@ async function backupSesi() {
 // ── RESTORE SESI DARI MONGODB ──
 async function restoreSesi() {
   try {
+    // Jika lokal sudah memiliki creds.json yang valid, pakai sesi lokal
+    if (fs.existsSync(`${SESI_DIR}/creds.json`)) {
+      try {
+        const localCreds = JSON.parse(fs.readFileSync(`${SESI_DIR}/creds.json`, "utf-8"))
+        if (localCreds?.me?.id || localCreds?.registered) {
+          console.log(chalk.green("✅ Sesi lokal terdeteksi & valid"))
+          return true
+        }
+      } catch (_) {}
+    }
+
     const { User, connect } = require("./lib/mongo")
-    await connect()
+    const connected = await connect()
+    if (!connected) return false
     const sesiDoc = await User.findById("__sesi__")
     if (sesiDoc?.data && Object.keys(sesiDoc.data).length > 0) {
       if (!fs.existsSync(SESI_DIR)) fs.mkdirSync(SESI_DIR, { recursive: true })
@@ -227,7 +240,10 @@ async function connectToWhatsApp() {
     }
   }
 
-  ryzu.ev.on("creds.update", saveCreds)
+  ryzu.ev.on("creds.update", async () => {
+    await saveCreds()
+    await backupSesi()
+  })
 
   // ── CONNECTION UPDATE ──
   ryzu.ev.on("connection.update", (update) => {
