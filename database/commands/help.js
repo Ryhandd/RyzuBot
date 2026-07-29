@@ -8,7 +8,7 @@ module.exports = {
     const teks = `📖 *PANDUAN RYZUBOT*
 
 👋 Halo *${name}*!
-Selamat datang di RyzuBot
+Selamat datang di RyzuBot (Bisa di Private Chat & Grup Chat)
 
 ━━━━━━━━━━━━━━━━━━━━━━
 

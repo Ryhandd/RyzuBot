@@ -236,7 +236,6 @@ module.exports = async function ryzuHandler(ryzu, m) {
     if (!from || from === "status@broadcast") return
 
     const isGroup = from.endsWith("@g.us")
-    if (isGroup) return
 
     // === SENDER ===
     let sender

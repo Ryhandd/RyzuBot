@@ -124,6 +124,7 @@ RyzuBot dilengkapi dengan sinkronisasi sesi berbasis cloud yang sangat andal:
 ## 📋 Fitur Utama & Perintah
 
 > [!NOTE]
+> - **Dukungan Chat**: Bot dapat digunakan secara fleksibel di **Private Chat (PC)** maupun **Grup WhatsApp (GC)**.
 > - **Akses Tanpa Daftar & Bebas Limit**: Seluruh fitur utama bot (AI, Downloader, Media, Games, Sticker, Tools, Fun) dapat digunakan oleh **semua pengguna tanpa perlu mendaftar (`.daftar`)** dan **tanpa batasan limit/premium**.
 > - **Pendaftaran Akun (`.daftar`)**: Pendaftaran akun hanya diperlukan apabila Anda ingin menggunakan fitur **RPG & Ekonomi**.
 
