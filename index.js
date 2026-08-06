@@ -147,12 +147,31 @@ async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState(SESI_DIR)
   const { version } = await fetchLatestBaileysVersion()
 
+  global.groupCache = global.groupCache || new Map()
+
+  const cachedGroupMetadata = async (jid) => {
+    if (!jid || !jid.endsWith("@g.us")) return null
+    const cached = global.groupCache.get(jid)
+    if (cached && (Date.now() - cached.time < 10 * 60 * 1000)) {
+      return cached.data
+    }
+    try {
+      const meta = await ryzu.groupMetadata(jid)
+      if (meta) {
+        global.groupCache.set(jid, { data: meta, time: Date.now() })
+        return meta
+      }
+    } catch (_) {}
+    return null
+  }
+
   const ryzu = makeWASocket({
     logger: pino({ level: "silent" }),
     auth: {
       creds: state.creds,
       keys: state.keys
     },
+    cachedGroupMetadata,
     browser: ["Mac OS", "chrome", "121.0.6167.159"],
     version,
     syncFullHistory: false,

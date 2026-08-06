@@ -260,8 +260,12 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     if (isGroup) {
       try {
+        global.groupCache = global.groupCache || new Map()
         groupMetadata = await ryzu.groupMetadata(from)
-        participants = groupMetadata.participants || []
+        if (groupMetadata) {
+          global.groupCache.set(from, { data: groupMetadata, time: Date.now() })
+        }
+        participants = groupMetadata?.participants || []
 
         for (const p of participants) {
           const pJid = decodeJid(p.id)
@@ -381,6 +385,13 @@ module.exports = async function ryzuHandler(ryzu, m) {
 
     const sendMsg = async (content, options = {}) => {
       try {
+        if (isGroup && (!global.groupCache || !global.groupCache.has(from))) {
+          try {
+            global.groupCache = global.groupCache || new Map()
+            const meta = await ryzu.groupMetadata(from)
+            if (meta) global.groupCache.set(from, { data: meta, time: Date.now() })
+          } catch (_) {}
+        }
         return await ryzu.sendMessage(from, content, { quoted: msg, ...options })
       } catch (err) {
         console.warn(`[Baileys sendMsg] Warning sending quoted msg (${err.message}). Retrying unquoted...`)

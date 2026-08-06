@@ -28,7 +28,7 @@ const buildExifBuffer = (pack, author) => {
 // isVideo: false = gambar biasa, true = video/gif animasi
 // keepSize: true = pertahankan ukuran asli (max 512 di sisi terbesar, scale proporsional)
 //           false = paksa square 512x512 (legacy, tidak dipakai di s/smeme)
-async function makeSticker(buffer, isVideo = false, pack = "RyzuBot", author = "+62 899-8821-419") {
+async function makeSticker(buffer, isVideo = false, pack = "RyzuBot", author = "+62 882-1064-7338") {
   const webp = require("node-webpmux")
 
   const input = tmp(`in_${Date.now()}`)
