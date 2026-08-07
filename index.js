@@ -102,11 +102,18 @@ async function backupSesi() {
 // ── RESTORE SESI DARI MONGODB ──
 async function restoreSesi() {
   try {
-    // Jika ada flag RESET_SESSION=true di .env, hapus sesi lokal & mongo
-    if (process.env.RESET_SESSION === "true") {
-      console.log(chalk.yellow("⚠️ RESET_SESSION=true terdeteksi. Menghapus sesi lokal & MongoDB..."))
+    const isResetRequested =
+      process.env.RESET_SESSION === "true" ||
+      process.env.RESET_SESSION === "1" ||
+      fs.existsSync("./RESET_SESSION") ||
+      fs.existsSync("./reset_session")
+
+    if (isResetRequested) {
+      console.log(chalk.yellow("⚠️ Permintaan RESET_SESSION terdeteksi. Menghapus sesi lokal & MongoDB..."))
       hapusSesi()
       await hapusSesiMongo()
+      if (fs.existsSync("./RESET_SESSION")) try { fs.unlinkSync("./RESET_SESSION") } catch (_) {}
+      if (fs.existsSync("./reset_session")) try { fs.unlinkSync("./reset_session") } catch (_) {}
       return false
     }
 
