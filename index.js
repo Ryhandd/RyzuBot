@@ -102,6 +102,14 @@ async function backupSesi() {
 // ── RESTORE SESI DARI MONGODB ──
 async function restoreSesi() {
   try {
+    // Jika ada flag RESET_SESSION=true di .env, hapus sesi lokal & mongo
+    if (process.env.RESET_SESSION === "true") {
+      console.log(chalk.yellow("⚠️ RESET_SESSION=true terdeteksi. Menghapus sesi lokal & MongoDB..."))
+      hapusSesi()
+      await hapusSesiMongo()
+      return false
+    }
+
     // Jika lokal sudah memiliki creds.json yang valid, pakai sesi lokal
     if (fs.existsSync(`${SESI_DIR}/creds.json`)) {
       try {
@@ -118,6 +126,19 @@ async function restoreSesi() {
     if (!connected) return false
     const sesiDoc = await User.findById("__sesi__")
     if (sesiDoc?.data && Object.keys(sesiDoc.data).length > 0) {
+      const filenames = Object.keys(sesiDoc.data)
+      const hasSessionKeys = filenames.some(f => f.startsWith("session-") || f.startsWith("sender-key-"))
+
+      // Jika MongoDB HANYA punya creds.json TANPA session keys,
+      // ini adalah sesi cacat bekas bug terdahulu (penyebab utama 'No sessions').
+      // Hapus sesi cacat di MongoDB agar bot melakukan pairing ulang yang bersih!
+      if (!hasSessionKeys) {
+        console.log(chalk.red("⚠️ Sesi MongoDB tidak memiliki session keys (sesi lama cacat). Menghapus sesi MongoDB agar bisa pairing ulang bersih..."))
+        await hapusSesiMongo()
+        hapusSesi()
+        return false
+      }
+
       if (!fs.existsSync(SESI_DIR)) fs.mkdirSync(SESI_DIR, { recursive: true })
       for (const [filename, content] of Object.entries(sesiDoc.data)) {
         if (
@@ -182,7 +203,7 @@ async function connectToWhatsApp() {
     logger: pino({ level: "silent" }),
     auth: {
       creds: state.creds,
-      keys: state.keys
+      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
     },
     cachedGroupMetadata,
     browser: ["Mac OS", "chrome", "121.0.6167.159"],
