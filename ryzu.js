@@ -261,10 +261,23 @@ module.exports = async function ryzuHandler(ryzu, m) {
     if (isGroup) {
       try {
         global.groupCache = global.groupCache || new Map()
-        groupMetadata = await ryzu.groupMetadata(from)
-        if (groupMetadata) {
-          global.groupCache.set(from, { data: groupMetadata, time: Date.now() })
+        const cached = global.groupCache.get(from)
+        // Gunakan cache jika masih baru (< 5 menit)
+        if (cached && (Date.now() - cached.time < 5 * 60 * 1000)) {
+          groupMetadata = cached.data
+        } else {
+          groupMetadata = await ryzu.groupMetadata(from)
+          if (groupMetadata) {
+            global.groupCache.set(from, { data: groupMetadata, time: Date.now() })
+          }
         }
+      } catch (err) {
+        // Jika fetch gagal (e.g. rate limit), gunakan cache lama jika ada
+        const cached = global.groupCache?.get(from)
+        if (cached) groupMetadata = cached.data
+      }
+
+      if (groupMetadata) {
         participants = groupMetadata?.participants || []
 
         for (const p of participants) {
@@ -284,9 +297,10 @@ module.exports = async function ryzuHandler(ryzu, m) {
           }
         }
 
-        isAdmin = participants.some((p) => decodeJid(p.id) === senderId && p.admin)
-        isBotAdmin = participants.some((p) => decodeJid(p.id) === botId && p.admin)
-      } catch (_) {}
+        const isUserAdmin = (p) => p.admin === "admin" || p.admin === "superadmin" || p.admin === true
+        isAdmin = participants.some((p) => decodeJid(p.id) === senderId && isUserAdmin(p))
+        isBotAdmin = participants.some((p) => decodeJid(p.id) === botId && isUserAdmin(p))
+      }
     }
 
     // === RESOLVE NOMOR DARI LID ===

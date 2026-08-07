@@ -41,22 +41,25 @@ function hapusSesi() {
   }
 }
 
-// ── BERSIHKAN FILE SESI SIGNAL YANG STALE/RUSAK ──
+// ── BERSIHKAN FILE SESI SIGNAL YANG STALE/RUSAK (HANYA 0-BYTE) ──
 function cleanSessionKeys() {
   if (!fs.existsSync(SESI_DIR)) return
   try {
     const files = fs.readdirSync(SESI_DIR)
     let cleaned = 0
     for (const file of files) {
-      if (file.startsWith("session-") || file.startsWith("sender-key-")) {
-        try {
-          fs.unlinkSync(`${SESI_DIR}/${file}`)
+      // HANYA hapus file yang 0-byte / benar-benar rusak (JANGAN hapus sender-key-*.json!)
+      const filePath = `${SESI_DIR}/${file}`
+      try {
+        const stat = fs.statSync(filePath)
+        if (stat.size === 0) {
+          fs.unlinkSync(filePath)
           cleaned++
-        } catch (_) {}
-      }
+        }
+      } catch (_) {}
     }
     if (cleaned > 0) {
-      console.log(chalk.yellow(`🧹 Dibersihkan ${cleaned} file sesi Signal kadaluarsa`))
+      console.log(chalk.yellow(`🧹 Dibersihkan ${cleaned} file sesi 0-byte yang rusak`))
     }
   } catch (e) {
     console.error("Gagal membersihkan file sesi:", e.message)
@@ -72,7 +75,12 @@ async function backupSesi() {
     if (!fs.existsSync(SESI_DIR)) return
     const sesiFiles = {}
     for (const file of fs.readdirSync(SESI_DIR)) {
-      if (file === "creds.json" || file.startsWith("app-state-")) {
+      if (
+        file === "creds.json" ||
+        file.startsWith("app-state-") ||
+        file.startsWith("sender-key-") ||
+        file.startsWith("session-")
+      ) {
         try {
           sesiFiles[file] = fs.readFileSync(`${SESI_DIR}/${file}`, "utf-8")
         } catch (_) {}
@@ -84,7 +92,7 @@ async function backupSesi() {
         { _id: "__sesi__", data: sesiFiles },
         { upsert: true }
       )
-      console.log(chalk.green("✅ Sesi (creds) di-backup ke MongoDB"))
+      console.log(chalk.green("✅ Sesi (creds & session keys) di-backup ke MongoDB"))
     }
   } catch (e) {
     console.error(chalk.red("Backup sesi gagal:"), e.message)
@@ -112,7 +120,12 @@ async function restoreSesi() {
     if (sesiDoc?.data && Object.keys(sesiDoc.data).length > 0) {
       if (!fs.existsSync(SESI_DIR)) fs.mkdirSync(SESI_DIR, { recursive: true })
       for (const [filename, content] of Object.entries(sesiDoc.data)) {
-        if (filename === "creds.json" || filename.startsWith("app-state-")) {
+        if (
+          filename === "creds.json" ||
+          filename.startsWith("app-state-") ||
+          filename.startsWith("sender-key-") ||
+          filename.startsWith("session-")
+        ) {
           fs.writeFileSync(`${SESI_DIR}/${filename}`, content)
         }
       }
