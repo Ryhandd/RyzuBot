@@ -4,7 +4,8 @@
     "description": "Ryzu Bot",
     "main": "index.js",
     "scripts": {
-        "start": "node index.js"
+        "start": "node index.js",
+        "reset": "node reset_sesi.js"
     },
     "dependencies": {
         "@distube/ytdl-core": "^4.16.12",

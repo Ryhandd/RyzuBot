@@ -66,6 +66,14 @@ function cleanSessionKeys() {
   }
 }
 
+let backupTimeout = null
+function debouncedBackupSesi(delayMs = 2500) {
+  if (backupTimeout) clearTimeout(backupTimeout)
+  backupTimeout = setTimeout(() => {
+    backupSesi()
+  }, delayMs)
+}
+
 // ── BACKUP SESI KE MONGODB ──
 async function backupSesi() {
   try {
@@ -79,7 +87,8 @@ async function backupSesi() {
         file === "creds.json" ||
         file.startsWith("app-state-") ||
         file.startsWith("sender-key-") ||
-        file.startsWith("session-")
+        file.startsWith("session-") ||
+        file.startsWith("pre-key-")
       ) {
         try {
           sesiFiles[file] = fs.readFileSync(`${SESI_DIR}/${file}`, "utf-8")
@@ -92,7 +101,7 @@ async function backupSesi() {
         { _id: "__sesi__", data: sesiFiles },
         { upsert: true }
       )
-      console.log(chalk.green("✅ Sesi (creds & session keys) di-backup ke MongoDB"))
+      console.log(chalk.green("✅ Sesi (creds, pre-keys & session keys) di-backup ke MongoDB"))
     }
   } catch (e) {
     console.error(chalk.red("Backup sesi gagal:"), e.message)
@@ -117,30 +126,17 @@ async function restoreSesi() {
       return false
     }
 
-    // Jika lokal sudah memiliki creds.json yang valid, pakai sesi lokal
-    if (fs.existsSync(`${SESI_DIR}/creds.json`)) {
-      try {
-        const localCreds = JSON.parse(fs.readFileSync(`${SESI_DIR}/creds.json`, "utf-8"))
-        if (localCreds?.me?.id || localCreds?.registered) {
-          console.log(chalk.green("✅ Sesi lokal terdeteksi & valid"))
-          return true
-        }
-      } catch (_) {}
-    }
-
     const { User, connect } = require("./lib/mongo")
     const connected = await connect()
     if (!connected) return false
+
     const sesiDoc = await User.findById("__sesi__")
     if (sesiDoc?.data && Object.keys(sesiDoc.data).length > 0) {
       const filenames = Object.keys(sesiDoc.data)
-      const hasSessionKeys = filenames.some(f => f.startsWith("session-") || f.startsWith("sender-key-"))
+      const hasSessionKeys = filenames.some(f => f.startsWith("session-") || f.startsWith("sender-key-") || f.startsWith("pre-key-"))
 
-      // Jika MongoDB HANYA punya creds.json TANPA session keys,
-      // ini adalah sesi cacat bekas bug terdahulu (penyebab utama 'No sessions').
-      // Hapus sesi cacat di MongoDB agar bot melakukan pairing ulang yang bersih!
       if (!hasSessionKeys) {
-        console.log(chalk.red("⚠️ Sesi MongoDB tidak memiliki session keys (sesi lama cacat). Menghapus sesi MongoDB agar bisa pairing ulang bersih..."))
+        console.log(chalk.red("⚠️ Sesi MongoDB tidak memiliki session keys/pre-keys (sesi lama cacat). Menghapus sesi MongoDB agar bisa pairing ulang bersih..."))
         await hapusSesiMongo()
         hapusSesi()
         return false
@@ -152,7 +148,8 @@ async function restoreSesi() {
           filename === "creds.json" ||
           filename.startsWith("app-state-") ||
           filename.startsWith("sender-key-") ||
-          filename.startsWith("session-")
+          filename.startsWith("session-") ||
+          filename.startsWith("pre-key-")
         ) {
           fs.writeFileSync(`${SESI_DIR}/${filename}`, content)
         }
@@ -186,7 +183,21 @@ async function connectToWhatsApp() {
   cleanSessionKeys()
 
   const { state, saveCreds } = await useMultiFileAuthState(SESI_DIR)
-  const { version } = await fetchLatestBaileysVersion()
+
+  // Auto-sync ke MongoDB setiap kali Baileys memperbarui session keys / pre-keys
+  const originalKeysSet = state.keys.set
+  state.keys.set = async (data) => {
+    await originalKeysSet(data)
+    debouncedBackupSesi()
+  }
+
+  let version
+  try {
+    const v = await fetchLatestBaileysVersion()
+    version = v.version
+  } catch (_) {
+    version = [2, 3000, 1015901307]
+  }
 
   global.groupCache = global.groupCache || new Map()
 
