@@ -126,22 +126,23 @@ async function restoreSesi() {
       return false
     }
 
+    // Jika lokal sudah memiliki creds.json yang valid, pakai & amankan sesi lokal
+    if (fs.existsSync(`${SESI_DIR}/creds.json`)) {
+      try {
+        const localCreds = JSON.parse(fs.readFileSync(`${SESI_DIR}/creds.json`, "utf-8"))
+        if (localCreds?.me?.id || localCreds?.registered || localCreds?.noiseKey) {
+          console.log(chalk.green("✅ Sesi lokal terdeteksi & valid"))
+          return true
+        }
+      } catch (_) {}
+    }
+
     const { User, connect } = require("./lib/mongo")
     const connected = await connect()
     if (!connected) return false
 
     const sesiDoc = await User.findById("__sesi__")
     if (sesiDoc?.data && Object.keys(sesiDoc.data).length > 0) {
-      const filenames = Object.keys(sesiDoc.data)
-      const hasSessionKeys = filenames.some(f => f.startsWith("session-") || f.startsWith("sender-key-") || f.startsWith("pre-key-"))
-
-      if (!hasSessionKeys) {
-        console.log(chalk.red("⚠️ Sesi MongoDB tidak memiliki session keys/pre-keys (sesi lama cacat). Menghapus sesi MongoDB agar bisa pairing ulang bersih..."))
-        await hapusSesiMongo()
-        hapusSesi()
-        return false
-      }
-
       if (!fs.existsSync(SESI_DIR)) fs.mkdirSync(SESI_DIR, { recursive: true })
       for (const [filename, content] of Object.entries(sesiDoc.data)) {
         if (
@@ -352,9 +353,12 @@ async function connectToWhatsApp() {
         hapusSesiMongo()
         askedNumber = false
         setTimeout(() => connectToWhatsApp(), 3000)
+      } else if (statusCode === DisconnectReason.restartRequired || statusCode === 515) {
+        console.log(chalk.yellow("🔄 Memulihkan koneksi WhatsApp (Code 515)..."))
+        setTimeout(() => connectToWhatsApp(), 1000)
       } else {
-        console.log(chalk.yellow("🔄 Reconnecting dalam 5 detik..."))
-        setTimeout(() => connectToWhatsApp(), 5000)
+        console.log(chalk.yellow("🔄 Reconnecting dalam 3 detik..."))
+        setTimeout(() => connectToWhatsApp(), 3000)
       }
     }
   })
