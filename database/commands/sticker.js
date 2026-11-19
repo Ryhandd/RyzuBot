@@ -31,6 +31,9 @@ const buildExifBuffer = (pack, author) => {
 async function makeSticker(buffer, isVideo = false, pack = "RyzuBot", author = "+62 882-1064-7338") {
   const webp = require("node-webpmux")
 
+  // tmp/ tidak ikut git (ada di .gitignore), jadi bisa belum ada di mesin baru.
+  await ensureTmp()
+
   const input = tmp(`in_${Date.now()}`)
   const output = tmp(`out_${Date.now()}.webp`)
 
@@ -39,16 +42,21 @@ async function makeSticker(buffer, isVideo = false, pack = "RyzuBot", author = "
   // Format ke rgba untuk mendukung transparansi penuh, skala proporsional max 512, lalu pad ke 512x512 (transparan) agar tidak gepeng di WA
   const scaleFilter = `format=rgba,scale='if(gt(iw,ih),512,-2)':'if(gt(iw,ih),-2,512)',pad=512:512:(512-iw)/2:(512-ih)/2:color=black@0`
 
-  if (isVideo) {
-    execSync(
-      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "${scaleFilter},fps=15" -loop 0 -preset default -an -vsync 0 "${output}"`,
-      { stdio: "ignore" }
-    )
-  } else {
-    execSync(
-      `ffmpeg -y -i "${input}" -vcodec libwebp -vf "${scaleFilter}" "${output}"`,
-      { stdio: "ignore" }
-    )
+  try {
+    if (isVideo) {
+      execSync(
+        `ffmpeg -y -i "${input}" -vcodec libwebp -vf "${scaleFilter},fps=15" -loop 0 -preset default -an -vsync 0 "${output}"`,
+        { stdio: "ignore" }
+      )
+    } else {
+      execSync(
+        `ffmpeg -y -i "${input}" -vcodec libwebp -vf "${scaleFilter}" "${output}"`,
+        { stdio: "ignore" }
+      )
+    }
+  } catch (e) {
+    if (fs.existsSync(input)) fs.unlinkSync(input)
+    throw new Error("Gagal memproses media (ffmpeg). Pastikan file gambar/video valid.")
   }
 
   const img = new webp.Image()

@@ -3,6 +3,7 @@ global.crypto = webcrypto
 
 require("dotenv").config()
 const fs = require("fs")
+const path = require("path")
 const ryzuHandler = require("./ryzu.js")
 
 const {
@@ -146,6 +147,25 @@ function startKeepAliveServer() {
 // ── PEMBERSIH MEDIA LAMA (cegah disk & RAM leak) ──
 function startMediaCleaner() {
   const MAX_AGE = 24 * 60 * 60 * 1000 // 24 jam
+
+  // tmp/ dipakai sticker & fitur lain untuk file sementara. Kalau proses berhenti di
+  // tengah jalan (crash/restart saat bikin stiker), file sisa bisa menumpuk.
+  const cleanTmp = () => {
+    const base = path.join(__dirname, "tmp")
+    if (!fs.existsSync(base)) return 0
+    let removed = 0
+    for (const file of fs.readdirSync(base)) {
+      const p = path.join(base, file)
+      try {
+        if (fs.statSync(p).isFile() && Date.now() - fs.statSync(p).mtimeMs > MAX_AGE) {
+          fs.unlinkSync(p)
+          removed++
+        }
+      } catch (_) {}
+    }
+    return removed
+  }
+
   const sweep = () => {
     const base = "./media"
     if (!fs.existsSync(base)) return
@@ -165,6 +185,7 @@ function startMediaCleaner() {
         }
       } catch (_) {}
     }
+    removed += cleanTmp()
     if (removed) console.log(chalk.gray(`🧹 Media sweep: ${removed} file lama dihapus`))
   }
   sweep()
