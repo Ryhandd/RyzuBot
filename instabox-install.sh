@@ -211,7 +211,11 @@ if need_sudo systemctl is-active --quiet "$SERVICE_NAME"; then
   log "Restart: sudo systemctl restart $SERVICE_NAME"
   echo
   warn "Cari 'KODE PAIRING ANDA' di log, lalu masukkan di WhatsApp."
-  PUBLIC_IP="$(curl -fsS --max-time 5 https://ifconfig.me 2>/dev/null || true)"
+  PUBLIC_IP="$(curl -fsS --max-time 5 -4 https://api.ipify.org 2>/dev/null || curl -fsS --max-time 5 https://ifconfig.me 2>/dev/null || true)"
+  # ifconfig.me bisa mengembalikan IPv6; pakai hanya kalau berbentuk IPv4.
+  if ! printf '%s' "$PUBLIC_IP" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+    PUBLIC_IP=""
+  fi
   warn "Setelah terhubung, pasang Uptime Robot (tipe KEYWORD) ke:"
   warn "  http://${PUBLIC_IP:-<ip-mesin>}:${PORT}/healthz   keyword: OK"
   warn "Panduan lengkap: docs/uptime-robot.md"

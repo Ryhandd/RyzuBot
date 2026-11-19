@@ -20,14 +20,22 @@ terputus. Jadi monitor bisa membedakan "server hidup" dan "bot benar-benar jalan
 Di terminal InstaBox:
 
 ```bash
-curl -s ifconfig.me          # catat IP publik mesin
+curl -4 -s api.ipify.org      # catat IPv4 publik mesin
 curl -s localhost:3000/healthz
 ```
 
 Harus keluar `OK bot=...`. Kalau `Connection refused`, port belum terbuka —
 pakai tab **Ports** di dashboard InstaBox dan catat domain/URL yang diberikan.
 
-Uji dari HP (matikan WiFi, pakai data) buka `http://<ip-atau-domain>:3000/healthz`.
+> [!IMPORTANT]
+> Pakai IP **IPv4** (format `1.2.3.4`), bukan IPv6 (`2600:1f14:...::ac`).
+> `curl ifconfig.me` bisa mengembalikan IPv6 dan URL seperti
+> `http://2600:1f14:...:3000/healthz` **tidak valid** — alamat IPv6 wajib
+> dikurung siku: `http://[2600:1f14:...::ac]:3000/healthz`. Kalau ragu,
+> lebih aman pakai domain dari tab **Ports** InstaBox. Uptime Robot gratis
+> belum tentu bisa memantau IPv6.
+
+Uji dari HP (matikan WiFi, pakai data) buka `http://<ipv4-atau-domain>:3000/healthz`.
 Kalau tidak terbuka, monitor eksternal juga tidak akan bisa — buka port-nya dulu
 di dashboard InstaBox.
 
@@ -43,7 +51,7 @@ Isi formulirnya:
 
 - **Monitor Type**: `Keyword`
 - **Friendly Name**: `RyzuBot`
-- **URL (or IP)**: `http://<ip-atau-domain>:3000/healthz`
+- **URL (or IP)**: `http://<ipv4-atau-domain>:3000/healthz`
 - **Keyword Type**: `exists`
 - **Keyword**: `OK`
 - **Monitoring Interval**: `5 minutes` (batas paket gratis)
