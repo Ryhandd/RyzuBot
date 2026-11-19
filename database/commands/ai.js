@@ -1,42 +1,17 @@
-const axios = require('axios');
-const RyzuAI = require('../../scrape/RyzuAI');
+const RyzuAI = require("../../scrape/RyzuAI")
+const { cleanAiText } = require("../../lib/ai")
 
 module.exports = {
     name: "ai",
     alias: ["tanya", "ask", "chatgpt", "gpt"],
     execute: async ({ reply, q, prefix, command }) => {
-        if (!q) return reply(`Contoh: ${prefix + command} apa itu coding?`);
+        if (!q) return reply(`Contoh: ${prefix + command} apa itu coding?`)
 
-        await reply("⏳ RyzuAI sedang berpikir...");
+        await reply("⏳ Sedang berpikir...")
 
-        try {
-            let resBackup = await RyzuAI(q);
-            if (resBackup) {
-                const cleanText = resBackup.replace(/[\*#]/g, "");
-                return await reply(cleanText);
-            } else {
-                throw new Error("RyzuAI empty response");
-            }
-        } catch (e) {
-            console.error("RyzuAI Error, switching to Velixs backup:", e.message);
-            
-            try {
-                const apikey = process.env.VELIXS_KEY;
-                const url = `https://api.velixs.com/gpt?apikey=${apikey}&text=${encodeURIComponent(q)}`;
-                
-                const response = await axios.get(url);
-                let resVelixs = response.data.result || response.data.answer || response.data.data;
+        const res = await RyzuAI(q)
+        if (!res) return reply("❌ Layanan AI sedang gangguan, coba lagi nanti.")
 
-                if (resVelixs) {
-                    const cleanText = resVelixs.replace(/[\*#]/g, "");
-                    await reply("*(Backup Mode)*\n\n" + cleanText);
-                } else {
-                    await reply("Semua layanan AI sedang gangguan, coba lagi nanti.");
-                }
-            } catch (err) {
-                console.error(err);
-                reply("❌ Terjadi kesalahan pada server AI.");
-            }
-        }
+        return reply(cleanAiText(res))
     }
-};
+}

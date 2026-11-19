@@ -1,11 +1,13 @@
+const { safeNum } = require('../../lib/rpgUtils')
 module.exports = {
     name: "level",
     execute: async ({ sender, reply }) => {
-        const u = global.rpg[sender];
+        const u = global.rpg[sender] || {}
+        const level = Math.max(1, safeNum(u.level, 1))
         reply(
             `📊 *LEVEL*\n\n` +
-            `Level: ${u.level}\n` +
-            `EXP: ${u.exp}/${u.level * 500}`
-        );
+            `Level: ${level}\n` +
+            `EXP: ${safeNum(u.exp)}/${level * 500}`
+        )
     }
 };

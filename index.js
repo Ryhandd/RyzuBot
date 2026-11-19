@@ -33,6 +33,80 @@ const question = (text) => {
 let askedNumber = false
 const SESI_DIR = "./RyzuSesi"
 
+// ── STATUS GLOBAL UNTUK KEEP-ALIVE ──
+let botConnected = false
+let botStartedAt = Date.now()
+let waSocket = null
+
+// ── SILENT WEB SERVER (UPTIME ROBOT) ──
+// Server HTTP super ringan: hanya membalas 200/JSON kecil, TIDAK menyentuh
+// socket WhatsApp sehingga tidak menambah trafik yang bisa memicu spam-check.
+// Dibuat SATU KALI saja (bukan per-reconnect) agar tidak bocor port/handler.
+let httpServer = null
+function startKeepAliveServer() {
+  if (httpServer) return httpServer
+  const http = require("http")
+  const port = Number(process.env.PORT) || 3000
+
+  httpServer = http.createServer((req, res) => {
+    const url = (req.url || "/").split("?")[0]
+
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "Content-Type": "text/plain" })
+      return res.end()
+    }
+
+    if (url === "/health" || url === "/status") {
+      res.writeHead(200, { "Content-Type": "application/json" })
+      return res.end(JSON.stringify({
+        status: "ok",
+        bot: botConnected ? "connected" : "disconnected",
+        uptime: Math.floor((Date.now() - botStartedAt) / 1000),
+        ram: Math.round(process.memoryUsage().rss / 1024 / 1024) + "MB",
+        time: new Date().toISOString()
+      }))
+    }
+
+    res.writeHead(200, { "Content-Type": "text/plain" })
+    res.end("RyzuBot alive")
+  })
+
+  httpServer.on("error", (e) => console.error("[KEEP-ALIVE]", e.message))
+  httpServer.listen(port, () => {
+    console.log(chalk.green(`🌐 Keep-alive server: http://localhost:${port}`))
+  })
+  return httpServer
+}
+
+// ── PEMBERSIH MEDIA LAMA (cegah disk & RAM leak) ──
+function startMediaCleaner() {
+  const MAX_AGE = 24 * 60 * 60 * 1000 // 24 jam
+  const sweep = () => {
+    const base = "./media"
+    if (!fs.existsSync(base)) return
+    let removed = 0
+    for (const type of fs.readdirSync(base)) {
+      const dir = `${base}/${type}`
+      try {
+        if (!fs.statSync(dir).isDirectory()) continue
+        for (const file of fs.readdirSync(dir)) {
+          const p = `${dir}/${file}`
+          try {
+            if (Date.now() - fs.statSync(p).mtimeMs > MAX_AGE) {
+              fs.unlinkSync(p)
+              removed++
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+    if (removed) console.log(chalk.gray(`🧹 Media sweep: ${removed} file lama dihapus`))
+  }
+  sweep()
+  const timer = setInterval(sweep, 6 * 60 * 60 * 1000)
+  timer.unref?.()
+}
+
 // ── HAPUS SESI LOKAL ──
 function hapusSesi() {
   if (fs.existsSync(SESI_DIR)) {
@@ -177,8 +251,12 @@ async function hapusSesiMongo() {
 
 // ── MAIN ──
 async function connectToWhatsApp() {
-  // Restore sesi dari MongoDB
+  const { User, connect } = require("./lib/mongo")
+  await connect()
   await restoreSesi()
+
+  // Host PaaS (InstaBox/Uptime) tidak punya TTY: matikan mode interaktif
+  if (!process.stdin.isTTY) process.stdin.isTTY = false
 
   // Bersihkan session-*.json & sender-key-*.json stale yang memicu 'No sessions'
   cleanSessionKeys()
@@ -229,8 +307,15 @@ async function connectToWhatsApp() {
     version,
     syncFullHistory: false,
     generateHighQualityLinkPreview: false,
-    markOnlineOnConnect: false
+    markOnlineOnConnect: false,
+    // Kurangi beban RAM & trafik (aman untuk host 512MB)
+    keepAliveIntervalMs: 30000,
+    retryRequestDelayMs: 2000,
+    maxMsgRetryCount: 3,
+    connectTimeoutMs: 60000,
+    defaultQueryTimeoutMs: 60000
   })
+  waSocket = ryzu
 
   let currentMethod = ""
   const isRegistered = !!(ryzu.authState?.creds?.me?.id || ryzu.authState?.creds?.registered)
@@ -328,6 +413,7 @@ async function connectToWhatsApp() {
 
     if (connection === "open") {
       askedNumber = true
+      botConnected = true
       console.log(chalk.green("\n✅ Ryzu Bot Berhasil Terhubung ke WhatsApp!"))
       console.log(chalk.cyan(`📱 Nomor: ${ryzu.user?.id?.split(":")[0] || "Unknown"}`))
       console.log(chalk.cyan(`⏰ Waktu: ${new Date().toLocaleString("id-ID")}\n`))
@@ -336,6 +422,7 @@ async function connectToWhatsApp() {
     }
 
     if (connection === "close") {
+      botConnected = false
       const statusCode = lastDisconnect?.error?.output?.statusCode
       const reason = lastDisconnect?.error?.output?.payload?.error
       console.log(chalk.yellow(`⚠️  Koneksi putus. Code: ${statusCode} | Reason: ${reason || "unknown"}`))
@@ -384,21 +471,38 @@ async function connectToWhatsApp() {
     await Promise.allSettled(promises)
   })
 
-  // ── GRACEFUL SHUTDOWN ──
-  process.on("SIGINT", () => {
-    console.log(chalk.yellow("\n👋 Bot dimatikan..."))
-    ryzu.end()
-    process.exit(0)
-  })
-
-  // ── PREVENT CRASH FROM UNHANDLED REJECTIONS / EXCEPTIONS ──
-  process.on("unhandledRejection", (reason, promise) => {
-    console.error(chalk.red("⚠️ Unhandled Rejection:"), reason)
-  })
-
-  process.on("uncaughtException", (err) => {
-    console.error(chalk.red("⚠️ Uncaught Exception:"), err)
-  })
+  // ── GRACEFUL SHUTDOWN (dipasang HANYA SEKALI di bootstrap, bukan per-reconnect) ──
+  return ryzu
 }
 
-connectToWhatsApp()
+// ── BOOTSTRAP: semua handler proses didaftarkan satu kali ──
+startKeepAliveServer()
+startMediaCleaner()
+
+let shuttingDown = false
+const gracefulShutdown = (signal) => {
+  if (shuttingDown) return
+  shuttingDown = true
+  console.log(chalk.yellow(`\n👋 Bot dimatikan (${signal})...`))
+  try { waSocket?.end?.(undefined) } catch (_) {}
+  try { httpServer?.close?.() } catch (_) {}
+  setTimeout(() => process.exit(0), 1500).unref?.()
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"))
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
+
+process.on("unhandledRejection", (reason) => {
+  const msg = String(reason?.message || reason)
+  if (/No sessions|bad mac|Session error/i.test(msg)) return
+  console.error(chalk.red("⚠️ Unhandled Rejection:"), reason)
+})
+
+process.on("uncaughtException", (err) => {
+  console.error(chalk.red("⚠️ Uncaught Exception:"), err)
+})
+
+connectToWhatsApp().catch((e) => {
+  console.error(chalk.red("❌ Gagal memulai bot:"), e)
+  setTimeout(() => connectToWhatsApp().catch(() => {}), 5000)
+})

@@ -5,10 +5,10 @@ const path = require("path")
 const axios = require("axios")
 const { exec } = require("child_process")
 const similarity = require("similarity")
-const OpenAI = require("openai")
 const chalk = require("chalk")
 
-const chessHandler = require("./database/chessHandler.js")
+const chessHandler = require("./lib/chess/handler.js")
+const { aiChat, cleanAiText } = require("./lib/ai.js")
 const { db, initDB } = require("./lib/db.js")
 const { connect, User } = require("./lib/mongo")
 
@@ -38,8 +38,6 @@ if (!fs.existsSync("./database")) fs.mkdirSync("./database")
 
 global.SHIMI_PROMPT = `Kamu adalah SHIMI. Kepribadian: Feminim, Slayy, Gaul, Bestie vibes, Ramah dan playful. Gaya bicara: Bahasa Indonesia gaul, santai, jawaban singkat. Panggilan favorit ke user: "bestiee". Usahakan setiap balasan diakhiri dengan kata "bestiee". Emoji: 🥰 😘 🤭 😍 😋 😜 ❤ 💋 💅 🤣 💖 😭 😱`
 global.SIMI_PROMPT = `Kamu adalah SIMI. Kepribadian: Ceria, polos, menggemaskan, ramah. Gaya bicara: Kalimat pendek, bahasa sederhana, nada ceria, pakai emoji 😊✨🐻. Jangan pakai kata kasar. Fokus jawab sesuai pertanyaan.`
-
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null
 
 const decodeJid = (jid) => {
   if (!jid) return jid
@@ -123,10 +121,16 @@ const funcs = {
   },
 
   downloadMedia: async (media, type) => {
+    // Kumpulkan chunk lalu Buffer.concat SEKALI — menghindari O(n²) copy
+    // dan churn GC pada media besar (memory leak di host RAM terbatas).
     const stream = await downloadContentFromMessage(media, type)
-    let buffer = Buffer.alloc(0)
-    for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
-    return buffer
+    const chunks = []
+    let size = 0
+    for await (const chunk of stream) {
+      chunks.push(chunk)
+      size += chunk.length
+    }
+    return Buffer.concat(chunks, size)
   },
 
   cekLevel: (s) => {
@@ -158,7 +162,9 @@ const readCommands = async () => {
     try {
       delete require.cache[require.resolve(path.join(cmdFolder, file))]
       const cmd = require(path.join(cmdFolder, file))
-      if (cmd?.name) {
+      // Hanya daftarkan module yang benar-benar command (punya execute).
+      // Ini mencegah library internal (mis. helper game) ikut jadi command.
+      if (cmd?.name && typeof cmd.execute === "function") {
         commands.set(cmd.name, cmd)
         console.log(`✅ Loaded: ${cmd.name}`)
       } else {
@@ -480,38 +486,37 @@ module.exports = async function ryzuHandler(ryzu, m) {
     if (!isCmd && shimiFastReply[bodyLow] && global.shimi?.[senderId]) {
       return sendMsg({ text: shimiFastReply[bodyLow] })
     }
-    if (!isCmd && global.shimi?.[senderId] && text && openai) {
+    if (!isCmd && global.shimi?.[senderId] && text) {
       const now = Date.now()
-      if (now - (global.shimiCooldown[senderId] || 0) < 1000) return
+      if (now - (global.shimiCooldown[senderId] || 0) < 3000) return
       global.shimiCooldown[senderId] = now
-      if (Math.random() < 0.3) return
-      try {
-        const res = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "system", content: global.SHIMI_PROMPT }, { role: "user", content: text }],
-          max_tokens: 150, temperature: 1.2
-        })
-        return sendMsg({ text: res.choices[0].message.content || "apaan dah" })
-      } catch (_) {}
+      // Anti-ban: SHIMI tidak membalas setiap pesan agar tidak terlihat bot agresif
+      if (Math.random() < 0.4) return
+      const out = await aiChat({
+        system: global.SHIMI_PROMPT,
+        messages: [{ role: "user", content: text }],
+        maxTokens: 150,
+        temperature: 1.1
+      })
+      if (out) return sendMsg({ text: cleanAiText(out) || "apaan dah" })
     }
 
     // === SIMI ===
     if (!isCmd && simiFastReply[bodyLow] && global.simi?.[senderId]) {
       return sendMsg({ text: simiFastReply[bodyLow] })
     }
-    if (!isCmd && global.simi?.[senderId] && text && openai) {
+    if (!isCmd && global.simi?.[senderId] && text) {
       const now = Date.now()
-      if (now - (global.simiCooldown[senderId] || 0) < 1000) return
+      if (now - (global.simiCooldown[senderId] || 0) < 3000) return
       global.simiCooldown[senderId] = now
-      if (Math.random() < 0.3) return
-      try {
-        const res = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "system", content: global.SIMI_PROMPT }, { role: "user", content: text }],
-          max_tokens: 120, temperature: 0.6
-        })
-        return sendMsg({ text: res.choices[0].message.content || "hmm?? 🤔" })
-      } catch (_) {}
+      if (Math.random() < 0.4) return
+      const out = await aiChat({
+        system: global.SIMI_PROMPT,
+        messages: [{ role: "user", content: text }],
+        maxTokens: 120,
+        temperature: 0.6
+      })
+      if (out) return sendMsg({ text: cleanAiText(out) || "hmm?? 🤔" })
     }
 
     // === GAME OBJECTS ===
@@ -533,9 +538,11 @@ module.exports = async function ryzuHandler(ryzu, m) {
           room.board[nomor] = senderId === room.p1 ? "X" : "O";
           room.turn = senderId === room.p1 ? room.p2 : room.p1;
           
+          const WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
           const checkWin = (b) => {
-            const wins = [,,,,,,,];
-            for (const c of wins) if (b[c] === b[c] && b[c] === b[c] && (b[c] === "X" || b[c] === "O")) return b[c];
+            for (const [a, c, d] of WIN_LINES) {
+              if (b[a] && b[a] === b[c] && b[a] === b[d]) return b[a];
+            }
             return null;
           }
           const renderBoard = (b) => {

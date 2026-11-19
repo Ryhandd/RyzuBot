@@ -9,6 +9,10 @@ package-lock.json
 *.id
 *.id)
 v.admin
+*.db-shm
+*.db-wal
+database/*.db*
 media
 database/userRPG.json
 database/history.db*
+RyzuBot.md

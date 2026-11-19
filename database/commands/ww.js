@@ -1,4 +1,47 @@
-const { updatePlayerStats, getBalancedRoles, getLeaderboard } = require('../../lib/wwUtils'); 
+// Werewolf: satu-satunya helper eksternal = leaderboard & komposisi role.
+// (modul wwUtils/wwAdv/wwRef duplikat sudah dihapus; state game ada di room ryzu.werewolf)
+if (!global.wwLeaderboard) global.wwLeaderboard = {}
+function getLeaderboard() {
+    return Object.entries(global.wwLeaderboard)
+        .map(([id, w]) => ({
+            id,
+            username: w.name || id.split("@")[0],
+            wins: w.wins || 0,
+            games: w.games || 0,
+            winRate: w.games ? Math.round(((w.wins || 0) / w.games) * 100) : 0
+        }))
+        .sort((a, b) => b.wins - a.wins)
+        .slice(0, 10)
+}
+// Pencatat statistik werewolf (pengganti updatePlayerStats dari wwUtils lama)
+function recordWwStats(room) {
+    if (!room || !room.player || !room.winner) return;
+    for (const pl of room.player) {
+        const rec = global.wwLeaderboard[pl.id] || { wins: 0, games: 0, name: pl.nickname };
+        rec.name = pl.nickname || rec.name;
+        rec.games += 1;
+        const won =
+            (room.winner === "WEREWOLF" && pl.role === "WEREWOLF") ||
+            (room.winner === "VILLAGER" && pl.role !== "WEREWOLF");
+        if (won) rec.wins += 1;
+        global.wwLeaderboard[pl.id] = rec;
+    }
+}
+
+function getBalancedRoles(n) {
+    const configs = {
+        4: ["WEREWOLF", "SEER", "VILLAGER", "VILLAGER"],
+        5: ["WEREWOLF", "SEER", "GUARDIAN", "VILLAGER", "VILLAGER"],
+        6: ["WEREWOLF", "SEER", "GUARDIAN", "VILLAGER", "VILLAGER", "VILLAGER"],
+        7: ["WEREWOLF", "WEREWOLF", "SEER", "GUARDIAN", "VILLAGER", "VILLAGER", "VILLAGER"],
+        8: ["WEREWOLF", "WEREWOLF", "SEER", "GUARDIAN", "VILLAGER", "VILLAGER", "VILLAGER", "VILLAGER"]
+    };
+    if (configs[n]) return [...configs[n]];
+    const out = ["WEREWOLF", "SEER", "GUARDIAN"];
+    while (out.length < n) out.push(out.length % 4 === 3 ? "WEREWOLF" : "VILLAGER");
+    return out;
+}
+
 
 module.exports = {
     name: "ww",
@@ -204,6 +247,7 @@ module.exports = {
 
                 case "reset":
                     if (room && room.timer) clearTimeout(room.timer);
+                    recordWwStats(room);
                     delete ryzu.werewolf[from];
                     return reply("✅ Game direset.");
 
