@@ -14,6 +14,7 @@ BRANCH="main"
 SERVICE_NAME="ryzubot"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 NODE_MAJOR="22"
+PORT="${PORT:-3000}"
 
 log()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*"; }
@@ -205,11 +206,15 @@ if need_sudo systemctl is-active --quiet "$SERVICE_NAME"; then
   log "Service aktif. Menampilkan 40 baris log terakhir:"
   need_sudo journalctl -u "$SERVICE_NAME" -n 40 --no-pager || true
   echo
-  log "StatuS: sudo systemctl status $SERVICE_NAME"  log "Log live: sudo journalctl -u $SERVICE_NAME -f"
+  log "StatuS: sudo systemctl status $SERVICE_NAME"
+  log "Log live: sudo journalctl -u $SERVICE_NAME -f"
   log "Restart: sudo systemctl restart $SERVICE_NAME"
   echo
   warn "Cari 'KODE PAIRING ANDA' di log, lalu masukkan di WhatsApp."
-  warn "Setelah terhubung, pasang Uptime Robot ke http://<ip-mesin>:$PORT/health"
+  PUBLIC_IP="$(curl -fsS --max-time 5 https://ifconfig.me 2>/dev/null || true)"
+  warn "Setelah terhubung, pasang Uptime Robot (tipe KEYWORD) ke:"
+  warn "  http://${PUBLIC_IP:-<ip-mesin>}:${PORT}/healthz   keyword: OK"
+  warn "Panduan lengkap: docs/uptime-robot.md"
 else
   die "Service gagal start. Lihat: sudo journalctl -u $SERVICE_NAME -n 80 --no-pager"
 fi

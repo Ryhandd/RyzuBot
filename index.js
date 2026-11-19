@@ -37,12 +37,38 @@ const SESI_DIR = "./RyzuSesi"
 let botConnected = false
 let botStartedAt = Date.now()
 let waSocket = null
+// Aktivitas terakhir: dipakai untuk mendeteksi bot "hidup tapi tidak merespons".
+let lastInboundAt = 0
+let lastOutboundAt = 0
+let reconnectCount = 0
+let lastDisconnectCode = null
 
 // ── SILENT WEB SERVER (UPTIME ROBOT) ──
 // Server HTTP super ringan: hanya membalas 200/JSON kecil, TIDAK menyentuh
 // socket WhatsApp sehingga tidak menambah trafik yang bisa memicu spam-check.
 // Dibuat SATU KALI saja (bukan per-reconnect) agar tidak bocor port/handler.
 let httpServer = null
+
+// Status socket WhatsApp yang sebenarnya (bukan cuma flag kita).
+function wsState() {
+  try {
+    const s = waSocket?.ws?.readyState
+    if (s === 1) return "open"
+    if (s === 0) return "connecting"
+    if (s === 2) return "closing"
+    if (s === 3) return "closed"
+  } catch (_) {}
+  return botConnected ? "open" : "closed"
+}
+
+// Bot dianggap hidup kalau flag connect true DAN socket tidak closed.
+// Ini menangkap kasus "proses jalan tapi WhatsApp sudah mati".
+function botAlive() {
+  if (!botConnected) return false
+  const st = wsState()
+  return st === "open" || st === "connecting"
+}
+
 function startKeepAliveServer() {
   if (httpServer) return httpServer
   const http = require("http")
@@ -57,14 +83,46 @@ function startKeepAliveServer() {
     }
 
     if (url === "/health" || url === "/status") {
+      let mongo = "unknown"
+      try {
+        const { isMongoAvailable } = require("./lib/mongo")
+        mongo = isMongoAvailable() ? "up" : "down"
+      } catch (_) { mongo = "error" }
+
+      const alive = botAlive()
       res.writeHead(200, { "Content-Type": "application/json" })
       return res.end(JSON.stringify({
-        status: "ok",
-        bot: botConnected ? "connected" : "disconnected",
+        status: alive ? "ok" : "degraded",
+        bot: alive ? "connected" : "disconnected",
+        ws: wsState(),
+        mongo,
         uptime: Math.floor((Date.now() - botStartedAt) / 1000),
         ram: Math.round(process.memoryUsage().rss / 1024 / 1024) + "MB",
+        reconnects: reconnectCount,
+        lastDisconnect: lastDisconnectCode,
+        lastInboundAgo: lastInboundAt ? Math.floor((Date.now() - lastInboundAt) / 1000) : null,
         time: new Date().toISOString()
       }))
+    }
+
+    // /healthz: teks polos untuk Uptime Robot KEYWORD monitor.
+    // 200 + "OK ..." = sehat. 503 + "FAIL ..." = bermasalah.
+    // Dipakai supaya monitoring tidak cuma tahu server hidup, tapi juga
+    // tahu WhatsApp-nya benar-benar tersambung.
+    if (url === "/healthz" || url === "/ping") {
+      let mongo = "unknown"
+      try {
+        const { isMongoAvailable } = require("./lib/mongo")
+        mongo = isMongoAvailable() ? "up" : "down"
+      } catch (_) { mongo = "error" }
+
+      const alive = botAlive()
+      const up = Math.floor((Date.now() - botStartedAt) / 1000)
+      const body = alive
+        ? `OK bot=connected ws=${wsState()} mongo=${mongo} uptime=${up}s`
+        : `FAIL bot=disconnected ws=${wsState()} mongo=${mongo} uptime=${up}s`
+      res.writeHead(alive ? 200 : 503, { "Content-Type": "text/plain; charset=utf-8" })
+      return res.end(body)
     }
 
     res.writeHead(200, { "Content-Type": "text/plain" })
@@ -483,6 +541,7 @@ async function connectToWhatsApp() {
     if (connection === "open") {
       askedNumber = true
       botConnected = true
+      if (reconnectCount > 0) console.log(chalk.gray(`[HEALTH] reconnected (#${reconnectCount})`))
       console.log(chalk.green("\n✅ Ryzu Bot Berhasil Terhubung ke WhatsApp!"))
       console.log(chalk.cyan(`📱 Nomor: ${ryzu.user?.id?.split(":")[0] || "Unknown"}`))
       console.log(chalk.cyan(`⏰ Waktu: ${new Date().toLocaleString("id-ID")}\n`))
@@ -492,7 +551,9 @@ async function connectToWhatsApp() {
 
     if (connection === "close") {
       botConnected = false
+      reconnectCount++
       const statusCode = lastDisconnect?.error?.output?.statusCode
+      lastDisconnectCode = statusCode ?? null
       const reason = lastDisconnect?.error?.output?.payload?.error
       console.log(chalk.yellow(`⚠️  Koneksi putus. Code: ${statusCode} | Reason: ${reason || "unknown"}`))
 
@@ -522,6 +583,7 @@ async function connectToWhatsApp() {
   // ── MESSAGE HANDLER ──
   ryzu.ev.on("messages.upsert", async (m) => {
     if (m.type !== "notify") return
+    lastInboundAt = Date.now()
     
     // Proses semua pesan dalam upsert secara paralel
     const promises = m.messages.map(async (msg) => {

@@ -111,6 +111,30 @@ Untuk men-deploy bot tanpa server fisik menggunakan Railway:
    - Railway akan mendeteksi berkas `Procfile` secara otomatis (`worker: node index.js`) dan menjalankan bot di latar belakang.
    - Buka tab **Deployments** -> **View Logs** untuk melihat proses *generate* QR Code atau Pairing Code untuk ditautkan ke WhatsApp Anda.
 
+### 4. ☁️ InstaBox (VPS 24/7 + Anti Auto-Pause)
+
+InstaBox mem-pause mesin kalau tidak ada trafik masuk. Bot menyediakan endpoint
+`/healthz` untuk dipantau [Uptime Robot](https://uptimerobot.com) setiap 5 menit,
+sehingga mesin dianggap aktif terus.
+
+Panduan lengkap: [`docs/uptime-robot.md`](docs/uptime-robot.md)
+
+Ringkasnya:
+
+1. Pasang bot: `curl -fsSL https://raw.githubusercontent.com/Ryhandd/RyzuBot/main/instabox-install.sh | bash`
+2. Isi `.env`: `bash /opt/ryzubot/RyzuBot/set-env.sh`
+3. Cek `curl -s localhost:3000/healthz` → harus `OK bot=connected ws=open ...`
+4. Daftar Uptime Robot → **Add New Monitor** → tipe **Keyword** →
+   URL `http://<ip-mesin>:3000/healthz`, keyword `OK`, interval 5 menit.
+
+Endpoint yang tersedia:
+
+| URL | Kegunaan |
+|---|---|
+| `/healthz` | teks `OK ...` (200) / `FAIL ...` (503) — untuk Uptime Robot keyword |
+| `/health` | JSON status lengkap (bot, ws, mongo, uptime, RAM, reconnect) |
+| `HEAD /` | 200 kosong — ping ringan |
+
 ---
 
 ## 💾 Manajemen Sesi (Cloud Sync)
