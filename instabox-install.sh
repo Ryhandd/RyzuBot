@@ -22,16 +22,33 @@ die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 SUDO=""
 if [ "$(id -u)" -ne 0 ]; then
   command -v sudo >/dev/null 2>&1 || die "Butuh sudo atau root."
+  # Tanpa TTY (mis. curl | bash dari web terminal), sudo tidak bisa meminta
+  # password. Pakai terminal sendiri kalau tersedia, atau terima dtk terbatas.
+  if [ ! -t 0 ] && command -v setsid >/dev/null 2>&1; then
+    if setsid -w true </dev/tty >/dev/null 2>&1; then
+      exec setsid -w bash "$0" "$@" </dev/tty
+    fi
+  fi
   SUDO="sudo"
 fi
 
 need_sudo() {
-  warn "Perintah berikut butuh sudo: $*"
-  if ! $SUDO -n true 2>/dev/null; then
-    log "Masukkan password sudo bila diminta."
-    $SUDO -v || die "sudo gagal."
+  if $SUDO -n true 2>/dev/null; then
+    $SUDO "$@"
+    return $?
   fi
-  $SUDO "$@"
+  if [ -t 0 ]; then
+    warn "Perintah berikut butuh password sudo: $*"
+    if $SUDO -v; then
+      $SUDO "$@"
+      return $?
+    fi
+  else
+    warn "Tidak ada terminal interaktif untuk mengetik password sudo."
+    warn "Jalankan ulang dari terminal InstaBox seperti ini:"
+    printf '  curl -fsSL https://raw.githubusercontent.com/Ryhandd/RyzuBot/main/instabox-install.sh -o /tmp/ryzu.sh && bash /tmp/ryzu.sh\n' >&2
+  fi
+  die "Gagal menjalankan sudo: $*"
 }
 
 # ---------- 1. Dependensi sistem ----------
