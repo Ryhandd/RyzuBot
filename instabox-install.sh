@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-APP_DIR="/opt/ryzubot"
+APP_DIR="${APP_DIR:-/opt/ryzubot}"
 REPO_DIR="$APP_DIR/RyzuBot"
 REPO_URL="https://github.com/Ryhandd/RyzuBot.git"
 BRANCH="main"
@@ -22,33 +22,44 @@ die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 SUDO=""
 if [ "$(id -u)" -ne 0 ]; then
   command -v sudo >/dev/null 2>&1 || die "Butuh sudo atau root."
-  # Tanpa TTY (mis. curl | bash dari web terminal), sudo tidak bisa meminta
-  # password. Pakai terminal sendiri kalau tersedia, atau terima dtk terbatas.
-  if [ ! -t 0 ] && command -v setsid >/dev/null 2>&1; then
-    if setsid -w true </dev/tty >/dev/null 2>&1; then
-      exec setsid -w bash "$0" "$@" </dev/tty
-    fi
-  fi
+  # Tanpa TTY (mis. curl | bash dari web terminal) skrip tidak boleh menganggap
+  # stdin adalah terminal. Dicatat supaya pesan errornya jelas.
+  HAS_TTY=0
+  ([ -t 0 ] || [ -t 2 ]) && HAS_TTY=1
   SUDO="sudo"
 fi
 
 need_sudo() {
+  # Pintu cepat: kredensial sudo masih valid -> jalankan tanpa menyentuh stdin.
   if $SUDO -n true 2>/dev/null; then
     $SUDO "$@"
     return $?
   fi
-  if [ -t 0 ]; then
-    warn "Perintah berikut butuh password sudo: $*"
-    if $SUDO -v; then
-      $SUDO "$@"
-      return $?
+
+  # Kredensial tidak ada. Sudo butuh terminal untuk mengetik password.
+  # JANGAN pernah memberi sudo stdin dari pipe/heredoc: itu bisa membanjiri
+  # password dengan sisa teks skrip ("cannot execute binary file").
+  if [ "${HAS_TTY:-0}" = "1" ]; then
+    if ( : </dev/tty ) 2>/dev/null; then
+      warn "Perintah berikut butuh password sudo: $*"
+      if $SUDO -v </dev/tty; then
+        $SUDO "$@"
+        return $?
+      fi
     fi
-  else
-    warn "Tidak ada terminal interaktif untuk mengetik password sudo."
-    warn "Jalankan ulang dari terminal InstaBox seperti ini:"
-    printf '  curl -fsSL https://raw.githubusercontent.com/Ryhandd/RyzuBot/main/instabox-install.sh -o /tmp/ryzu.sh && bash /tmp/ryzu.sh\n' >&2
   fi
-  die "Gagal menjalankan sudo: $*"
+
+  cat >&2 <<MSG
+[x] sudo butuh password, tapi tidak ada terminal untuk mengetiknya.
+    Skrip tidak melanjutkan agar .env/service tidak terpasang setengah jadi.
+
+    Jalankan perintah ini di terminal InstaBox (lalu ulangi):
+      sudo -v
+
+    Setelah password diterima, jalankan lagi skrip ini:
+      bash /tmp/ryzu.sh
+MSG
+  exit 1
 }
 
 # ---------- 1. Dependensi sistem ----------
