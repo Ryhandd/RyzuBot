@@ -1,0 +1,16 @@
+node_modules/
+.git/
+.env
+.env.*
+!.env.example
+RyzuSesi/
+media/
+tmp/
+*.db
+*.db-shm
+*.db-wal
+database/*.db*
+database/userRPG.json
+package-lock.json
+*.exe
+RyzuBot.md
