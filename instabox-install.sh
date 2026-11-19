@@ -38,7 +38,7 @@ need_sudo() {
 log "Memasang dependensi sistem (git, curl, ffmpeg, build tools)..."
 export DEBIAN_FRONTEND=noninteractive
 need_sudo apt-get update -qq
-need_sudo apt-get install -y -qq git curl ca-certificates ffmpeg python3 make g++ >/dev/null
+need_sudo apt-get install -y -qq git curl nano ca-certificates ffmpeg python3 make g++ >/dev/null
 
 # ---------- 2. Node.js ----------
 need_node="0"
@@ -85,15 +85,24 @@ fi
 if [ ! -f "$REPO_DIR/.env" ]; then
   cp "$REPO_DIR/.env.example" "$REPO_DIR/.env"
   chmod 600 "$REPO_DIR/.env"
-  warn ".env belum diisi. Buka lalu isi nilainya:"
-  warn "  nano $REPO_DIR/.env"
+  warn ".env belum diisi. Ada dua cara mengisi:"
+  warn "  1) Tanpa editor (disarankan):"
+  warn "       bash $REPO_DIR/set-env.sh"
+  warn "  2) Pakai nano:"
+  warn "       nano $REPO_DIR/.env"
   warn "Setelah itu jalankan skrip ini lagi (aman diulang)."
   exit 0
 fi
 chmod 600 "$REPO_DIR/.env"
 
 if grep -q '628xxxxxxxxxx' "$REPO_DIR/.env"; then
-  die ".env masih berisi placeholder (628xxxxxxxxxx). Isi BOT_NUMBER & OWNER_NUMBERS dulu."
+  die ".env masih berisi placeholder (628xxxxxxxxxx). Jalankan: bash $REPO_DIR/set-env.sh"
+fi
+if grep -q 'bwr_live_xxxxxxxx' "$REPO_DIR/.env"; then
+  die ".env: AI_API_KEY masih placeholder. Jalankan: bash $REPO_DIR/set-env.sh"
+fi
+if grep -q 'mongodb+srv://user:pass@' "$REPO_DIR/.env"; then
+  die ".env: MONGO_URI masih placeholder. Jalankan: bash $REPO_DIR/set-env.sh"
 fi
 
 # ---------- 5. Dependensi node ----------
