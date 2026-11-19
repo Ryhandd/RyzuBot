@@ -1,0 +1,20 @@
+{
+  "apps": [
+    {
+      "name": "ryzubot",
+      "script": "index.js",
+      "cwd": "/opt/ryzubot/RyzuBot",
+      "instances": 1,
+      "autorestart": true,
+      "max_restarts": 100,
+      "restart_delay": 5000,
+      "kill_timeout": 8000,
+      "max_memory_restart": "700M",
+      "watch": false,
+      "time": true,
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  ]
+}

@@ -71,7 +71,14 @@ function startKeepAliveServer() {
     res.end("RyzuBot alive")
   })
 
-  httpServer.on("error", (e) => console.error("[KEEP-ALIVE]", e.message))
+  httpServer.on("error", (e) => {
+    console.error("[KEEP-ALIVE]", e.message)
+    // EADDRINUSE bukan alasan mematikan bot: tetap bisa dipakai kalau
+    // memang ada proses lain di port yang sama (mis. sisa deploy lama).
+    if (e.code === "EADDRINUSE") {
+      console.error(chalk.yellow(`⚠️ Port ${port} sudah dipakai. Bot tetap jalan tanpa keep-alive server.`))
+    }
+  })
   httpServer.listen(port, () => {
     console.log(chalk.green(`🌐 Keep-alive server: http://localhost:${port}`))
   })
