@@ -22,11 +22,32 @@ die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 SUDO=""
 if [ "$(id -u)" -ne 0 ]; then
   command -v sudo >/dev/null 2>&1 || die "Butuh sudo atau root."
-  # Tanpa TTY (mis. curl | bash dari web terminal) skrip tidak boleh menganggap
-  # stdin adalah terminal. Dicatat supaya pesan errornya jelas.
-  HAS_TTY=0
-  ([ -t 0 ] || [ -t 2 ]) && HAS_TTY=1
   SUDO="sudo"
+  # Siapkan kredensial sudo SEKALI, di muka, sebelum skrip menyentuh /opt.
+  # Setelah satu kali berhasil, 'sudo -n' berlaku untuk seluruh sisa skrip
+  # sehingga tidak ada prompt berulang di tengah proses.
+  if $SUDO -n true 2>/dev/null; then
+    log "Akses sudo sudah aktif (tanpa password)."
+  elif [ -r /dev/tty ] && ( : </dev/tty ) 2>/dev/null; then
+    log "Meminta password sudo (dari terminal)..."
+    if ! $SUDO -v </dev/tty; then
+      die "Password sudo salah. Coba 'sudo -v' dulu, lalu ulangi skrip ini."
+    fi
+  else
+    cat >&2 <<MSG
+--------------------------------------------------------------------------------
+ Akses sudo belum aktif dan tidak ada terminal untuk mengetik password.
+
+ Langkah 1. Jalankan di terminal InstaBox:
+     sudo -v
+
+ Kalau langkah 1 ditolak ('Sorry, try again'), password akun 'user' memang
+ tidak pernah diberikan oleh InstaBox. Langkah 2 gagal, gunakan Jalan C
+ (tanpa sudo, di home directory).
+--------------------------------------------------------------------------------
+MSG
+    exit 1
+  fi
 fi
 
 need_sudo() {
@@ -39,18 +60,15 @@ need_sudo() {
   # Kredensial tidak ada. Sudo butuh terminal untuk mengetik password.
   # JANGAN pernah memberi sudo stdin dari pipe/heredoc: itu bisa membanjiri
   # password dengan sisa teks skrip ("cannot execute binary file").
-  if [ "${HAS_TTY:-0}" = "1" ]; then
-    if ( : </dev/tty ) 2>/dev/null; then
-      warn "Perintah berikut butuh password sudo: $*"
-      if $SUDO -v </dev/tty; then
-        $SUDO "$@"
-        return $?
-      fi
+  if [ -r /dev/tty ] && ( : </dev/tty ) 2>/dev/null; then
+    if $SUDO -v </dev/tty; then
+      $SUDO "$@"
+      return $?
     fi
   fi
 
   cat >&2 <<MSG
-[x] sudo butuh password, tapi tidak ada terminal untuk mengetiknya.
+[x] sudo butuh password, tapi ${SUDO} gagal tanpa terminal.
     Skrip tidak melanjutkan agar .env/service tidak terpasang setengah jadi.
 
     Jalankan perintah ini di terminal InstaBox (lalu ulangi):
@@ -63,10 +81,11 @@ MSG
 }
 
 # ---------- 1. Dependensi sistem ----------
-log "Memasang dependensi sistem (git, curl, ffmpeg, build tools)..."
+log "Memasang dependensi sistem (git, curl, nano, ffmpeg, build tools)..."
 export DEBIAN_FRONTEND=noninteractive
 need_sudo apt-get update -qq
-need_sudo apt-get install -y -qq git curl nano ca-certificates ffmpeg python3 make g++ >/dev/null
+need_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+  git curl nano ca-certificates ffmpeg python3 make g++ >/dev/null
 
 # ---------- 2. Node.js ----------
 need_node="0"
@@ -81,7 +100,7 @@ if [ "$need_node" = "1" ]; then
   log "Memasang Node.js ${NODE_MAJOR}.x..."
   curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" -o /tmp/nodesource_setup.sh
   need_sudo bash /tmp/nodesource_setup.sh >/dev/null
-  need_sudo apt-get install -y -qq nodejs >/dev/null
+  need_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs >/dev/null
   rm -f /tmp/nodesource_setup.sh
 fi
 log "Node $(node -v) | npm $(npm -v)"
