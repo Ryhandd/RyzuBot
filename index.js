@@ -250,10 +250,71 @@ async function hapusSesiMongo() {
   } catch (_) {}
 }
 
+// ── CLAIM INSTANCE (cegah 2 proses pakai sesi WhatsApp yang sama) ──
+// InstaBox bisa menjalankan proses baru sebelum proses lama benar-benar mati.
+// Dua instance dengan creds yang sama akan saling tendang (logout 401 / 405).
+// Claim ini dipegang selama proses hidup lalu dilepas otomatis saat exit/crash.
+const os = require("os")
+const INSTANCE_ID = `${os.hostname()}-${process.pid}-${Date.now()}`
+const INSTANCE_TTL_MS = 3 * 60 * 1000
+let instanceTimer = null
+
+async function claimInstance(force = process.env.FORCE_TAKEOVER === "true" || process.env.FORCE_TAKEOVER === "1") {
+  try {
+    const { User, connect } = require("./lib/mongo")
+    if (!(await connect())) return null // Mongo mati: lanjut tanpa guard
+
+    const now = Date.now()
+    const doc = await User.findById("__instance__").catch(() => null)
+    const holder = doc?.data || null
+    const fresh = holder && now - Number(holder.heartbeat || 0) < INSTANCE_TTL_MS
+
+    if (fresh && holder.id !== INSTANCE_ID && !force) {
+      return { busy: true, holder }
+    }
+
+    await User.findByIdAndUpdate(
+      "__instance__",
+      { _id: "__instance__", data: { id: INSTANCE_ID, heartbeat: now } },
+      { upsert: true }
+    )
+    if (instanceTimer) clearInterval(instanceTimer)
+    instanceTimer = setInterval(() => {
+      User.findByIdAndUpdate("__instance__", { "data.heartbeat": Date.now() }).catch(() => {})
+    }, 60000)
+    instanceTimer.unref?.()
+
+    return { busy: false, tookOver: !!(fresh && holder && holder.id !== INSTANCE_ID) }
+  } catch (_) {
+    return null
+  }
+}
+
+function releaseInstance() {
+  try {
+    if (instanceTimer) clearInterval(instanceTimer)
+    const { User } = require("./lib/mongo")
+    User.findOneAndDelete({ _id: "__instance__", "data.id": INSTANCE_ID }).catch(() => {})
+  } catch (_) {}
+}
+
 // ── MAIN ──
 async function connectToWhatsApp() {
   const { User, connect } = require("./lib/mongo")
   await connect()
+
+  const claim = await claimInstance()
+  if (claim?.busy) {
+    console.error(chalk.red(
+      `\n⛔ Instance lain masih hidup (pid ${claim.holder?.id || "?"}).\n` +
+      "   Hentikan dulu instance lama, atau set FORCE_TAKEOVER=true untuk memaksa ambil alih.\n"
+    ))
+    process.exit(0)
+  }
+  if (claim?.tookOver) {
+    console.log(chalk.yellow("⚠️ Instance lama sudah mati (heartbeat basi). Ambil alih sesi."))
+  }
+
   await restoreSesi()
 
   // Host PaaS (InstaBox/Uptime) tidak punya TTY: matikan mode interaktif
@@ -487,6 +548,7 @@ const gracefulShutdown = (signal) => {
   console.log(chalk.yellow(`\n👋 Bot dimatikan (${signal})...`))
   try { waSocket?.end?.(undefined) } catch (_) {}
   try { httpServer?.close?.() } catch (_) {}
+  releaseInstance()
   setTimeout(() => process.exit(0), 1500).unref?.()
 }
 
