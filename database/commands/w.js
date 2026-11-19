@@ -1,5 +1,5 @@
 const fs = require("fs")
-const db = require("../history")
+const { db } = require("../../lib/db.js")
 
 module.exports = {
   name: "who",
@@ -9,7 +9,6 @@ module.exports = {
     let ctx = msg.message?.extendedTextMessage?.contextInfo
     if (!ctx?.stanzaId) return reply("Reply pesan dulu.")
 
-    const chatId = msg.key.remoteJid
     let currentId = ctx.stanzaId
     let targetMessage = null
 
@@ -23,21 +22,24 @@ module.exports = {
 
       targetMessage = data
 
+      let raw = null
       try {
-        const parsed = JSON.parse(data.raw || "{}")
-
-        const nextCtx =
-          parsed?.message?.extendedTextMessage?.contextInfo ||
-          parsed?.message?.imageMessage?.contextInfo ||
-          parsed?.message?.videoMessage?.contextInfo
-
-        if (nextCtx?.stanzaId) {
-          currentId = nextCtx.stanzaId
-        } else {
-          break
-        }
-
+        raw = JSON.parse(data.text || "")
       } catch {
+        raw = null
+      }
+
+      // Cari stanzaId pesan yang di-reply oleh pesan terpilih (chain).
+      // Schema `messages` tidak menyimpan contextInfo, jadi chain hanya
+      // bisa ditelusuri bila `text` kebetulan JSON berisi message.
+      const nextCtx =
+        raw?.message?.extendedTextMessage?.contextInfo ||
+        raw?.message?.imageMessage?.contextInfo ||
+        raw?.message?.videoMessage?.contextInfo
+
+      if (nextCtx?.stanzaId) {
+        currentId = nextCtx.stanzaId
+      } else {
         break
       }
     }

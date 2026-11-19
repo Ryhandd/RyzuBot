@@ -146,6 +146,7 @@ function debouncedBackupSesi(delayMs = 2500) {
   backupTimeout = setTimeout(() => {
     backupSesi()
   }, delayMs)
+  backupTimeout.unref?.()
 }
 
 // ── BACKUP SESI KE MONGODB ──

@@ -15,4 +15,7 @@ database/*.db*
 media
 database/userRPG.json
 database/history.db*
+database.db
+database.db-shm
+database.db-wal
 RyzuBot.md
